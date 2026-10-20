@@ -1,0 +1,646 @@
+import { Person, Relationship } from '../types';
+
+/**
+ * Tính toán danh xưng vai vế chuẩn hóa theo góc nhìn của "Tôi" (Người quan sát)
+ * Tuân thủ quy tắc tiếng Việt chuẩn dòng họ:
+ * - Tách bạch rõ huyết thống và hôn nhân.
+ * - Phân biệt chính xác Bên Nội (Bố, Ông bà nội, Bác/Chú/Cô) và Bên Ngoại (Mẹ, Ông bà ngoại, Cậu/Dì).
+ * - Xử lý chuẩn xác dâu rể (Vợ của Bác ruột, Chồng của Cô ruột, Chị dâu, Anh rể...).
+ * - Fallback: "Người thân" thay vì đoán mò mơ hồ.
+ */
+export function getKinshipToMe(
+  me: Person | null | undefined,
+  target: Person,
+  allPersons: Person[],
+  allRels: Relationship[],
+  visitedIds: Set<string> = new Set()
+): string {
+  if (!me) {
+    return target.generation === 1 ? 'Thủy Tổ' : `Thế hệ ${target.generation}`;
+  }
+
+  // 1. Bản thân
+  if (me.id === target.id) {
+    return 'Tôi';
+  }
+
+  // Circular reference guard against infinite recursion between spouses
+  if (visitedIds.has(target.id)) {
+    return 'Người thân';
+  }
+  const nextVisited = new Set(visitedIds);
+  nextVisited.add(target.id);
+
+  // 2. Vợ / Chồng trực tiếp
+  const isSpouse = allRels.some(
+    (r) =>
+      r.type === 'SPOUSE' &&
+      ((r.spouse1Id === me.id && r.spouse2Id === target.id) ||
+        (r.spouse1Id === target.id && r.spouse2Id === me.id))
+  );
+  if (isSpouse) {
+    return target.gender === 'MALE' ? 'Chồng' : 'Vợ';
+  }
+
+  // 3. Cha / Mẹ trực tiếp
+  const isParent = allRels.some(
+    (r) => r.type === 'PARENT_CHILD' && r.parentId === target.id && r.childId === me.id
+  );
+  if (isParent) {
+    return target.gender === 'MALE' ? 'Bố' : 'Mẹ';
+  }
+
+  // 4. Con ruột trực tiếp
+  const isChild = allRels.some(
+    (r) => r.type === 'PARENT_CHILD' && r.parentId === me.id && r.childId === target.id
+  );
+  if (isChild) {
+    return target.gender === 'MALE' ? 'Con trai' : 'Con gái';
+  }
+
+  // Lấy danh sách cha mẹ của "Tôi"
+  const myParentIds = allRels
+    .filter((r) => r.type === 'PARENT_CHILD' && r.childId === me.id && r.parentId)
+    .map((r) => r.parentId as string);
+
+  const myFather = allPersons.find((p) => myParentIds.includes(p.id) && p.gender === 'MALE');
+  const myMother = allPersons.find((p) => myParentIds.includes(p.id) && p.gender === 'FEMALE');
+
+  // Lấy danh sách con ruột của "Tôi"
+  const myChildIds = allRels
+    .filter((r) => r.type === 'PARENT_CHILD' && r.parentId === me.id && r.childId)
+    .map((r) => r.childId as string);
+
+  // 5. Anh / Chị / Em ruột (Cùng cha hoặc cùng mẹ)
+  const isSibling = allRels.some(
+    (r) =>
+      r.type === 'PARENT_CHILD' &&
+      r.childId === target.id &&
+      myParentIds.includes(r.parentId as string)
+  );
+  if (isSibling) {
+    const isTargetOlder =
+      (target.birthDate && me.birthDate && new Date(target.birthDate) < new Date(me.birthDate)) ||
+      (target.nickname && target.nickname.toLowerCase().includes('cả'));
+    if (target.gender === 'MALE') {
+      return isTargetOlder ? 'Anh trai' : 'Em trai';
+    } else {
+      return isTargetOlder ? 'Chị gái' : 'Em gái';
+    }
+  }
+
+  // 6. Cháu ruột (Con của anh/chị/em ruột)
+  const siblingIds = allPersons
+    .filter((p) => p.id !== me.id)
+    .filter((p) =>
+      allRels.some(
+        (r) =>
+          r.type === 'PARENT_CHILD' &&
+          r.childId === p.id &&
+          myParentIds.includes(r.parentId as string)
+      )
+    )
+    .map((p) => p.id);
+
+  const isNephewNiece = allRels.some(
+    (r) =>
+      r.type === 'PARENT_CHILD' &&
+      r.childId === target.id &&
+      siblingIds.includes(r.parentId as string)
+  );
+  if (isNephewNiece) {
+    return target.gender === 'MALE' ? 'Cháu trai ruột' : 'Cháu gái ruột';
+  }
+
+  // 7. Ông / Bà (Cha mẹ của Bố hoặc Mẹ)
+  const isFatherParent = myFather
+    ? allRels.some(
+        (r) => r.type === 'PARENT_CHILD' && r.parentId === target.id && r.childId === myFather.id
+      )
+    : false;
+
+  const isMotherParent = myMother
+    ? allRels.some(
+        (r) => r.type === 'PARENT_CHILD' && r.parentId === target.id && r.childId === myMother.id
+      )
+    : false;
+
+  if (isFatherParent) {
+    return target.gender === 'MALE' ? 'Ông nội' : 'Bà nội';
+  }
+  if (isMotherParent) {
+    return target.gender === 'MALE' ? 'Ông ngoại' : 'Bà ngoại';
+  }
+
+  // Kiểm tra bạn đời của Ông nội / Bà nội hoặc Ông ngoại / Bà ngoại
+  const spouseOfGrandparent = allRels.find(
+    (r) =>
+      r.type === 'SPOUSE' && (r.spouse1Id === target.id || r.spouse2Id === target.id)
+  );
+  if (spouseOfGrandparent) {
+    const partnerId =
+      spouseOfGrandparent.spouse1Id === target.id
+        ? spouseOfGrandparent.spouse2Id
+        : spouseOfGrandparent.spouse1Id;
+
+    if (myFather && allRels.some((r) => r.type === 'PARENT_CHILD' && r.parentId === partnerId && r.childId === myFather.id)) {
+      return target.gender === 'MALE' ? 'Ông nội' : 'Bà nội';
+    }
+    if (myMother && allRels.some((r) => r.type === 'PARENT_CHILD' && r.parentId === partnerId && r.childId === myMother.id)) {
+      return target.gender === 'MALE' ? 'Ông ngoại' : 'Bà ngoại';
+    }
+  }
+
+  // 8. Bác / Chú / Cô / Dì / Cậu (Anh chị em ruột của Bố hoặc Mẹ)
+  let isPaternalUncleAunt = false; // Bên Nội (anh chị em của Bố)
+  let isMaternalUncleAunt = false; // Bên Ngoại (anh chị em của Mẹ)
+
+  if (myFather) {
+    const paternalGrandparentIds = allRels
+      .filter((r) => r.type === 'PARENT_CHILD' && r.childId === myFather.id && r.parentId)
+      .map((r) => r.parentId as string);
+
+    isPaternalUncleAunt = allRels.some(
+      (r) =>
+        r.type === 'PARENT_CHILD' &&
+        r.childId === target.id &&
+        paternalGrandparentIds.includes(r.parentId as string)
+    );
+  }
+
+  if (myMother) {
+    const maternalGrandparentIds = allRels
+      .filter((r) => r.type === 'PARENT_CHILD' && r.childId === myMother.id && r.parentId)
+      .map((r) => r.parentId as string);
+
+    isMaternalUncleAunt = allRels.some(
+      (r) =>
+        r.type === 'PARENT_CHILD' &&
+        r.childId === target.id &&
+        maternalGrandparentIds.includes(r.parentId as string)
+    );
+  }
+
+  if (isPaternalUncleAunt) {
+    const isMale = target.gender === 'MALE';
+    const isOlder =
+      target.nickname?.toLowerCase().includes('cả') ||
+      target.nickname?.toLowerCase().includes('bác') ||
+      (target.birthDate && myFather?.birthDate && new Date(target.birthDate) < new Date(myFather.birthDate));
+    if (isMale) {
+      return isOlder ? 'Bác ruột' : 'Chú ruột';
+    } else {
+      return isOlder ? 'Bác gái' : 'Cô ruột';
+    }
+  }
+
+  if (isMaternalUncleAunt) {
+    const isMale = target.gender === 'MALE';
+    const isOlder =
+      target.nickname?.toLowerCase().includes('cả') ||
+      target.nickname?.toLowerCase().includes('bác') ||
+      (target.birthDate && myMother?.birthDate && new Date(target.birthDate) < new Date(myMother.birthDate));
+    if (isMale) {
+      return isOlder ? 'Bác trai' : 'Cậu ruột';
+    } else {
+      return isOlder ? 'Bác gái' : 'Dì ruột';
+    }
+  }
+
+  // 9. Kiểm tra Vợ / Chồng của Người Thân (Hôn nhân trong dòng họ) - Hoàn toàn không đệ quy
+  const spouseRel = allRels.find(
+    (r) => r.type === 'SPOUSE' && (r.spouse1Id === target.id || r.spouse2Id === target.id)
+  );
+  if (spouseRel) {
+    const partnerId = spouseRel.spouse1Id === target.id ? spouseRel.spouse2Id! : spouseRel.spouse1Id!;
+    const partner = allPersons.find((p) => p.id === partnerId);
+    if (partner) {
+      // 9.1 Partner là con ruột của Tôi
+      if (myChildIds.includes(partner.id)) {
+        return target.gender === 'FEMALE' ? 'Con dâu' : 'Con rể';
+      }
+
+      // 9.2 Partner là anh / chị / em ruột của Tôi
+      const isPartnerSibling = allRels.some(
+        (r) =>
+          r.type === 'PARENT_CHILD' &&
+          r.childId === partner.id &&
+          myParentIds.includes(r.parentId as string)
+      );
+      if (isPartnerSibling) {
+        const isPartnerOlder =
+          (partner.birthDate && me.birthDate && new Date(partner.birthDate) < new Date(me.birthDate)) ||
+          (partner.nickname && partner.nickname.toLowerCase().includes('cả'));
+        if (partner.gender === 'MALE') {
+          return isPartnerOlder ? 'Chị dâu' : 'Em dâu';
+        } else {
+          return isPartnerOlder ? 'Anh rể' : 'Em rể';
+        }
+      }
+
+      // 9.3 Partner là anh/chị/em ruột của Bố (Bác ruột / Chú ruột / Cô ruột)
+      if (myFather) {
+        const paternalGrandparentIds = allRels
+          .filter((r) => r.type === 'PARENT_CHILD' && r.childId === myFather.id && r.parentId)
+          .map((r) => r.parentId as string);
+
+        const isPartnerPaternalUncleAunt = allRels.some(
+          (r) =>
+            r.type === 'PARENT_CHILD' &&
+            r.childId === partner.id &&
+            paternalGrandparentIds.includes(r.parentId as string)
+        );
+
+        if (isPartnerPaternalUncleAunt) {
+          if (partner.gender === 'MALE') {
+            const isOlder =
+              partner.nickname?.toLowerCase().includes('cả') ||
+              partner.nickname?.toLowerCase().includes('bác') ||
+              (partner.birthDate && myFather.birthDate && new Date(partner.birthDate) < new Date(myFather.birthDate));
+            return isOlder ? 'Vợ của Bác ruột' : 'Vợ của Chú ruột';
+          } else {
+            return 'Chồng của Cô ruột';
+          }
+        }
+      }
+
+      // 9.4 Partner là anh/chị/em ruột của Mẹ (Cậu ruột / Dì ruột)
+      if (myMother) {
+        const maternalGrandparentIds = allRels
+          .filter((r) => r.type === 'PARENT_CHILD' && r.childId === myMother.id && r.parentId)
+          .map((r) => r.parentId as string);
+
+        const isPartnerMaternalUncleAunt = allRels.some(
+          (r) =>
+            r.type === 'PARENT_CHILD' &&
+            r.childId === partner.id &&
+            maternalGrandparentIds.includes(r.parentId as string)
+        );
+
+        if (isPartnerMaternalUncleAunt) {
+          if (partner.gender === 'MALE') {
+            return 'Vợ của Cậu ruột';
+          } else {
+            return 'Chồng của Dì ruột';
+          }
+        }
+      }
+
+      // 9.5 Partner cùng thế hệ với Tôi (Anh chị em họ)
+      if (partner.generation === me.generation) {
+        return target.gender === 'FEMALE' ? 'Chị dâu họ' : 'Anh rể họ';
+      }
+
+      // 9.6 Partner là cháu ruột của Tôi
+      if (siblingIds.length > 0) {
+        const isPartnerNephew = allRels.some(
+          (r) =>
+            r.type === 'PARENT_CHILD' &&
+            r.childId === partner.id &&
+            siblingIds.includes(r.parentId as string)
+        );
+        if (isPartnerNephew) {
+          return target.gender === 'FEMALE' ? 'Cháu dâu' : 'Cháu rể';
+        }
+      }
+    }
+  }
+
+  // 10. Cháu nội / Cháu ngoại (Con của con tôi)
+  const isGrandchild = myChildIds.some((childId) =>
+    allRels.some(
+      (r) => r.type === 'PARENT_CHILD' && r.parentId === childId && r.childId === target.id
+    )
+  );
+  if (isGrandchild) {
+    const parentOfGrandchild = allPersons.find((p) =>
+      allRels.some((r) => r.type === 'PARENT_CHILD' && r.parentId === p.id && r.childId === target.id)
+    );
+    if (parentOfGrandchild?.gender === 'MALE') {
+      return target.gender === 'MALE' ? 'Cháu nội' : 'Cháu nội';
+    } else {
+      return target.gender === 'MALE' ? 'Cháu ngoại' : 'Cháu ngoại';
+    }
+  }
+
+  // 11. Dựa theo Chênh lệch thế hệ (Generation Diff)
+  const genDiff = (target.generation || 1) - (me.generation || 1);
+  const isMale = target.gender === 'MALE';
+
+  if (genDiff === 0) {
+    return isMale ? 'Anh / Em họ' : 'Chị / Em họ';
+  } else if (genDiff === -1) {
+    return isMale ? 'Bác họ' : 'Cô / Dì họ';
+  } else if (genDiff === 1) {
+    return isMale ? 'Cháu trai họ' : 'Cháu gái họ';
+  } else if (genDiff === -2) {
+    return isMale ? 'Cụ Ông' : 'Cụ Bà';
+  } else if (genDiff === 2) {
+    return isMale ? 'Cháu trai' : 'Cháu gái';
+  } else if (genDiff === -3) {
+    return isMale ? 'Cụ tổ (Cố)' : 'Cụ bà (Cố)';
+  } else if (genDiff === 3) {
+    return 'Chắt';
+  } else if (genDiff <= -4) {
+    return 'Thủy Tổ / Tiền Nhân';
+  } else if (genDiff >= 4) {
+    return 'Chút / Chít';
+  }
+
+  return 'Người thân';
+}
+
+/**
+ * Phân loại chính xác danh sách ID thành viên thuộc Bên Nội và Bên Ngoại
+ * Theo quy tắc phả hệ:
+ * 1. Gia đình hạt nhân của Tôi (Tôi, Vợ/Chồng, Con cái, Cháu chắt nếu có):
+ *    -> Luôn thuộc CẢ HAI BÊN (khi lọc Bên Nội hay Bên Ngoại đều hiển thị).
+ * 2. Bên Nội:
+ *    - Tính từ Cha của Tôi đi lên: Bố, Ông bà nội, Cụ cố nội...
+ *    - Các con ruột của Ông bà nội (Anh chị em ruột của Bố - Bác/Chú/Cô) và vợ/chồng của họ.
+ *    - Toàn bộ con cháu của họ (anh chị em họ bên nội, cháu họ nội...).
+ *    - Anh chị em ruột của Tôi (cũng là con của Bố) và con cháu của họ.
+ * 3. Bên Ngoại:
+ *    - Tính từ Mẹ của Tôi đi lên: Mẹ, Ông bà ngoại, Cụ cố ngoại...
+ *    - Các con ruột của Ông bà ngoại (Anh chị em ruột của Mẹ - Bác/Cậu/Dì) và vợ/chồng của họ.
+ *    - Toàn bộ con cháu của họ (anh chị em họ bên ngoại, cháu họ ngoại...).
+ *    - Anh chị em ruột của Tôi (cũng là con của Mẹ) và con cháu của họ.
+ */
+export function getPaternalMaternalMemberIds(
+  me: Person | null | undefined,
+  allPersons: Person[],
+  allRels: Relationship[]
+): { paternalMemberIds: Set<string>; maternalMemberIds: Set<string> } {
+  const pSet = new Set<string>();
+  const mSet = new Set<string>();
+
+  if (!allPersons || allPersons.length === 0) {
+    return { paternalMemberIds: pSet, maternalMemberIds: mSet };
+  }
+
+  // Xác định người quan sát trung tâm (me hoặc người định danh Tôi hoặc thế hệ 3 hoặc người đầu tiên)
+  const targetMe =
+    me ||
+    allPersons.find((m) => m.nickname === 'Tôi' || m.nickname === 'Tôi (Khởi tạo)') ||
+    allPersons.find((m) => m.generation === 3) ||
+    allPersons[0];
+
+  if (!targetMe) {
+    allPersons.forEach((m) => {
+      pSet.add(m.id);
+      mSet.add(m.id);
+    });
+    return { paternalMemberIds: pSet, maternalMemberIds: mSet };
+  }
+
+  // Helper: Lấy tất cả con cháu hậu duệ đệ quy của 1 danh sách người
+  const addAllDescendantsAndSpouses = (rootIds: string[], targetSet: Set<string>) => {
+    const queue = [...rootIds];
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      if (!targetSet.has(currentId)) {
+        targetSet.add(currentId);
+
+        // Thêm vợ/chồng của người này
+        allRels.forEach((r) => {
+          if (r.type === 'SPOUSE') {
+            if (r.spouse1Id === currentId && r.spouse2Id && !targetSet.has(r.spouse2Id)) {
+              targetSet.add(r.spouse2Id);
+            } else if (r.spouse2Id === currentId && r.spouse1Id && !targetSet.has(r.spouse1Id)) {
+              targetSet.add(r.spouse1Id);
+            }
+          }
+        });
+
+        // Thêm anh/chị/em ruột (nếu liên kết trực tiếp SIBLING)
+        allRels.forEach((r) => {
+          if (r.type === 'SIBLING') {
+            if (r.spouse1Id === currentId && r.spouse2Id && !targetSet.has(r.spouse2Id)) {
+              queue.push(r.spouse2Id);
+            } else if (r.spouse2Id === currentId && r.spouse1Id && !targetSet.has(r.spouse1Id)) {
+              queue.push(r.spouse1Id);
+            }
+          }
+        });
+
+        // Thêm con ruột của người này vào queue
+        allRels.forEach((r) => {
+          if (r.type === 'PARENT_CHILD' && r.parentId === currentId && r.childId) {
+            queue.push(r.childId);
+          }
+        });
+      }
+    }
+  };
+
+  // Helper: Tìm tất cả tổ tiên tổ phụ (bố, mẹ, ông bà, cụ...) đi lên, luôn gom đủ cả vợ chồng (Ông & Bà)
+  const getAncestors = (startId: string): string[] => {
+    const ancestors = new Set<string>();
+    const queue = [startId];
+    const visited = new Set<string>();
+
+    while (queue.length > 0) {
+      const curr = queue.shift()!;
+      if (!visited.has(curr)) {
+        visited.add(curr);
+
+        // 1. Tìm cha/mẹ trực tiếp
+        allRels.forEach((r) => {
+          if (r.type === 'PARENT_CHILD' && r.childId === curr && r.parentId) {
+            ancestors.add(r.parentId);
+            queue.push(r.parentId);
+
+            // Tìm luôn vợ/chồng của cha/mẹ này (để luôn đủ cặp Ông & Bà)
+            allRels.forEach((sp) => {
+              if (sp.type === 'SPOUSE') {
+                const partnerId =
+                  sp.spouse1Id === r.parentId
+                    ? sp.spouse2Id
+                    : sp.spouse2Id === r.parentId
+                    ? sp.spouse1Id
+                    : null;
+                if (partnerId && !ancestors.has(partnerId)) {
+                  ancestors.add(partnerId);
+                  queue.push(partnerId);
+                }
+              }
+            });
+          }
+        });
+      }
+    }
+    return Array.from(ancestors);
+  };
+
+  // 1. Gia đình hạt nhân của Tôi: Tôi, vợ/chồng, anh chị em ruột, con cái, cháu chắt
+  const nuclearIds = new Set<string>();
+  addAllDescendantsAndSpouses([targetMe.id], nuclearIds);
+  nuclearIds.add(targetMe.id);
+
+  // Thêm vợ/chồng và anh/chị/em của Tôi
+  allRels.forEach((r) => {
+    if (r.type === 'SPOUSE') {
+      if (r.spouse1Id === targetMe.id && r.spouse2Id) nuclearIds.add(r.spouse2Id);
+      if (r.spouse2Id === targetMe.id && r.spouse1Id) nuclearIds.add(r.spouse1Id);
+    }
+    if (r.type === 'SIBLING') {
+      if (r.spouse1Id === targetMe.id && r.spouse2Id) nuclearIds.add(r.spouse2Id);
+      if (r.spouse2Id === targetMe.id && r.spouse1Id) nuclearIds.add(r.spouse1Id);
+    }
+  });
+
+  // Gia đình hạt nhân luôn thuộc cả Bên Nội và Bên Ngoại
+  nuclearIds.forEach((id) => {
+    pSet.add(id);
+    mSet.add(id);
+  });
+
+  // 2. Tìm Cha và Mẹ trực tiếp của targetMe
+  const myParents = allPersons.filter((p) =>
+    allRels.some((r) => r.type === 'PARENT_CHILD' && r.parentId === p.id && r.childId === targetMe.id)
+  );
+
+  let myFather = myParents.find((p) => p.gender === 'MALE');
+  let myMother = myParents.find((p) => p.gender === 'FEMALE');
+
+  // Fallback nếu không gắn rõ giới tính
+  if (myParents.length >= 1 && !myFather && !myMother) {
+    myFather = myParents[0];
+    if (myParents.length >= 2) myMother = myParents[1];
+  }
+
+  // 3. Xử lý BÊN NỘI: Tính từ Cha của Tôi ra
+  if (myFather) {
+    pSet.add(myFather.id);
+
+    // Vợ của Bố (Mẹ hoặc Mẹ kế) trong gia đình Bố
+    allRels.forEach((r) => {
+      if (r.type === 'SPOUSE') {
+        if (r.spouse1Id === myFather!.id && r.spouse2Id) pSet.add(r.spouse2Id);
+        if (r.spouse2Id === myFather!.id && r.spouse1Id) pSet.add(r.spouse1Id);
+      }
+    });
+
+    // Lấy toàn bộ tổ phụ của Bố: Luôn gồm đầy đủ cả Ông Nội & Bà Nội, Cụ ông & Cụ bà
+    const fatherAncestors = getAncestors(myFather.id);
+    fatherAncestors.forEach((ancId) => pSet.add(ancId));
+
+    // Quét và vẽ ra toàn bộ các anh/chị/em ruột của Bố (các bác, chú, cô bên nội)
+    const fatherSiblings = new Set<string>();
+    // a. Qua các tổ phụ chung (con của ông/bà nội)
+    fatherAncestors.forEach((ancId) => {
+      allRels.forEach((r) => {
+        if (r.type === 'PARENT_CHILD' && r.parentId === ancId && r.childId && r.childId !== myFather!.id) {
+          fatherSiblings.add(r.childId);
+        }
+      });
+    });
+    // b. Qua quan hệ SIBLING trực tiếp với Bố
+    allRels.forEach((r) => {
+      if (r.type === 'SIBLING') {
+        if (r.spouse1Id === myFather!.id && r.spouse2Id) fatherSiblings.add(r.spouse2Id);
+        if (r.spouse2Id === myFather!.id && r.spouse1Id) fatherSiblings.add(r.spouse1Id);
+      }
+    });
+
+    // Thêm các anh chị em ruột của Bố và toàn bộ gia đình con cháu họ vào nhánh Nội
+    fatherSiblings.forEach((sibId) => {
+      pSet.add(sibId);
+      addAllDescendantsAndSpouses([sibId], pSet);
+    });
+
+    // Đảm bảo lan truyền con cháu từ các tổ tiên cao nhất bên nội
+    const topAncestors = fatherAncestors.length > 0 ? fatherAncestors : [myFather.id];
+    topAncestors.forEach((ancId) => {
+      addAllDescendantsAndSpouses([ancId], pSet);
+    });
+  }
+
+  // 4. Xử lý BÊN NGOẠI: Tính từ Mẹ của Tôi ra
+  if (myMother) {
+    mSet.add(myMother.id);
+
+    // Chồng của Mẹ trong gia đình Mẹ
+    allRels.forEach((r) => {
+      if (r.type === 'SPOUSE') {
+        if (r.spouse1Id === myMother!.id && r.spouse2Id) mSet.add(r.spouse2Id);
+        if (r.spouse2Id === myMother!.id && r.spouse1Id) mSet.add(r.spouse1Id);
+      }
+    });
+
+    // Lấy toàn bộ tổ phụ của Mẹ: Luôn gồm đầy đủ cả Ông Ngoại & Bà Ngoại, Cụ ông & Cụ bà ngoại
+    const motherAncestors = getAncestors(myMother.id);
+    motherAncestors.forEach((ancId) => mSet.add(ancId));
+
+    // Quét và vẽ ra toàn bộ các anh/chị/em ruột của Mẹ (các bác, cậu, dì bên ngoại)
+    const motherSiblings = new Set<string>();
+    // a. Qua các tổ phụ chung (con của ông/bà ngoại)
+    motherAncestors.forEach((ancId) => {
+      allRels.forEach((r) => {
+        if (r.type === 'PARENT_CHILD' && r.parentId === ancId && r.childId && r.childId !== myMother!.id) {
+          motherSiblings.add(r.childId);
+        }
+      });
+    });
+    // b. Qua quan hệ SIBLING trực tiếp với Mẹ
+    allRels.forEach((r) => {
+      if (r.type === 'SIBLING') {
+        if (r.spouse1Id === myMother!.id && r.spouse2Id) motherSiblings.add(r.spouse2Id);
+        if (r.spouse2Id === myMother!.id && r.spouse1Id) motherSiblings.add(r.spouse1Id);
+      }
+    });
+
+    // Thêm các anh chị em ruột của Mẹ và toàn bộ gia đình con cháu họ vào nhánh Ngoại
+    motherSiblings.forEach((sibId) => {
+      mSet.add(sibId);
+      addAllDescendantsAndSpouses([sibId], mSet);
+    });
+
+    // Đảm bảo lan truyền con cháu từ các tổ tiên cao nhất bên ngoại
+    const topAncestors = motherAncestors.length > 0 ? motherAncestors : [myMother.id];
+    topAncestors.forEach((ancId) => {
+      addAllDescendantsAndSpouses([ancId], mSet);
+    });
+  }
+
+  // 5. Nếu cây chưa có bố mẹ được nối chính thức (hoặc cây độc lập), đảm bảo không bị rỗng
+  if (!myFather && !myMother) {
+    allPersons.forEach((m) => {
+      pSet.add(m.id);
+      mSet.add(m.id);
+    });
+  }
+
+  // 6. ĐẢM BẢO TÍNH TOÀN VẸN CẶP ĐÔI (Couples Integrity Rule):
+  // Tuyệt đối không để tình trạng một người có mặt nhưng thiếu người bạn đời (vợ/chồng).
+  // Đời ông bà phải luôn hiển thị cả đôi (Ông Nội & Bà Nội, Ông Ngoại & Bà Ngoại).
+  let changed = true;
+  let iterations = 0;
+  while (changed && iterations < 10) {
+    changed = false;
+    iterations++;
+    allRels.forEach((r) => {
+      if (r.type === 'SPOUSE' && r.spouse1Id && r.spouse2Id) {
+        // Bên Nội
+        if (pSet.has(r.spouse1Id) && !pSet.has(r.spouse2Id)) {
+          pSet.add(r.spouse2Id);
+          changed = true;
+        } else if (pSet.has(r.spouse2Id) && !pSet.has(r.spouse1Id)) {
+          pSet.add(r.spouse1Id);
+          changed = true;
+        }
+
+        // Bên Ngoại
+        if (mSet.has(r.spouse1Id) && !mSet.has(r.spouse2Id)) {
+          mSet.add(r.spouse2Id);
+          changed = true;
+        } else if (mSet.has(r.spouse2Id) && !mSet.has(r.spouse1Id)) {
+          mSet.add(r.spouse1Id);
+          changed = true;
+        }
+      }
+    });
+  }
+
+  return { paternalMemberIds: pSet, maternalMemberIds: mSet };
+}

@@ -1,0 +1,85 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  fullName     String
+  avatarUrl    String?
+  role         String        @default("MEMBER")
+  trees        FamilyTree[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model FamilyTree {
+  id            String         @id @default(uuid())
+  name          String
+  description   String?
+  branchName    String?
+  ancestorInfo  String?
+  ownerId       String
+  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members       Person[]
+  relationships Relationship[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Person {
+  id                String         @id @default(uuid())
+  treeId            String
+  tree              FamilyTree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  
+  fullName          String
+  nickname          String?
+  gender            String         @default("MALE") // MALE, FEMALE, OTHER
+  phone             String?
+  address           String?
+  
+  generation        Int            @default(1)
+  birthDate         DateTime?
+  isDeceased        Boolean        @default(false)
+  deathDate         DateTime?
+  lunarDeathDay     String?        // Ví dụ "15/07 Âm lịch"
+  burialPlace       String?        // Nghĩa trang / Địa điểm mộ phần
+  burialCoordinates String?        // Tọa độ GPS hoặc Google Maps link
+  
+  avatarUrl         String?
+  biography         String?
+  
+  parentRels        Relationship[] @relation("ChildRelations")
+  childRels         Relationship[] @relation("ParentRelations")
+  spouseRels1       Relationship[] @relation("Spouse1Relations")
+  spouseRels2       Relationship[] @relation("Spouse2Relations")
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model Relationship {
+  id          String      @id @default(uuid())
+  treeId      String
+  tree        FamilyTree  @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  
+  type        String      // PARENT_CHILD, SPOUSE, ADOPTED
+  
+  parentId    String?
+  parent      Person?     @relation("ParentRelations", fields: [parentId], references: [id], onDelete: Cascade)
+  
+  childId     String?
+  child       Person?     @relation("ChildRelations", fields: [childId], references: [id], onDelete: Cascade)
+  
+  spouse1Id   String?
+  spouse1     Person?     @relation("Spouse1Relations", fields: [spouse1Id], references: [id], onDelete: Cascade)
+  
+  spouse2Id   String?
+  spouse2     Person?     @relation("Spouse2Relations", fields: [spouse2Id], references: [id], onDelete: Cascade)
+}

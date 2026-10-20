@@ -1,0 +1,39 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="favStem" x1="24" y1="42" x2="24" y2="12" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="60%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#34d399" />
+    </linearGradient>
+    <linearGradient id="favGold" x1="20" y1="6" x2="28" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+
+  <!-- Modern Dark Emerald Rounded Square Icon Container -->
+  <rect width="48" height="48" rx="13" fill="#041f14" stroke="#10b981" stroke-width="1.8" stroke-opacity="0.5"/>
+
+  <!-- Roots -->
+  <path d="M16 40C20 38 28 38 32 40" stroke="#059669" stroke-width="3" stroke-linecap="round" />
+  
+  <!-- Trunk -->
+  <path d="M24 39V18" stroke="url(#favStem)" stroke-width="4" stroke-linecap="round" />
+  
+  <!-- Left Branch -->
+  <path d="M24 28C19 28 14 24 12 18" stroke="url(#favStem)" stroke-width="2.8" stroke-linecap="round" />
+  <circle cx="12" cy="18" r="3.8" fill="#10b981" stroke="#ffffff" stroke-width="1.2" />
+  <circle cx="7" cy="27" r="2.2" fill="#38bdf8" />
+  <path d="M12 21C10.5 23 8.5 25 7 27" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" />
+
+  <!-- Right Branch -->
+  <path d="M24 28C29 28 34 24 36 18" stroke="url(#favStem)" stroke-width="2.8" stroke-linecap="round" />
+  <circle cx="36" cy="18" r="3.8" fill="#10b981" stroke="#ffffff" stroke-width="1.2" />
+  <circle cx="41" cy="27" r="2.2" fill="#38bdf8" />
+  <path d="M36 21C37.5 23 39.5 25 41 27" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" />
+
+  <!-- Apex Gold Ancestor -->
+  <circle cx="24" cy="11" r="5" fill="url(#favGold)" stroke="#ffffff" stroke-width="1.5" />
+  <!-- Center Union Node -->
+  <circle cx="24" cy="27" r="3" fill="#34d399" stroke="#042f1f" stroke-width="1.2" />
+</svg>
