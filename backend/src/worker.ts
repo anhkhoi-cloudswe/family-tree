@@ -1,4 +1,17 @@
+import http from 'http';
+import { handleAsNodeRequest } from 'cloudflare:node';
 import app from './index';
+
+let server: http.Server | null = null;
+let serverPort = 8080;
+
+function ensureServer(): number {
+  if (!server) {
+    server = http.createServer(app);
+    server.listen(serverPort);
+  }
+  return serverPort;
+}
 
 // Cloudflare Workers fetch handler
 export default {
@@ -11,8 +24,6 @@ export default {
       process.env.JWT_SECRET = env.JWT_SECRET;
     }
 
-    // Xử lý request qua Express app (Web standard Request -> Response)
-    // Dùng adapter Node.js HTTP Server tương thích Cloudflare Workers
     const url = new URL(request.url);
     
     // Fallback response cho health check
@@ -22,7 +33,8 @@ export default {
       });
     }
 
-    // Chuyển quyền xử lý cho Express
-    return (app as any)(request, env, ctx);
+    // Chuyển quyền xử lý cho Express qua Node HTTP bridge
+    const port = ensureServer();
+    return handleAsNodeRequest(port, request, env, ctx);
   },
 };

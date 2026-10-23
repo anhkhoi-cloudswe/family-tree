@@ -84,7 +84,11 @@ app.get('/api/health', (req, res) => {
 // Export app cho Cloudflare Workers / Serverless
 export default app;
 
-if (!process.env.CLOUDFLARE_WORKER && process.env.NODE_ENV !== 'test') {
+// Chỉ khởi động HTTP server khi chạy trực tiếp trong Node.js (cục bộ / Docker)
+const isDirectRun = typeof process !== 'undefined' && 
+  Boolean(process.argv && process.argv[1] && (process.argv[1].endsWith('index.ts') || process.argv[1].endsWith('index.js')));
+
+if (isDirectRun && process.env.NODE_ENV !== 'test' && !process.env.CLOUDFLARE_WORKER) {
   app.listen(PORT, async () => {
     console.log(`[FamilyTree API] Server is running on http://localhost:${PORT}`);
     try {
