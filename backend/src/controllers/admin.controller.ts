@@ -63,6 +63,19 @@ export const updateAdminUserRole = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Vai trò không hợp lệ (phải là ADMIN hoặc MEMBER).' });
     }
 
+    // Nếu hạ quyền từ ADMIN xuống MEMBER, kiểm tra xem có phải admin duy nhất không
+    if (role === 'MEMBER') {
+      const targetUser = await prisma.user.findUnique({ where: { id } });
+      if (targetUser?.role === 'ADMIN') {
+        const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
+        if (adminCount <= 1) {
+          return res.status(400).json({
+            error: 'Hệ thống chỉ còn một Quản trị viên (ADMIN) duy nhất. Không được phép hạ quyền tài khoản này!',
+          });
+        }
+      }
+    }
+
     const updated = await prisma.user.update({
       where: { id },
       data: { role },
@@ -165,6 +178,17 @@ export const deleteAdminUser = async (req: AuthRequest, res: Response) => {
 
     if (currentAdminId === id) {
       return res.status(400).json({ error: 'Bạn không thể tự xóa tài khoản của chính mình!' });
+    }
+
+    // Kiểm tra nếu tài khoản bị xóa là ADMIN, hệ thống phải còn ít nhất một admin khác
+    const targetUser = await prisma.user.findUnique({ where: { id } });
+    if (targetUser?.role === 'ADMIN') {
+      const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
+      if (adminCount <= 1) {
+        return res.status(400).json({
+          error: 'Hệ thống chỉ còn một Quản trị viên (ADMIN) duy nhất. Không được phép xóa tài khoản này để đảm bảo an toàn vận hành!',
+        });
+      }
     }
 
     // Xóa cascade: Xóa các relationships, persons, trees thuộc sở hữu của user trước
