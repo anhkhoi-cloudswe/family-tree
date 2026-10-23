@@ -425,11 +425,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       <div
         className="auth-modal-card"
         style={{
-          maxWidth: '430px',
+          maxWidth: '390px',
           width: '100%',
-          padding: '2.2rem 2.4rem',
+          maxHeight: '94vh',
+          overflowY: 'auto',
+          padding: '1.5rem 1.6rem',
           background: 'rgba(10, 26, 18, 0.98)',
-          borderRadius: '22px',
+          borderRadius: '20px',
           border: '1px solid rgba(52, 211, 153, 0.32)',
           boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(16, 185, 129, 0.18)',
           color: '#f1f5f9',
@@ -438,26 +440,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }}
       >
         {/* Brand header */}
-        <div style={{ textAlign: 'center', marginBottom: '1.4rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '0.9rem' }}>
           <div
             style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
               background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 78, 59, 0.4) 100%)',
               border: '1px solid rgba(52, 211, 153, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              margin: '0 auto 0.75rem auto',
+              margin: '0 auto 0.4rem auto',
               boxShadow: '0 8px 20px -4px rgba(16, 185, 129, 0.3)',
             }}
           >
-            <FamilyTreeLogo size={34} />
+            <FamilyTreeLogo size={26} />
           </div>
           <h2
             style={{
-              fontSize: '1.45rem',
+              fontSize: '1.3rem',
               fontWeight: 700,
               color: '#ffffff',
               letterSpacing: '-0.02em',
@@ -553,157 +555,97 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <form onSubmit={authMode === 'LOGIN' ? handleLogin : handleRegister}>
               {authMode === 'REGISTER' && (
-                <div style={{ marginBottom: '0.9rem', position: 'relative' }}>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      color: '#cbd5e1',
-                      marginBottom: '0.35rem',
-                      textAlign: 'left',
-                    }}
-                  >
-                    Họ và tên của bạn:
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Nguyễn Văn A"
-                      className="auth-input-dark"
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem 1rem 0.75rem 2.6rem',
-                        background: '#0a1a12',
-                        backgroundColor: '#0a1a12',
-                        WebkitBoxShadow: '0 0 0 1000px #0a1a12 inset',
-                        boxShadow: '0 0 0 1000px #0a1a12 inset',
-                        border: '1px solid rgba(52, 211, 153, 0.3)',
-                        borderRadius: '11px',
-                        color: '#f1f5f9',
-                        fontSize: '0.92rem',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                    />
-                    <UserIcon
-                      size={17}
-                      color="#34d399"
-                      style={{
-                        position: 'absolute',
-                        left: '0.9rem',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        pointerEvents: 'none',
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div style={{ marginBottom: '0.9rem', position: 'relative' }}>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    color: '#cbd5e1',
-                    marginBottom: '0.35rem',
-                    textAlign: 'left',
-                  }}
-                >
-                  Email đăng nhập:
-                </label>
-                <div style={{ position: 'relative' }}>
+                <div style={{ marginBottom: '0.7rem', position: 'relative' }}>
                   <input
-                    type="email"
+                    type="text"
                     required
-                    placeholder="name@example.com"
+                    placeholder="Nhập họ và tên của bạn..."
                     className="auth-input-dark"
                     style={{
                       width: '100%',
-                      padding: '0.75rem 1rem 0.75rem 2.6rem',
+                      padding: '0.72rem 1rem 0.72rem 2.5rem',
                       background: '#0a1a12',
                       backgroundColor: '#0a1a12',
                       WebkitBoxShadow: '0 0 0 1000px #0a1a12 inset',
                       boxShadow: '0 0 0 1000px #0a1a12 inset',
                       border: '1px solid rgba(52, 211, 153, 0.3)',
-                      borderRadius: '11px',
+                      borderRadius: '10px',
                       color: '#f1f5f9',
-                      fontSize: '0.92rem',
+                      fontSize: '0.88rem',
                       outline: 'none',
                       boxSizing: 'border-box',
                     }}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                   />
-                  <Mail
-                    size={17}
+                  <UserIcon
+                    size={16}
                     color="#34d399"
                     style={{
                       position: 'absolute',
-                      left: '0.9rem',
+                      left: '0.85rem',
                       top: '50%',
                       transform: 'translateY(-50%)',
                       pointerEvents: 'none',
                     }}
                   />
                 </div>
+              )}
+
+              <div style={{ marginBottom: '0.7rem', position: 'relative' }}>
+                <input
+                  type="email"
+                  required
+                  placeholder="Nhập địa chỉ email..."
+                  className="auth-input-dark"
+                  style={{
+                    width: '100%',
+                    padding: '0.72rem 1rem 0.72rem 2.5rem',
+                    background: '#0a1a12',
+                    backgroundColor: '#0a1a12',
+                    WebkitBoxShadow: '0 0 0 1000px #0a1a12 inset',
+                    boxShadow: '0 0 0 1000px #0a1a12 inset',
+                    border: '1px solid rgba(52, 211, 153, 0.3)',
+                    borderRadius: '10px',
+                    color: '#f1f5f9',
+                    fontSize: '0.88rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <Mail
+                  size={16}
+                  color="#34d399"
+                  style={{
+                    position: 'absolute',
+                    left: '0.85rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'none',
+                  }}
+                />
               </div>
 
-              <div style={{ marginBottom: '1.25rem', position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                  <label
-                    style={{
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      color: '#cbd5e1',
-                    }}
-                  >
-                    Mật khẩu:
-                  </label>
-                  {authMode === 'LOGIN' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAuthMode('FORGOT_PASSWORD');
-                        setError(null);
-                      }}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#34d399',
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        padding: 0,
-                        textDecoration: 'underline',
-                        textUnderlineOffset: '2px',
-                      }}
-                    >
-                      Quên mật khẩu?
-                    </button>
-                  )}
-                </div>
+              <div style={{ marginBottom: '0.8rem', position: 'relative' }}>
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
-                    placeholder="••••••••"
+                    placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)..."
                     className="auth-input-dark"
                     style={{
                       width: '100%',
-                      padding: '0.75rem 2.6rem 0.75rem 2.6rem',
+                      padding: '0.72rem 2.5rem 0.72rem 2.5rem',
                       background: '#0a1a12',
                       backgroundColor: '#0a1a12',
                       WebkitBoxShadow: '0 0 0 1000px #0a1a12 inset',
                       boxShadow: '0 0 0 1000px #0a1a12 inset',
                       border: '1px solid rgba(52, 211, 153, 0.3)',
-                      borderRadius: '11px',
+                      borderRadius: '10px',
                       color: '#f1f5f9',
-                      fontSize: '0.92rem',
+                      fontSize: '0.88rem',
                       outline: 'none',
                       boxSizing: 'border-box',
                     }}
@@ -711,11 +653,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     onChange={(e) => setPassword(e.target.value)}
                   />
                   <Lock
-                    size={17}
+                    size={16}
                     color="#34d399"
                     style={{
                       position: 'absolute',
-                      left: '0.9rem',
+                      left: '0.85rem',
                       top: '50%',
                       transform: 'translateY(-50%)',
                       pointerEvents: 'none',
@@ -726,7 +668,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     onClick={() => setShowPassword(!showPassword)}
                     style={{
                       position: 'absolute',
-                      right: '0.85rem',
+                      right: '0.75rem',
                       top: '50%',
                       transform: 'translateY(-50%)',
                       background: 'none',
@@ -738,9 +680,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       alignItems: 'center',
                     }}
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
+                {authMode === 'LOGIN' && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.3rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('FORGOT_PASSWORD');
+                        setError(null);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#34d399',
+                        fontSize: '0.74rem',
+                        cursor: 'pointer',
+                        padding: 0,
+                        textDecoration: 'underline',
+                        textUnderlineOffset: '2px',
+                      }}
+                    >
+                      Quên mật khẩu?
+                    </button>
+                  </div>
+                )}
               </div>
 
               <button
@@ -751,21 +716,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.55rem',
-                  padding: '0.78rem 1rem',
-                  fontSize: '0.92rem',
+                  gap: '0.5rem',
+                  padding: '0.72rem 1rem',
+                  fontSize: '0.9rem',
                   fontWeight: 600,
                   color: '#ffffff',
                   background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
                   border: '1px solid rgba(52, 211, 153, 0.4)',
-                  borderRadius: '11px',
+                  borderRadius: '10px',
                   cursor: isLoading ? 'not-allowed' : 'pointer',
                   opacity: isLoading ? 0.75 : 1,
                   boxShadow: '0 4px 18px rgba(16, 185, 129, 0.35)',
                   transition: 'all 0.15s ease',
                 }}
               >
-                {authMode === 'LOGIN' ? <LogIn size={17} /> : <UserPlus size={17} />}
+                {authMode === 'LOGIN' ? <LogIn size={16} /> : <UserPlus size={16} />}
                 <span>
                   {isLoading
                     ? 'Đang xử lý...'
@@ -777,7 +742,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </form>
 
             {/* Dải phân cách "Hoặc" */}
-            <div style={{ display: 'flex', alignItems: 'center', margin: '1.15rem 0', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', margin: '0.85rem 0', gap: '0.75rem' }}>
               <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.12)' }} />
               <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
                 Hoặc
@@ -874,7 +839,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <input
                   type="email"
                   required
-                  placeholder="name@example.com"
+                  placeholder="Nhập địa chỉ email của bạn..."
                   autoFocus
                   className="auth-input-dark"
                   style={{
