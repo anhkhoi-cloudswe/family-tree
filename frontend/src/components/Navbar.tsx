@@ -146,7 +146,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div className="brand-text-box">
               <div className="brand-title-row">
-                <h1 className="brand-title">Fam3 - Cây Gia Phả</h1>
+                <h1 className="brand-title">Famlykin - Cây Gia Phả</h1>
               </div>
             </div>
           </div>

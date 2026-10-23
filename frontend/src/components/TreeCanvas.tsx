@@ -956,7 +956,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
                 >
                   <Sparkles size={32} color="#fef08a" />
                 </div>
-                <h3>Chào Mừng Đến Với Fam3!</h3>
+                <h3>Chào Mừng Đến Với Famlykin!</h3>
                 <p>
                   Cây gia phả của bạn đang sẵn sàng. Hãy bắt đầu khởi tạo thành viên đầu tiên (Cụ Thủy Tổ hoặc Bản Thân bạn) để xây dựng phả hệ trường tồn.
                 </p>

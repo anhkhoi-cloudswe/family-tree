@@ -347,7 +347,7 @@ const AppContent: React.FC = () => {
       <div className="app-loading-screen">
         <div className="loading-card">
           <div className="loading-spinner" />
-          <h2 className="loading-title">Fam3 - Cây Gia Phả</h2>
+          <h2 className="loading-title">Famlykin - Cây Gia Phả</h2>
           <p className="loading-desc">Đang tải cấu trúc gia phả và phân tầng thế hệ...</p>
         </div>
       </div>

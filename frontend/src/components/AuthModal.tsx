@@ -218,7 +218,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
               margin: 0,
             }}
           >
-            Fam3 - Cây Gia Phả
+            Famlykin - Cây Gia Phả
           </h2>
         </div>
 
