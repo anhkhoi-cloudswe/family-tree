@@ -10,16 +10,6 @@ export async function seedDatabase() {
   await prisma.familyTree.deleteMany({});
   await prisma.user.deleteMany({});
 
-  const demoPasswordHash = await bcrypt.hash('Password123!', 10);
-  const user = await prisma.user.create({
-    data: {
-      email: 'demo@giapha.vn',
-      passwordHash: demoPasswordHash,
-      fullName: 'Nguyễn Văn An',
-      role: 'MEMBER',
-    },
-  });
-
   const adminPasswordHash = await bcrypt.hash('123456', 10);
   const adminUser = await prisma.user.create({
     data: {
@@ -36,7 +26,7 @@ export async function seedDatabase() {
       description: 'Cây gia phả số dòng họ Nguyễn lưu truyền từ Cụ Thủy Tổ Nguyễn Phúc Lộc',
       branchName: 'Chi Trưởng - Đệ Nhất Ngành',
       ancestorInfo: 'Khởi nguồn từ đất Cổ Am, định cư và phát triển tại Ý Yên, Nam Định và Hà Nội',
-      ownerId: user.id,
+      ownerId: adminUser.id,
     },
   });
 
@@ -353,10 +343,9 @@ export async function seedDatabase() {
     data: { treeId: tree.id, type: 'PARENT_CHILD', parentId: toiAn.id, childId: conDan.id },
   });
 
-  console.log('✓ Khởi tạo dữ liệu mẫu hoàn tất thành công!');
-  console.log('  1. Tài khoản Demo (MEMBER): demo@giapha.vn / Password123!');
-  console.log('  2. Tài khoản Admin (ADMIN): admin@famlykin.vn / 123456');
-  console.log(`  Cây gia phả mẫu: "${tree.name}" (ID: ${tree.id})`);
+  console.log('✓ Khởi tạo dữ liệu quản trị viên hoàn tất thành công!');
+  console.log('  Tài khoản Admin (ADMIN): admin@famlykin.vn / 123456');
+  console.log(`  Cây gia phả ban đầu: "${tree.name}" (ID: ${tree.id})`);
 }
 
 if (typeof process !== 'undefined' && process.argv && process.argv[1] && process.argv[1].includes('seed')) {

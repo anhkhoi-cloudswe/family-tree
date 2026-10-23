@@ -144,21 +144,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
     }
   };
 
-  // Nút Demo nhanh (Member)
-  const handleQuickDemo = async () => {
-    setError(null);
-    setIsLoading(true);
-    try {
-      const res = await apiLogin({ email: 'demo@giapha.vn', password: 'Password123!' });
-      setStoredToken(res.token);
-      onSuccess(res.user, res.defaultTreeId);
-    } catch (err: any) {
-      setError(err.message || 'Không thể đăng nhập bằng tài khoản demo');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const isGmail = email.toLowerCase().includes('@gmail.com');
 
   return (
@@ -225,50 +210,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
         {/* Màn hình 1 & 2: Đăng Nhập hoặc Đăng Ký */}
         {(authMode === 'LOGIN' || authMode === 'REGISTER') && (
           <>
-            {/* Nút Demo tiện lợi */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <button
-                type="button"
-                onClick={handleQuickDemo}
-                disabled={isLoading}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  padding: '0.75rem 1rem',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  color: '#ffffff',
-                  background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
-                  border: '1px solid rgba(199, 210, 254, 0.5)',
-                  borderRadius: '11px',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 16px -2px rgba(79, 70, 229, 0.4)',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <Sparkles size={16} color="#fef08a" />
-                <span>Thử Nhanh: Đăng Nhập Mẫu (Demo)</span>
-              </button>
-            </div>
 
-            {/* Divider */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.8rem',
-                marginBottom: '1.2rem',
-              }}
-            >
-              <div style={{ height: '1px', flex: 1, background: 'rgba(255, 255, 255, 0.12)' }} />
-              <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 500 }}>
-                hoặc tài khoản cá nhân
-              </span>
-              <div style={{ height: '1px', flex: 1, background: 'rgba(255, 255, 255, 0.12)' }} />
-            </div>
 
             {/* Chỉ 2 Tabs: Đăng Nhập | Đăng Ký */}
             <div
