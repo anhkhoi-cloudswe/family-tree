@@ -2,9 +2,13 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-const uploadDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = typeof __dirname !== 'undefined' ? path.join(__dirname, '../../uploads') : '/tmp/uploads';
+try {
+  if (typeof fs !== 'undefined' && fs.existsSync && !fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch {
+  // Ignored in non-filesystem environments like Cloudflare Workers
 }
 
 const storage = multer.diskStorage({

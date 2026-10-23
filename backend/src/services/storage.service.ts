@@ -12,9 +12,13 @@ export class LocalStorageService implements IStorageService {
   private uploadDir: string;
 
   constructor() {
-    this.uploadDir = path.join(__dirname, '../../uploads');
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
+    this.uploadDir = typeof __dirname !== 'undefined' ? path.join(__dirname, '../../uploads') : '/tmp/uploads';
+    try {
+      if (typeof fs !== 'undefined' && fs.existsSync && !fs.existsSync(this.uploadDir)) {
+        fs.mkdirSync(this.uploadDir, { recursive: true });
+      }
+    } catch {
+      // Ignored in non-filesystem environments like Cloudflare Workers
     }
   }
 

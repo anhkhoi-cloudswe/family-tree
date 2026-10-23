@@ -56,9 +56,11 @@ app.use(cookieParser());
 app.use(express.json({ limit: '10mb' })); // Chống Payload Bomb làm nghẽn RAM server
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Phục vụ ảnh avatar tải lên ở thư mục uploads cục bộ
-const uploadsPath = path.join(__dirname, '../uploads');
-app.use('/uploads', express.static(uploadsPath));
+// Phục vụ ảnh avatar tải lên ở thư mục uploads cục bộ (khi chạy Node.js truyền thống)
+if (typeof __dirname !== 'undefined') {
+  const uploadsPath = path.join(__dirname, '../uploads');
+  app.use('/uploads', express.static(uploadsPath));
+}
 
 import { prisma } from './prisma';
 import { seedDatabase } from './utils/seed';
