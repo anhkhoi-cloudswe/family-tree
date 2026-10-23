@@ -48,9 +48,15 @@ export const apiLogin = (data: { email: string; password: string }) =>
   });
 
 export const apiRegister = (data: { email: string; password: string; fullName?: string }) =>
-  request<{ token: string; user: User; defaultTreeId?: string }>('/auth/register', {
+  request<{ success: boolean; message: string; email: string }>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(data),
+  });
+
+export const apiVerifyRegistration = (token: string) =>
+  request<{ success: boolean; token: string; user: User; defaultTreeId?: string; message: string }>('/auth/verify-registration', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
   });
 
 export const apiCheckEmail = (email: string) =>
@@ -60,9 +66,15 @@ export const apiCheckEmail = (email: string) =>
   });
 
 export const apiForgotPassword = (email: string) =>
-  request<{ message: string; email: string }>('/auth/forgot-password', {
+  request<{ success: boolean; message: string; email: string }>('/auth/forgot-password', {
     method: 'POST',
     body: JSON.stringify({ email }),
+  });
+
+export const apiResetPassword = (data: { token: string; newPassword: string }) =>
+  request<{ success: boolean; message: string }>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify(data),
   });
 
 export const apiMagicLogin = (email: string) =>

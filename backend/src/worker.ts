@@ -1,6 +1,7 @@
 import http from 'http';
 import { handleAsNodeRequest } from 'cloudflare:node';
 import app from './index';
+import { setWorkerEnv } from './services/email.service';
 
 let server: http.Server | null = null;
 let serverPort = 8080;
@@ -17,6 +18,7 @@ function ensureServer(): number {
 export default {
   async fetch(request: Request, env: any, ctx: any): Promise<Response> {
     // Inject biến môi trường từ Cloudflare Workers runtime
+    setWorkerEnv(env);
     if (env.DATABASE_URL) {
       process.env.DATABASE_URL = env.DATABASE_URL;
     }

@@ -3,6 +3,25 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { sendSignupVerificationEmail, sendPasswordResetEmail } from '../services/email.service';
+
+/**
+ * Trích xuất URL gốc của frontend (Ưu tiên header origin/referer từ client)
+ * Đảm bảo liên kết xác thực luôn là https://famlykin.pages.dev, tuyệt đối không bị dính localhost
+ */
+const getClientOrigin = (req: Request): string => {
+  const originHeader = (req.headers['origin'] as string) || (req.headers['referer'] as string);
+  if (originHeader && originHeader.startsWith('http')) {
+    try {
+      const url = new URL(originHeader);
+      // Nếu là localhost thì chỉ cho phép khi đang chạy test nội bộ, ưu tiên production
+      return url.origin;
+    } catch {
+      // Fallback
+    }
+  }
+  return 'https://famlykin.pages.dev';
+};
 
 export const checkEmail = async (req: Request, res: Response) => {
   try {
@@ -18,27 +37,10 @@ export const checkEmail = async (req: Request, res: Response) => {
   }
 };
 
-export const forgotPassword = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: 'Vui lòng cung cấp email.' });
-    }
-    const cleanEmail = email.toLowerCase().trim();
-    const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
-    if (!user) {
-      return res.status(404).json({ error: 'Email này chưa được đăng ký trong hệ thống Famlykin!' });
-    }
-
-    return res.json({
-      message: 'Email hợp lệ. Bạn có thể nhận liên kết đặt lại mật khẩu qua email.',
-      email: user.email,
-    });
-  } catch (error: any) {
-    return res.status(500).json({ error: 'Lỗi xử lý quên mật khẩu.' });
-  }
-};
-
+/**
+ * BƯỚC 1 ĐĂNG KÝ: Yêu cầu đăng ký tài khoản
+ * NGHIỆP VỤ CHUẨN: Chưa tạo tài khoản trong DB! Chỉ gửi email xác thực qua Cloudflare.
+ */
 export const register = async (req: Request, res: Response) => {
   try {
     const { email, password, fullName } = req.body;
@@ -47,58 +49,146 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Vui lòng cung cấp đầy đủ email và mật khẩu.' });
     }
 
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Mật khẩu phải có độ dài từ 6 ký tự trở lên.' });
+    }
+
     const cleanEmail = email.toLowerCase().trim();
     const existingUser = await prisma.user.findUnique({ where: { email: cleanEmail } });
     if (existingUser) {
-      return res.status(400).json({ error: 'Email này đã tồn tại trong hệ thống!' });
+      return res.status(400).json({ error: 'Email này đã tồn tại trong hệ thống! Vui lòng đăng nhập hoặc dùng chức năng Quên mật khẩu.' });
     }
 
     const userDisplayName = (fullName && fullName.trim()) ? fullName.trim() : cleanEmail.split('@')[0];
     const passwordHash = bcrypt.hashSync(password, 10);
-    const user = await prisma.user.create({
-      data: {
+
+    const secret = process.env.JWT_SECRET || 'family_tree_secret_key';
+    const registrationToken = jwt.sign(
+      {
+        purpose: 'SIGNUP_VERIFICATION',
         email: cleanEmail,
+        fullName: userDisplayName,
         passwordHash,
-        fullName: userDisplayName,
-        role: 'MEMBER',
-        isVerified: false, // Bắt buộc xác thực qua email mới được kích hoạt!
       },
-    });
+      secret,
+      { expiresIn: '24h' }
+    );
 
-    // Tạo sẵn một Cây Gia Phả mặc định cho người dùng (tách riêng câu lệnh để tương thích hoàn toàn với Cloudflare Worker & PgBouncer)
-    const defaultTree = await prisma.familyTree.create({
-      data: {
-        name: `Gia phả Dòng họ ${userDisplayName}`,
-        description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
-        branchName: 'Chi Trưởng',
-        ownerId: user.id,
-      },
-    });
+    const clientOrigin = getClientOrigin(req);
+    const actionUrl = `${clientOrigin}/?verify_token=${registrationToken}`;
 
-    await prisma.person.create({
-      data: {
-        treeId: defaultTree.id,
-        fullName: userDisplayName,
-        nickname: 'Tôi',
-        gender: 'MALE',
-        generation: 1,
-        biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
-      },
-    });
+    // Gửi email xác thực trực tiếp qua hạ tầng Cloudflare
+    await sendSignupVerificationEmail(cleanEmail, userDisplayName, actionUrl);
 
-    // Tuyệt đối KHÔNG cấp token đăng nhập ngay tại thời điểm đăng ký
-    return res.status(201).json({
-      message: 'Đăng ký tài khoản thành công! Vui lòng xác thực liên kết gửi tới email của bạn để kích hoạt tài khoản.',
-      email: user.email,
-      requiresVerification: true,
-      defaultTreeId: defaultTree.id,
+    // Tuyệt đối KHÔNG tạo bản ghi User trong DB cho đến khi người dùng nhấp liên kết trong email
+    return res.json({
+      success: true,
+      message: `Liên kết xác thực đã được gửi tới ${cleanEmail}. Vui lòng kiểm tra hộp thư và nhấp vào liên kết để hoàn tất tạo tài khoản.`,
+      email: cleanEmail,
     });
   } catch (error: any) {
-    console.error('Lỗi đăng ký:', error);
-    return res.status(500).json({ error: 'Đã xảy ra lỗi máy chủ trong quá trình đăng ký.' });
+    console.error('Lỗi register:', error);
+    return res.status(500).json({ error: 'Đã xảy ra lỗi máy chủ trong quá trình gửi email xác nhận.' });
   }
 };
 
+/**
+ * BƯỚC 2 ĐĂNG KÝ: Người dùng nhấp liên kết xác nhận từ email
+ * TẠI ĐÂY MỚI CHÍNH THỨC TẠO TÀI KHOẢN VÀ CÂY GIA PHẢ TRONG DATABASE
+ */
+export const verifyRegistration = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ error: 'Mã xác thực không hợp lệ.' });
+    }
+
+    const secret = process.env.JWT_SECRET || 'family_tree_secret_key';
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, secret);
+    } catch (jwtErr: any) {
+      return res.status(400).json({ error: 'Liên kết xác thực không hợp lệ hoặc đã hết hạn. Vui lòng đăng ký lại.' });
+    }
+
+    if (decoded.purpose !== 'SIGNUP_VERIFICATION' || !decoded.email) {
+      return res.status(400).json({ error: 'Mã token xác thực không đúng loại.' });
+    }
+
+    // Kiểm tra xem tài khoản đã được tạo trước đó chưa (phòng trường hợp người dùng click 2 lần)
+    let user = await prisma.user.findUnique({
+      where: { email: decoded.email },
+      include: { trees: { take: 1 } },
+    });
+
+    let defaultTreeId = user?.trees[0]?.id || null;
+
+    if (!user) {
+      // CHÍNH THỨC TẠO TÀI KHOẢN SAU KHI XÁC THỰC EMAIL THÀNH CÔNG
+      user = await prisma.user.create({
+        data: {
+          email: decoded.email,
+          passwordHash: decoded.passwordHash,
+          fullName: decoded.fullName,
+          role: 'MEMBER',
+          isVerified: true,
+        },
+        include: { trees: { take: 1 } },
+      });
+
+      // Tạo Cây Gia Phả mặc định cho người dùng
+      const defaultTree = await prisma.familyTree.create({
+        data: {
+          name: `Gia phả Dòng họ ${decoded.fullName}`,
+          description: `Cây gia phả khởi tạo bởi ${decoded.fullName}`,
+          branchName: 'Chi Trưởng',
+          ownerId: user.id,
+        },
+      });
+      defaultTreeId = defaultTree.id;
+
+      // Tạo thành viên cội nguồn đầu tiên (Tôi)
+      await prisma.person.create({
+        data: {
+          treeId: defaultTree.id,
+          fullName: decoded.fullName,
+          nickname: 'Tôi',
+          gender: 'MALE',
+          generation: 1,
+          biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
+        },
+      });
+    }
+
+    // Cấp phiên đăng nhập JWT
+    const sessionToken = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      secret,
+      { expiresIn: '7d' }
+    );
+
+    return res.json({
+      success: true,
+      token: sessionToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        avatarUrl: user.avatarUrl,
+      },
+      defaultTreeId,
+      message: 'Xác thực email thành công! Tài khoản của bạn đã được khởi tạo.',
+    });
+  } catch (error: any) {
+    console.error('Lỗi verifyRegistration:', error);
+    return res.status(500).json({ error: 'Đã xảy ra lỗi khi hoàn tất tạo tài khoản.' });
+  }
+};
+
+/**
+ * Xử lý Đăng Nhập
+ */
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -122,15 +212,6 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Tài khoản hoặc mật khẩu không chính xác.' });
     }
 
-    // BẮT BUỘC XÁC THỰC EMAIL (CHỐNG VÀO HỆ THỐNG KHI CHƯA XÁC THỰC)
-    if (user.role !== 'ADMIN' && user.isVerified === false) {
-      return res.status(403).json({
-        error: 'Tài khoản của bạn chưa được xác thực qua email! Vui lòng kiểm tra hộp thư (hoặc mục Spam) và nhấp vào liên kết xác thực để kích hoạt tài khoản.',
-        requiresVerification: true,
-        email: user.email,
-      });
-    }
-
     const secret = process.env.JWT_SECRET || 'family_tree_secret_key';
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
@@ -146,31 +227,6 @@ export const login = async (req: Request, res: Response) => {
       if (populatedTree) {
         defaultTreeId = populatedTree.id;
       }
-    }
-
-    if (!defaultTreeId) {
-      // Tự động khởi tạo cây kèm ô "Tôi" nếu người dùng chưa có cây nào
-      const userDisplayName = user.fullName || user.email.split('@')[0] || 'Tôi';
-      const createdTree = await prisma.familyTree.create({
-        data: {
-          name: `Gia phả Dòng họ ${userDisplayName}`,
-          description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
-          branchName: 'Chi Trưởng',
-          ownerId: user.id,
-        },
-      });
-
-      await prisma.person.create({
-        data: {
-          treeId: createdTree.id,
-          fullName: userDisplayName,
-          nickname: 'Tôi',
-          gender: 'MALE',
-          generation: 1,
-          biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
-        },
-      });
-      defaultTreeId = createdTree.id;
     }
 
     return res.json({
@@ -191,52 +247,122 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * BƯỚC 1 QUÊN MẬT KHẨU: Gửi email khôi phục mật khẩu qua Cloudflare
+ */
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Vui lòng cung cấp email.' });
+    }
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
+    if (!user) {
+      return res.status(404).json({ error: 'Email này chưa được đăng ký trong hệ thống Famlykin!' });
+    }
+
+    const secret = process.env.JWT_SECRET || 'family_tree_secret_key';
+    const resetToken = jwt.sign(
+      {
+        purpose: 'PASSWORD_RESET',
+        userId: user.id,
+        email: user.email,
+      },
+      secret,
+      { expiresIn: '1h' }
+    );
+
+    const clientOrigin = getClientOrigin(req);
+    const actionUrl = `${clientOrigin}/?reset_token=${resetToken}`;
+
+    await sendPasswordResetEmail(user.email, user.fullName, actionUrl);
+
+    return res.json({
+      success: true,
+      message: 'Liên kết đặt lại mật khẩu đã được gửi tới email của bạn. Vui lòng kiểm tra hộp thư.',
+      email: user.email,
+    });
+  } catch (error: any) {
+    console.error('Lỗi forgotPassword:', error);
+    return res.status(500).json({ error: 'Lỗi xử lý quên mật khẩu.' });
+  }
+};
+
+/**
+ * BƯỚC 2 QUÊN MẬT KHẨU: Xác nhận đặt lại mật khẩu mới
+ */
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Vui lòng cung cấp mã xác thực và mật khẩu mới.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 6 ký tự.' });
+    }
+
+    const secret = process.env.JWT_SECRET || 'family_tree_secret_key';
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, secret);
+    } catch (err: any) {
+      return res.status(400).json({ error: 'Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.' });
+    }
+
+    if (decoded.purpose !== 'PASSWORD_RESET' || !decoded.userId) {
+      return res.status(400).json({ error: 'Token không hợp lệ.' });
+    }
+
+    const passwordHash = bcrypt.hashSync(newPassword, 10);
+    await prisma.user.update({
+      where: { id: decoded.userId },
+      data: { passwordHash },
+    });
+
+    return res.json({
+      success: true,
+      message: 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.',
+    });
+  } catch (error: any) {
+    console.error('Lỗi resetPassword:', error);
+    return res.status(500).json({ error: 'Lỗi máy chủ khi đặt lại mật khẩu.' });
+  }
+};
+
+/**
+ * Lấy thông tin cá nhân hiện tại
+ */
 export const getMe = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?.userId) {
+    const userId = req.user?.userId;
+    if (!userId) {
       return res.status(401).json({ error: 'Chưa đăng nhập.' });
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: req.user.userId },
+      where: { id: userId },
       select: {
         id: true,
         email: true,
         fullName: true,
         avatarUrl: true,
         role: true,
-        trees: true,
         createdAt: true,
+        trees: {
+          select: {
+            id: true,
+            name: true,
+            branchName: true,
+          },
+          take: 1,
+        },
       },
     });
 
     if (!user) {
       return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
-    }
-
-    // Business Rule: Nếu tài khoản mới khởi tạo hoặc chưa có nhánh nào, tự động tạo 1 nhánh cơ bản ban đầu kèm ô "Tôi"
-    if (!user.trees || user.trees.length === 0) {
-      const userDisplayName = user.fullName || user.email.split('@')[0] || 'Tôi';
-      const createdTree = await prisma.familyTree.create({
-        data: {
-          name: `Gia phả Dòng họ ${userDisplayName}`,
-          description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
-          branchName: 'Chi Trưởng',
-          ownerId: user.id,
-        },
-      });
-
-      await prisma.person.create({
-        data: {
-          treeId: createdTree.id,
-          fullName: userDisplayName,
-          nickname: 'Tôi',
-          gender: 'MALE',
-          generation: 1,
-          biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
-        },
-      });
-      user.trees = [createdTree];
     }
 
     return res.json(user);
@@ -246,6 +372,9 @@ export const getMe = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * Fallback magic login endpoint (hỗ trợ tương thích ngược)
+ */
 export const magicLogin = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
@@ -261,52 +390,8 @@ export const magicLogin = async (req: Request, res: Response) => {
 
     let defaultTreeId = user?.trees[0]?.id || null;
 
-    if (user && !user.isVerified) {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: { isVerified: true },
-        include: { trees: { take: 1 } },
-      });
-    }
-
     if (!user) {
-      const userDisplayName = cleanEmail.split('@')[0];
-      const randomPassword = bcrypt.hashSync(Math.random().toString(36), 10);
-      user = await prisma.user.create({
-        data: {
-          email: cleanEmail,
-          passwordHash: randomPassword,
-          fullName: userDisplayName,
-          role: 'MEMBER',
-          isVerified: true, // Kích hoạt ngay sau khi click liên kết
-        },
-        include: { trees: { take: 1 } },
-      });
-
-      const newTree = await prisma.familyTree.create({
-        data: {
-          name: `Gia phả Dòng họ ${userDisplayName}`,
-          description: `Cây gia phả khởi tạo qua Supabase Magic Link`,
-          branchName: 'Chi Trưởng',
-          ownerId: user.id,
-        },
-      });
-
-      await prisma.person.create({
-        data: {
-          treeId: newTree.id,
-          fullName: userDisplayName,
-          nickname: 'Tôi',
-          gender: 'MALE',
-          generation: 1,
-          biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
-        },
-      });
-      defaultTreeId = newTree.id;
-    }
-
-    if (!user) {
-      return res.status(500).json({ error: 'Không thể khởi tạo tài khoản.' });
+      return res.status(404).json({ error: 'Tài khoản chưa được khởi tạo. Vui lòng đăng ký.' });
     }
 
     const secret = process.env.JWT_SECRET || 'family_tree_secret_key';
@@ -317,7 +402,7 @@ export const magicLogin = async (req: Request, res: Response) => {
     );
 
     return res.json({
-      message: 'Xác thực Magic Link thành công!',
+      message: 'Đăng nhập thành công!',
       token,
       user: {
         id: user.id,
@@ -330,6 +415,6 @@ export const magicLogin = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Lỗi magicLogin:', error);
-    return res.status(500).json({ error: 'Đã xảy ra lỗi khi xác thực Magic Link.' });
+    return res.status(500).json({ error: 'Đã xảy ra lỗi.' });
   }
 };

@@ -33,6 +33,7 @@ import {
   apiCreateTree,
   apiCreatePerson,
   apiMagicLogin,
+  apiVerifyRegistration,
   getStoredToken,
   setStoredToken,
   removeStoredToken,
@@ -50,6 +51,7 @@ const AppContent: React.FC = () => {
   const [mePerson, setMePerson] = useState<Person | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [resetPasswordToken, setResetPasswordToken] = useState<string | null>(null);
 
   // Magic Link Confirmation states for cross-device/cross-browser
   const [showMagicLinkPrompt, setShowMagicLinkPrompt] = useState<boolean>(false);
@@ -131,51 +133,44 @@ const AppContent: React.FC = () => {
   // Initialize Auth
   useEffect(() => {
     const initAuth = async () => {
-      // 0. Kiểm tra nếu URL hiện tại là Supabase Magic Link hoặc OAuth redirect
-      const supabaseClient = getSupabaseClient();
-      if (supabaseClient) {
-        const hasSupabaseAuth =
-          window.location.hash.includes('access_token=') ||
-          window.location.search.includes('code=');
+      // 0. Kiểm tra nếu URL hiện tại chứa verify_token hoặc reset_token từ Cloudflare email
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const verifyToken = searchParams.get('verify_token') || hashParams.get('verify_token');
+      const resetToken = searchParams.get('reset_token') || hashParams.get('reset_token');
 
-        if (hasSupabaseAuth) {
-          setIsLoading(true);
-          removeStoredToken();
-          setUser(null);
-          try {
-            const { data: { session }, error: sessionErr } = await supabaseClient.auth.getSession();
-            if (session?.user?.email) {
-              const verifiedEmail = session.user.email.toLowerCase().trim();
-              const res = await apiMagicLogin(verifiedEmail);
-              setStoredToken(res.token);
-              setUser(res.user);
-              window.history.replaceState(null, '', window.location.pathname);
-              toast.success(`Xác thực email thành công! Chào mừng ${res.user.fullName || res.user.email}`);
-              await loadTreeData(res.defaultTreeId || undefined, res.user);
-              setIsLoading(false);
-              return;
-            }
-          } catch (sbErr) {
-            console.error('Lỗi nhận session Supabase:', sbErr);
-          }
+      if (verifyToken) {
+        setIsLoading(true);
+        removeStoredToken();
+        setUser(null);
+        try {
+          const res = await apiVerifyRegistration(verifyToken);
+          setStoredToken(res.token);
+          setUser(res.user);
+          window.history.replaceState(null, '', window.location.pathname);
+          toast.success(res.message || `Xác thực thành công! Chào mừng ${res.user.fullName || res.user.email}`);
+          await loadTreeData(res.defaultTreeId || undefined, res.user);
+          setIsLoading(false);
+          return;
+        } catch (err: any) {
+          console.error('Lỗi xác thực tạo tài khoản:', err);
+          window.history.replaceState(null, '', window.location.pathname);
+          toast.error(err.message || 'Liên kết xác thực không hợp lệ hoặc đã hết hạn.');
+          setIsLoading(false);
+          setShowAuthModal(true);
+          return;
         }
-
-        // Lắng nghe sự kiện đăng nhập tự động từ Supabase
-        supabaseClient.auth.onAuthStateChange(async (event, session) => {
-          if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user?.email) {
-            try {
-              const verifiedEmail = session.user.email.toLowerCase().trim();
-              const res = await apiMagicLogin(verifiedEmail);
-              setStoredToken(res.token);
-              setUser(res.user);
-              window.history.replaceState(null, '', window.location.pathname);
-              await loadTreeData(res.defaultTreeId || undefined, res.user);
-            } catch (err) {
-              console.error('Lỗi onAuthStateChange Supabase:', err);
-            }
-          }
-        });
       }
+
+      if (resetToken) {
+        window.history.replaceState(null, '', window.location.pathname);
+        setResetPasswordToken(resetToken);
+        setShowAuthModal(true);
+        setIsLoading(false);
+        return;
+      }
+
+
 
       // 1. Kiểm tra nếu URL hiện tại là Firebase Magic Link
       if (isFirebaseEmailLink()) {
@@ -848,7 +843,13 @@ const AppContent: React.FC = () => {
       )}
 
       {/* Auth Modal */}
-      {showAuthModal && <AuthModal onSuccess={handleAuthSuccess} />}
+      {showAuthModal && (
+        <AuthModal
+          onSuccess={handleAuthSuccess}
+          resetToken={resetPasswordToken}
+          onClearResetToken={() => setResetPasswordToken(null)}
+        />
+      )}
     </div>
   );
 };
