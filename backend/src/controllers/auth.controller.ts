@@ -54,7 +54,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const userDisplayName = (fullName && fullName.trim()) ? fullName.trim() : cleanEmail.split('@')[0];
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = bcrypt.hashSync(password, 10);
     const user = await prisma.user.create({
       data: {
         email: cleanEmail,
@@ -64,22 +64,24 @@ export const register = async (req: Request, res: Response) => {
       },
     });
 
-    // Tạo sẵn một Cây Gia Phả mặc định cho người dùng
+    // Tạo sẵn một Cây Gia Phả mặc định cho người dùng (tách riêng câu lệnh để tương thích hoàn toàn với Cloudflare Worker & PgBouncer)
     const defaultTree = await prisma.familyTree.create({
       data: {
         name: `Gia phả Dòng họ ${userDisplayName}`,
         description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
         branchName: 'Chi Trưởng',
         ownerId: user.id,
-        members: {
-          create: {
-            fullName: userDisplayName,
-            nickname: 'Tôi',
-            gender: 'MALE',
-            generation: 1,
-            biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
-          },
-        },
+      },
+    });
+
+    await prisma.person.create({
+      data: {
+        treeId: defaultTree.id,
+        fullName: userDisplayName,
+        nickname: 'Tôi',
+        gender: 'MALE',
+        generation: 1,
+        biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
       },
     });
 
@@ -125,7 +127,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Tài khoản hoặc mật khẩu không chính xác.' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    const isMatch = bcrypt.compareSync(password, user.passwordHash);
     if (!isMatch) {
       return res.status(401).json({ error: 'Tài khoản hoặc mật khẩu không chính xác.' });
     }
@@ -154,15 +156,17 @@ export const login = async (req: Request, res: Response) => {
           description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
           branchName: 'Chi Trưởng',
           ownerId: user.id,
-          members: {
-            create: {
-              fullName: userDisplayName,
-              nickname: 'Tôi',
-              gender: 'MALE',
-              generation: 1,
-              biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
-            },
-          },
+        },
+      });
+
+      await prisma.person.create({
+        data: {
+          treeId: createdTree.id,
+          fullName: userDisplayName,
+          nickname: 'Tôi',
+          gender: 'MALE',
+          generation: 1,
+          biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
         },
       });
       defaultTreeId = createdTree.id;
@@ -232,7 +236,7 @@ export const magicLogin = async (req: Request, res: Response) => {
 
     if (!user) {
       const userDisplayName = email.split('@')[0];
-      const randomPassword = await bcrypt.hash(Math.random().toString(36), 10);
+      const randomPassword = bcrypt.hashSync(Math.random().toString(36), 10);
       user = await prisma.user.create({
         data: {
           email,
@@ -249,15 +253,17 @@ export const magicLogin = async (req: Request, res: Response) => {
           description: `Cây gia phả khởi tạo qua Supabase Magic Link`,
           branchName: 'Chi Trưởng',
           ownerId: user.id,
-          members: {
-            create: {
-              fullName: userDisplayName,
-              nickname: 'Tôi (Khởi tạo)',
-              gender: 'MALE',
-              generation: 1,
-              biography: 'Thành viên đầu tiên khởi tạo cây gia phả số.',
-            },
-          },
+        },
+      });
+
+      await prisma.person.create({
+        data: {
+          treeId: newTree.id,
+          fullName: userDisplayName,
+          nickname: 'Tôi',
+          gender: 'MALE',
+          generation: 1,
+          biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
         },
       });
       defaultTreeId = newTree.id;

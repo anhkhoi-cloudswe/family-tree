@@ -32,15 +32,6 @@ export const getTrees = async (req: AuthRequest, res: Response) => {
             description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
             branchName: 'Chi Trưởng',
             ownerId: user.id,
-            members: {
-              create: {
-                fullName: userDisplayName,
-                nickname: 'Tôi',
-                gender: 'MALE',
-                generation: 1,
-                biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
-              },
-            },
           },
           select: {
             id: true,
@@ -52,6 +43,18 @@ export const getTrees = async (req: AuthRequest, res: Response) => {
             updatedAt: true,
           },
         });
+
+        await prisma.person.create({
+          data: {
+            treeId: newTree.id,
+            fullName: userDisplayName,
+            nickname: 'Tôi',
+            gender: 'MALE',
+            generation: 1,
+            biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
+          },
+        });
+
         trees = [newTree];
       }
     }
@@ -127,22 +130,24 @@ export const createTree = async (req: AuthRequest, res: Response) => {
         branchName,
         ancestorInfo,
         ownerId: userId,
-        members: {
-          create: {
-            fullName: userDisplayName,
-            nickname: 'Tôi',
-            gender: 'MALE',
-            generation: 1,
-            biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
-          },
-        },
-      },
-      include: {
-        members: true,
       },
     });
 
-    return res.status(201).json(tree);
+    const rootMember = await prisma.person.create({
+      data: {
+        treeId: tree.id,
+        fullName: userDisplayName,
+        nickname: 'Tôi',
+        gender: 'MALE',
+        generation: 1,
+        biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
+      },
+    });
+
+    return res.status(201).json({
+      ...tree,
+      members: [rootMember],
+    });
   } catch (error) {
     console.error('Lỗi tạo cây gia phả:', error);
     return res.status(500).json({ error: 'Lỗi máy chủ.' });

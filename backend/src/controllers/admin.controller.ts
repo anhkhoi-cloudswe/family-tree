@@ -103,7 +103,7 @@ export const createAdminUser = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Email này đã tồn tại trong hệ thống.' });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = bcrypt.hashSync(password, 10);
     const userRole = role === 'ADMIN' ? 'ADMIN' : 'MEMBER';
     const userDisplayName = (fullName && fullName.trim()) ? fullName.trim() : email.split('@')[0];
 
@@ -149,7 +149,7 @@ export const updateAdminUser = async (req: AuthRequest, res: Response) => {
     if (fullName !== undefined) dataToUpdate.fullName = fullName.trim();
     if (role && ['ADMIN', 'MEMBER'].includes(role)) dataToUpdate.role = role;
     if (password && password.trim().length >= 6) {
-      dataToUpdate.passwordHash = await bcrypt.hash(password.trim(), 10);
+      dataToUpdate.passwordHash = bcrypt.hashSync(password.trim(), 10);
     }
 
     const updated = await prisma.user.update({
