@@ -137,7 +137,8 @@ export const downloadTreeExcel = async (treeId: string, treeName: string) => {
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${treeName}_GiaPha.xlsx`;
+  const cleanTreeName = (treeName || 'Dòng họ').replace(/^Gia\s*phả\s*/i, '').trim();
+  a.download = `Famlykin ${cleanTreeName}.xlsx`;
   document.body.appendChild(a);
   a.click();
   a.remove();

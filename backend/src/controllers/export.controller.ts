@@ -65,10 +65,11 @@ export const exportExcel = async (req: AuthRequest, res: Response) => {
 
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-    const safeTreeName = encodeURIComponent(tree.name.replace(/[^a-zA-Z0-9_\u00C0-\u1EF9]/g, '_'));
+    const cleanTreeName = (tree.name || 'Dòng_họ').replace(/^Gia\s*phả\s*/i, '').trim();
+    const safeTreeName = encodeURIComponent(cleanTreeName.replace(/[^a-zA-Z0-9_\u00C0-\u1EF9]/g, '_'));
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="${safeTreeName}_GiaPha.xlsx"`
+      `attachment; filename="Famlykin_${safeTreeName}.xlsx"`
     );
     res.setHeader(
       'Content-Type',

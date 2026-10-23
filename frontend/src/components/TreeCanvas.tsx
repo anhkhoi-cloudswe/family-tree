@@ -718,8 +718,9 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
       });
 
       const link = document.createElement('a');
-      const safeName = tree.name.replace(/[^a-zA-Z0-9_\u00C0-\u1EF9]/g, '_');
-      link.download = `${safeName}_CayGiaPha_HD.png`;
+      const cleanTreeName = (tree.name || 'Dòng_họ').replace(/^Gia\s*phả\s*/i, '').trim();
+      const safeName = cleanTreeName.replace(/[^a-zA-Z0-9_\u00C0-\u1EF9]/g, '_');
+      link.download = `Famlykin_${safeName}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {

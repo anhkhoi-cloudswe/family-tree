@@ -10,16 +10,14 @@ import {
   Menu,
   X,
   Scan,
-  Compass,
-  ArrowUpCircle,
   HelpCircle,
   Layers,
   ChevronDown,
   Users,
   Crown,
+  ShieldCheck,
   Check,
   Sparkles,
-  MoreHorizontal,
 } from 'lucide-react';
 import { User, FamilyTree, Person } from '../types';
 import { downloadTreeExcel } from '../services/api';
@@ -48,11 +46,8 @@ interface NavbarProps {
   onPanToMe?: () => void;
   onPanToGen1?: () => void;
   onOpenHelp?: () => void;
-  onOpenAdmin?: () => void;
-  adminActiveTab?: 'USERS' | 'TREES' | 'OVERVIEW' | 'SETTINGS';
-  onAdminTabChange?: (tab: 'USERS' | 'TREES' | 'OVERVIEW' | 'SETTINGS') => void;
-  adminPreviewTreeId?: string | null;
-  onAdminExitPreview?: () => void;
+  adminActiveTab?: 'USERS' | 'REPORTS' | 'AUDIT' | 'SETTINGS';
+  onAdminTabChange?: (tab: 'USERS' | 'REPORTS' | 'AUDIT' | 'SETTINGS') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -77,11 +72,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onPanToMe,
   onPanToGen1,
   onOpenHelp,
-  onOpenAdmin,
   adminActiveTab = 'USERS',
   onAdminTabChange,
-  adminPreviewTreeId,
-  onAdminExitPreview,
 }) => {
   const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -153,26 +145,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               <FamilyTreeLogo size={24} />
             </div>
             <div className="brand-text-box">
-              <div className="brand-title-row" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="brand-title-row">
                 <h1 className="brand-title">Famlykin</h1>
                 {user?.role === 'ADMIN' ? (
-                  <span
-                    style={{
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
-                      padding: '0.18rem 0.55rem',
-                      borderRadius: '999px',
-                      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.4) 100%)',
-                      border: '1px solid rgba(245, 158, 11, 0.55)',
-                      color: '#fbbf24',
-                      letterSpacing: '0.04em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Admin
-                  </span>
+                  <span className="brand-admin-badge">Admin</span>
                 ) : (
-                  <span style={{ color: '#a7f3d0', fontSize: '0.82rem', fontWeight: 600 }}>Cây Gia Phả</span>
+                  <span className="brand-sub-desktop">– Cây Gia Phả</span>
                 )}
               </div>
             </div>
@@ -184,53 +162,41 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 className={`framer-admin-tab-pill ${adminActiveTab === 'USERS' ? 'active' : ''}`}
-                onClick={() => {
-                  onAdminTabChange?.('USERS');
-                  if (adminPreviewTreeId && onAdminExitPreview) onAdminExitPreview();
-                }}
+                onClick={() => onAdminTabChange?.('USERS')}
                 title="Quản lý danh sách tài khoản & phân quyền người dùng"
               >
                 <Users size={15} color="#34d399" />
-                <span>Người Dùng</span>
+                <span>Tài Khoản</span>
               </button>
 
               <button
                 type="button"
-                className={`framer-admin-tab-pill ${adminActiveTab === 'TREES' ? 'active' : ''}`}
-                onClick={() => {
-                  onAdminTabChange?.('TREES');
-                  if (adminPreviewTreeId && onAdminExitPreview) onAdminExitPreview();
-                }}
-                title="Quản lý và giám sát tất cả cây gia phả trong hệ thống"
+                className={`framer-admin-tab-pill ${adminActiveTab === 'REPORTS' ? 'active' : ''}`}
+                onClick={() => onAdminTabChange?.('REPORTS')}
+                title="Báo cáo số liệu & thống kê hệ thống"
               >
-                <TreePine size={15} color="#38bdf8" />
-                <span>Cây Gia Phả</span>
+                <Crown size={15} color="#38bdf8" />
+                <span>Báo Cáo</span>
               </button>
 
               <button
                 type="button"
-                className={`framer-admin-tab-pill ${adminActiveTab === 'OVERVIEW' ? 'active' : ''}`}
-                onClick={() => {
-                  onAdminTabChange?.('OVERVIEW');
-                  if (adminPreviewTreeId && onAdminExitPreview) onAdminExitPreview();
-                }}
-                title="Thống kê tổng quan và trạng thái hạ tầng đám mây"
+                className={`framer-admin-tab-pill ${adminActiveTab === 'AUDIT' ? 'active' : ''}`}
+                onClick={() => onAdminTabChange?.('AUDIT')}
+                title="Nhật ký truy vết & kiểm tra bảo mật"
               >
-                <Crown size={15} color="#fbbf24" />
-                <span>Tổng Quan</span>
+                <ShieldCheck size={15} color="#fbbf24" />
+                <span>Bảo Mật</span>
               </button>
 
               <button
                 type="button"
                 className={`framer-admin-tab-pill ${adminActiveTab === 'SETTINGS' ? 'active' : ''}`}
-                onClick={() => {
-                  onAdminTabChange?.('SETTINGS');
-                  if (adminPreviewTreeId && onAdminExitPreview) onAdminExitPreview();
-                }}
+                onClick={() => onAdminTabChange?.('SETTINGS')}
                 title="Cấu hình kết nối Supabase Storage S3"
               >
                 <Layers size={15} color="#a78bfa" />
-                <span>Cấu Hình S3</span>
+                <span>Hạ Tầng S3</span>
               </button>
             </nav>
           ) : (
@@ -312,19 +278,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
 
           {/* 3. Right: Action CTA & User */}
+          {/* 3. Right: Action CTA & User */}
           <div className="framer-action-group">
-            {/* If admin is previewing a tree, provide exit preview button */}
-            {user?.role === 'ADMIN' && adminPreviewTreeId && onAdminExitPreview && (
-              <button
-                type="button"
-                className="admin-preview-exit-btn"
-                onClick={onAdminExitPreview}
-                title="Trở lại giao diện Quản Trị Hệ Thống"
-              >
-                <span>⬅ Quay lại Quản Trị</span>
-              </button>
-            )}
-
             {/* Primary Action Button (Only for regular users, NOT admin) */}
             {user?.role !== 'ADMIN' && (
               <button
@@ -339,7 +294,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* User Profile & Logout */}
+            {/* User Profile & Prominent Logout */}
             {user && (
               <div className="framer-user-pill">
                 <div
@@ -350,14 +305,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   {user.fullName ? user.fullName[0].toUpperCase() : 'U'}
                 </div>
+                <span className="framer-user-name-display" title={user.fullName}>
+                  {user.fullName}
+                </span>
                 <button
                   type="button"
-                  className="framer-logout-btn"
+                  className="framer-logout-btn-labeled"
                   onClick={onLogout}
                   title="Đăng xuất tài khoản"
                   aria-label="Đăng xuất tài khoản"
                 >
-                  <LogOut size={15} />
+                  <LogOut size={14} />
+                  <span>Đăng xuất</span>
                 </button>
               </div>
             )}
@@ -390,25 +349,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* =========================================================
-            TIER 2: Sub-bar Controls (Only shown for non-admin, OR when admin is previewing a tree)
+            TIER 2: Sub-bar Controls (Only shown for non-admin)
             ========================================================= */}
-        {user?.role === 'ADMIN' ? (
-          adminPreviewTreeId && (
-            <div className="admin-preview-banner">
-              <div>
-                <span>Đang xem trước cây phả hệ: </span>
-                <strong style={{ color: '#ffffff' }}>{tree?.name || adminPreviewTreeId}</strong>
-              </div>
-              <button
-                type="button"
-                className="admin-preview-exit-btn"
-                onClick={onAdminExitPreview}
-              >
-                <span>⬅ Thoát Xem Trước</span>
-              </button>
-            </div>
-          )
-        ) : (
+        {user?.role === 'ADMIN' ? null : (
           <div className="navbar-tier-2 framer-subbar">
             {/* Main View Mode Segmented Tabs: [Sơ đồ Cây] / [Danh Sách] */}
             <div className="tier2-mainview-tabs" role="tablist" aria-label="Chế độ sơ đồ hoặc danh sách">
@@ -612,57 +555,54 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className={`mobile-action-card ${adminActiveTab === 'USERS' ? 'primary' : ''}`}
                     onClick={() => {
                       onAdminTabChange?.('USERS');
-                      if (adminPreviewTreeId && onAdminExitPreview) onAdminExitPreview();
                       closeDrawer();
                     }}
                   >
                     <div className="mobile-action-icon-box">
-                      <Users size={22} color="#34d399" />
+                      <Users size={20} color="#34d399" />
                     </div>
                     <div className="mobile-action-content">
                       <div className="mobile-action-title">Quản Lý Tài Khoản</div>
                       <div className="mobile-action-desc">
-                        Danh sách người dùng, phân quyền Admin & thêm tài khoản mới
+                        Phân quyền Admin & tạo tài khoản mới
                       </div>
                     </div>
                   </button>
 
                   <button
                     type="button"
-                    className={`mobile-action-card ${adminActiveTab === 'TREES' ? 'primary' : ''}`}
+                    className={`mobile-action-card ${adminActiveTab === 'REPORTS' ? 'primary' : ''}`}
                     onClick={() => {
-                      onAdminTabChange?.('TREES');
-                      if (adminPreviewTreeId && onAdminExitPreview) onAdminExitPreview();
+                      onAdminTabChange?.('REPORTS');
                       closeDrawer();
                     }}
                   >
                     <div className="mobile-action-icon-box">
-                      <TreePine size={22} color="#38bdf8" />
+                      <Crown size={20} color="#38bdf8" />
                     </div>
                     <div className="mobile-action-content">
-                      <div className="mobile-action-title">Cây Gia Phả Hệ Thống</div>
+                      <div className="mobile-action-title">Báo Cáo & Thống Kê</div>
                       <div className="mobile-action-desc">
-                        Xem chi tiết cây phả hệ, quy mô dòng họ và kiểm duyệt dữ liệu
+                        Chỉ số người dùng & xuất báo cáo CSV
                       </div>
                     </div>
                   </button>
 
                   <button
                     type="button"
-                    className={`mobile-action-card ${adminActiveTab === 'OVERVIEW' ? 'primary' : ''}`}
+                    className={`mobile-action-card ${adminActiveTab === 'AUDIT' ? 'primary' : ''}`}
                     onClick={() => {
-                      onAdminTabChange?.('OVERVIEW');
-                      if (adminPreviewTreeId && onAdminExitPreview) onAdminExitPreview();
+                      onAdminTabChange?.('AUDIT');
                       closeDrawer();
                     }}
                   >
                     <div className="mobile-action-icon-box">
-                      <Crown size={22} color="#fbbf24" />
+                      <ShieldCheck size={20} color="#fbbf24" />
                     </div>
                     <div className="mobile-action-content">
-                      <div className="mobile-action-title">Thống Kê Tổng Quan</div>
+                      <div className="mobile-action-title">Nhật Ký & Bảo Mật</div>
                       <div className="mobile-action-desc">
-                        Chỉ số người dùng, dòng họ và trạng thái kết nối hạ tầng
+                        Giám sát phiên làm việc & an toàn hệ thống
                       </div>
                     </div>
                   </button>
@@ -672,17 +612,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className={`mobile-action-card ${adminActiveTab === 'SETTINGS' ? 'primary' : ''}`}
                     onClick={() => {
                       onAdminTabChange?.('SETTINGS');
-                      if (adminPreviewTreeId && onAdminExitPreview) onAdminExitPreview();
                       closeDrawer();
                     }}
                   >
                     <div className="mobile-action-icon-box">
-                      <Layers size={22} color="#a78bfa" />
+                      <Layers size={20} color="#a78bfa" />
                     </div>
                     <div className="mobile-action-content">
-                      <div className="mobile-action-title">Cấu Hình Supabase S3</div>
+                      <div className="mobile-action-title">Hạ Tầng & S3 Storage</div>
                       <div className="mobile-action-desc">
-                        Cấu hình Anon Key & kiểm tra kết nối lưu trữ ảnh Cloud
+                        Cấu hình lưu trữ ảnh Cloud Supabase
                       </div>
                     </div>
                   </button>
@@ -747,7 +686,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </button>
                   )}
 
-                  {/* 1. Thêm Người Thân */}
+                  {/* 1. Thêm Người Thân Mới */}
                   <button
                     type="button"
                     className="mobile-action-card primary"
@@ -757,60 +696,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }}
                   >
                     <div className="mobile-action-icon-box" style={{ background: '#14532d' }}>
-                      <UserPlus size={22} color="#ffffff" />
+                      <UserPlus size={20} color="#ffffff" />
                     </div>
                     <div className="mobile-action-content">
                       <div className="mobile-action-title">+ Thêm Người Thân Mới</div>
                       <div className="mobile-action-desc">
-                        Thêm con cháu, cha mẹ hoặc dâu rể mới vào cây gia phả
+                        Thêm con cháu, cha mẹ hoặc dâu rể
                       </div>
                     </div>
                   </button>
 
-                  {/* 2. Đổi Vai Vế (Person Picker) */}
-                  <button
-                    type="button"
-                    className="mobile-action-card"
-                    onClick={() => {
-                      closeDrawer();
-                      onOpenPersonPicker();
-                    }}
-                  >
-                    <div className="mobile-action-icon-box" style={{ background: '#eff6ff' }}>
-                      <UserCheck size={22} color="#2563eb" />
-                    </div>
-                    <div className="mobile-action-content">
-                      <div className="mobile-action-title">Đổi Góc Nhìn Xưng Hô</div>
-                      <div className="mobile-action-desc">
-                        Đang xem theo: <strong>{mePerson?.fullName || 'Bản thân'}</strong>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* 3. Tải Ảnh Cây Gia Phả */}
-                  <button
-                    type="button"
-                    className="mobile-action-card"
-                    onClick={() => {
-                      closeDrawer();
-                      onExportImage();
-                    }}
-                    disabled={isExportingImage}
-                  >
-                    <div className="mobile-action-icon-box" style={{ background: '#ccfbf1' }}>
-                      <Download size={22} color="#0d9488" />
-                    </div>
-                    <div className="mobile-action-content">
-                      <div className="mobile-action-title">
-                        {isExportingImage ? 'Đang tạo ảnh...' : 'Tải Ảnh Cây Gia Phả (HD)'}
-                      </div>
-                      <div className="mobile-action-desc">
-                        Lưu hình ảnh cây sắc nét về máy để xem hoặc chia sẻ cho con cháu
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* 4. Xuất Excel */}
+                  {/* 2. Xuất Excel */}
                   <button
                     type="button"
                     className="mobile-action-card"
@@ -821,19 +717,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                     disabled={isExportingExcel}
                   >
                     <div className="mobile-action-icon-box" style={{ background: '#d1fae5' }}>
-                      <FileSpreadsheet size={22} color="#059669" />
+                      <FileSpreadsheet size={20} color="#059669" />
                     </div>
                     <div className="mobile-action-content">
                       <div className="mobile-action-title">
-                        {isExportingExcel ? 'Đang xuất...' : 'Xuất Danh Sách Excel'}
+                        {isExportingExcel ? 'Đang xuất Excel...' : 'Xuất Danh Sách Excel'}
                       </div>
                       <div className="mobile-action-desc">
-                        Tải bảng danh bạ kèm ngày sinh, SĐT, quê quán dòng họ
+                        Tải bảng danh bạ kèm ngày sinh, SĐT
                       </div>
                     </div>
                   </button>
 
-                  {/* 5. Lịch Giỗ & Mộ Phần */}
+                  {/* 3. Lịch Giỗ & Mộ Phần */}
                   <button
                     type="button"
                     className="mobile-action-card"
@@ -843,17 +739,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }}
                   >
                     <div className="mobile-action-icon-box" style={{ background: '#ffedd5' }}>
-                      <Calendar size={22} color="#ea580c" />
+                      <Calendar size={20} color="#ea580c" />
                     </div>
                     <div className="mobile-action-content">
                       <div className="mobile-action-title">Lịch Giỗ & Mộ Phần</div>
                       <div className="mobile-action-desc">
-                        Tra cứu ngày giỗ âm lịch, nơi an táng và tọa độ GPS tổ tiên
+                        Tra cứu ngày giỗ âm lịch & phần mộ
                       </div>
                     </div>
                   </button>
 
-                  {/* 5.1 Gợi Nhớ Sinh Nhật & Ngày Giỗ */}
+                  {/* 4. Nhắc Lịch Sinh Nhật & Giỗ */}
                   {onOpenReminder && (
                     <button
                       type="button"
@@ -864,18 +760,83 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                     >
                       <div className="mobile-action-icon-box" style={{ background: '#fdf2f8' }}>
-                        <Calendar size={22} color="#db2777" />
+                        <Calendar size={20} color="#db2777" />
                       </div>
                       <div className="mobile-action-content">
-                        <div className="mobile-action-title">Gợi Nhớ Sinh Nhật & Ngày Giỗ</div>
+                        <div className="mobile-action-title">Gợi Nhớ Sinh Nhật & Giỗ</div>
                         <div className="mobile-action-desc">
-                          Cài đặt nhắc nhở trước ngày sinh nhật và ngày giỗ (Mặc định 1 ngày)
+                          Cài đặt nhắc nhở trước 1 ngày
                         </div>
                       </div>
                     </button>
                   )}
 
-                  {/* 6. Căn Vừa Màn Hình */}
+                  {/* 5. Tải Ảnh Cây Gia Phả HD */}
+                  <button
+                    type="button"
+                    className="mobile-action-card"
+                    onClick={() => {
+                      closeDrawer();
+                      onExportImage();
+                    }}
+                    disabled={isExportingImage}
+                  >
+                    <div className="mobile-action-icon-box" style={{ background: '#ccfbf1' }}>
+                      <Download size={20} color="#0d9488" />
+                    </div>
+                    <div className="mobile-action-content">
+                      <div className="mobile-action-title">
+                        {isExportingImage ? 'Đang tạo ảnh...' : 'Tải Ảnh Cây Gia Phả (HD)'}
+                      </div>
+                      <div className="mobile-action-desc">
+                        Lưu hình ảnh phả hệ sắc nét về máy
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* 6. Đổi Góc Nhìn Xưng Hô */}
+                  <button
+                    type="button"
+                    className="mobile-action-card"
+                    onClick={() => {
+                      closeDrawer();
+                      onOpenPersonPicker();
+                    }}
+                  >
+                    <div className="mobile-action-icon-box" style={{ background: '#eff6ff' }}>
+                      <UserCheck size={20} color="#2563eb" />
+                    </div>
+                    <div className="mobile-action-content">
+                      <div className="mobile-action-title">Đổi Góc Nhìn Xưng Hô</div>
+                      <div className="mobile-action-desc">
+                        Đang xem theo: <strong>{mePerson?.fullName || 'Bản thân'}</strong>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* 7. Đố Vui Gia Phả */}
+                  {onOpenFlashcard && (
+                    <button
+                      type="button"
+                      className="mobile-action-card"
+                      onClick={() => {
+                        closeDrawer();
+                        onOpenFlashcard();
+                      }}
+                    >
+                      <div className="mobile-action-icon-box" style={{ background: '#f3e8ff' }}>
+                        <Sparkles size={20} color="#9333ea" />
+                      </div>
+                      <div className="mobile-action-content">
+                        <div className="mobile-action-title">Đố Vui Gia Phả (Flashcard)</div>
+                        <div className="mobile-action-desc">
+                          Trò chơi đoán vai vế & người thân
+                        </div>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* 8. Căn Vừa Màn Hình */}
                   {onFitToScreen && (
                     <button
                       type="button"
@@ -886,62 +847,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                     >
                       <div className="mobile-action-icon-box" style={{ background: '#eff6ff' }}>
-                        <Scan size={22} color="#2563eb" />
+                        <Scan size={20} color="#2563eb" />
                       </div>
                       <div className="mobile-action-content">
                         <div className="mobile-action-title">Căn Vừa Màn Hình</div>
                         <div className="mobile-action-desc">
-                          Tự động gom gọn toàn bộ các thế hệ vào khung nhìn
+                          Tự động căn chỉnh toàn bộ sơ đồ
                         </div>
                       </div>
                     </button>
                   )}
 
-                  {/* 7. Về Vị Trí Của Tôi */}
-                  {onPanToMe && mePerson && (
-                    <button
-                      type="button"
-                      className="mobile-action-card"
-                      onClick={() => {
-                        closeDrawer();
-                        onPanToMe();
-                      }}
-                    >
-                      <div className="mobile-action-icon-box" style={{ background: '#fef3c7' }}>
-                        <Compass size={22} color="#b45309" />
-                      </div>
-                      <div className="mobile-action-content">
-                        <div className="mobile-action-title">Về Vị Trí Của Tôi</div>
-                        <div className="mobile-action-desc">
-                          Tự động di chuyển tâm canvas đến thẻ của bạn
-                        </div>
-                      </div>
-                    </button>
-                  )}
-
-                  {/* 8. Về Thế Hệ I */}
-                  {onPanToGen1 && (
-                    <button
-                      type="button"
-                      className="mobile-action-card"
-                      onClick={() => {
-                        closeDrawer();
-                        onPanToGen1();
-                      }}
-                    >
-                      <div className="mobile-action-icon-box" style={{ background: '#f1f5f9' }}>
-                        <ArrowUpCircle size={22} color="#475569" />
-                      </div>
-                      <div className="mobile-action-content">
-                        <div className="mobile-action-title">Về Thế Hệ I (Đầu Cây)</div>
-                        <div className="mobile-action-desc">
-                          Di chuyển lên thế hệ ông bà tổ tiên đầu dòng
-                        </div>
-                      </div>
-                    </button>
-                  )}
-
-                  {/* 10. Hướng Dẫn Sử Dụng */}
+                  {/* 9. Hướng Dẫn Sử Dụng */}
                   {onOpenHelp && (
                     <button
                       type="button"
@@ -952,12 +869,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                     >
                       <div className="mobile-action-icon-box" style={{ background: '#f8fafc' }}>
-                        <HelpCircle size={22} color="#475569" />
+                        <HelpCircle size={20} color="#475569" />
                       </div>
                       <div className="mobile-action-content">
                         <div className="mobile-action-title">Hướng Dẫn Sử Dụng</div>
                         <div className="mobile-action-desc">
-                          Xem cách kéo thả, phóng to, tìm kiếm và thêm thành viên
+                          Cách kéo thả, phóng to & điều hướng
                         </div>
                       </div>
                     </button>
@@ -966,31 +883,35 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {/* Mobile User Profile & Logout Footer */}
+            {/* Mobile User Profile & Prominent Logout Footer */}
             {user && (
               <div className="mobile-drawer-footer">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div className="user-avatar-badge" style={{ width: 44, height: 44, fontSize: '1.1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, flex: 1 }}>
+                  <div className="user-avatar-badge" style={{ width: 42, height: 42, fontSize: '1.05rem', flexShrink: 0 }}>
                     {user.fullName ? user.fullName[0].toUpperCase() : 'U'}
                   </div>
-                  <div>
-                    <span className="drawer-user-name">{user.fullName}</span>
-                    <span className="drawer-user-email">{user.email}</span>
+                  <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                    <span className="drawer-user-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user.fullName}
+                    </span>
+                    <span className="drawer-user-email" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user.email}
+                    </span>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  className="drawer-logout-btn"
+                  className="drawer-logout-prominent-btn"
                   onClick={() => {
                     closeDrawer();
                     onLogout();
                   }}
-                  title="Đăng xuất tài khoản"
+                  title="Đăng xuất khỏi tài khoản này"
                   aria-label="Đăng xuất tài khoản"
                 >
                   <LogOut size={16} />
-                  <span>Thoát</span>
+                  <span>Đăng Xuất</span>
                 </button>
               </div>
             )}
