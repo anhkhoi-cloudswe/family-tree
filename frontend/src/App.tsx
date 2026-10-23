@@ -420,7 +420,9 @@ const AppContent: React.FC = () => {
         });
         localStorage.removeItem('famlykin_pending_signup');
       } else {
-        res = await apiMagicLogin(cleanEmail);
+        res = await apiCompleteRegistration({
+          email: cleanEmail,
+        });
       }
 
       setStoredToken(res.token);
