@@ -131,6 +131,8 @@ const AppContent: React.FC = () => {
     }
   }, [toast]);
 
+  const isMagicLinkProcessingRef = useRef(false);
+
   // Initialize Auth
   useEffect(() => {
     const initAuth = async () => {
@@ -171,10 +173,11 @@ const AppContent: React.FC = () => {
         return;
       }
 
-
-
       // 1. Kiểm tra nếu URL hiện tại là Firebase Magic Link
       if (isFirebaseEmailLink()) {
+        if (isMagicLinkProcessingRef.current) return;
+        isMagicLinkProcessingRef.current = true;
+
         setIsLoading(true);
         // Xóa sạch session/token cũ (nếu trình duyệt đang đăng nhập tài khoản khác như Admin)
         removeStoredToken();
@@ -193,7 +196,11 @@ const AppContent: React.FC = () => {
             }
 
             let res;
-            if (pendingSignup && pendingSignup.email?.toLowerCase().trim() === email.toLowerCase().trim()) {
+            if (
+              pendingSignup &&
+              pendingSignup.email &&
+              pendingSignup.email.toLowerCase().trim() === email.toLowerCase().trim()
+            ) {
               res = await apiCompleteRegistration({
                 email: pendingSignup.email,
                 fullName: pendingSignup.fullName,
@@ -213,7 +220,15 @@ const AppContent: React.FC = () => {
             return;
           } catch (fbErr: any) {
             console.error('Lỗi hoàn tất Firebase Magic Link:', fbErr);
-            toast.error('Liên kết xác thực đã hết hạn hoặc không hợp lệ. Vui lòng thử lại.');
+            isMagicLinkProcessingRef.current = false;
+            const code = fbErr?.code || '';
+            let msg = 'Liên kết xác thực đã hết hạn hoặc không hợp lệ. Vui lòng thử lại.';
+            if (code === 'auth/invalid-action-code') {
+              msg = 'Liên kết xác thực này đã được sử dụng hoặc đã hết hạn. Vui lòng bấm gửi lại email mới.';
+            } else if (code === 'auth/invalid-email') {
+              msg = 'Email không khớp với liên kết xác thực.';
+            }
+            toast.error(msg);
             window.history.replaceState(null, '', window.location.pathname);
             setIsLoading(false);
             setShowAuthModal(true);
@@ -221,6 +236,7 @@ const AppContent: React.FC = () => {
           }
         } else {
           // Trình duyệt mới (cross-browser / cross-device) chưa có email trong URL hoặc LocalStorage
+          isMagicLinkProcessingRef.current = false;
           setIsLoading(false);
           setShowMagicLinkPrompt(true);
           return;

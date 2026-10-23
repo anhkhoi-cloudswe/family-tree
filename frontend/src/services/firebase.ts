@@ -31,6 +31,8 @@ const firebaseConfig = {
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const firebaseAuth = getAuth(app);
+// Thiết lập ngôn ngữ tiếng Việt để Firebase tự động gửi email tiếng Việt chuyên nghiệp
+firebaseAuth.languageCode = 'vi';
 
 const EMAIL_FOR_SIGN_IN_KEY = 'fam3_email_for_sign_in';
 
@@ -89,9 +91,26 @@ export const isFirebaseEmailLink = (): boolean => {
 };
 
 /**
- * Trích xuất email từ URL query params hoặc continueUrl hoặc LocalStorage
+ * Trích xuất email sạch từ LocalStorage hoặc URL query params hoặc continueUrl
  */
 export const getEmailFromUrlOrStorage = (): string | null => {
+  // 1. Ưu tiên kiểm tra LocalStorage trước (chính xác tuyệt đối trên cùng trình duyệt, không bị URL encode)
+  const stored = localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
+  if (stored && stored.includes('@')) {
+    return stored.toLowerCase().trim();
+  }
+
+  const pendingRaw = localStorage.getItem('famlykin_pending_signup');
+  if (pendingRaw) {
+    try {
+      const parsed = JSON.parse(pendingRaw);
+      if (parsed.email && parsed.email.includes('@')) {
+        return parsed.email.toLowerCase().trim();
+      }
+    } catch {}
+  }
+
+  // 2. Nếu mở trên trình duyệt khác, trích xuất từ URL params hoặc continueUrl
   const urlParams = new URLSearchParams(window.location.search);
   let email = urlParams.get('email');
 
@@ -102,11 +121,28 @@ export const getEmailFromUrlOrStorage = (): string | null => {
     } catch {}
   }
 
-  if (!email) {
-    email = localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
+  if (email) {
+    let clean = email.toLowerCase().trim();
+    // Giải mã nhiều lớp URL encoding (%2540 -> %40 -> @)
+    for (let i = 0; i < 3; i++) {
+      if (clean.includes('%')) {
+        try {
+          const decoded = decodeURIComponent(clean);
+          if (decoded === clean) break;
+          clean = decoded;
+        } catch {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+    if (clean.includes('@')) {
+      return clean;
+    }
   }
 
-  return email ? email.toLowerCase().trim() : null;
+  return null;
 };
 
 /**
