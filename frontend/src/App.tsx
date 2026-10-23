@@ -131,8 +131,6 @@ const AppContent: React.FC = () => {
     }
   }, [toast]);
 
-  const isMagicLinkProcessingRef = useRef(false);
-
   // Initialize Auth
   useEffect(() => {
     const initAuth = async () => {
@@ -175,14 +173,20 @@ const AppContent: React.FC = () => {
 
       // 1. Kiểm tra nếu URL hiện tại là Firebase Magic Link
       if (isFirebaseEmailLink()) {
-        if (isMagicLinkProcessingRef.current) return;
-        isMagicLinkProcessingRef.current = true;
+        const urlParams = new URLSearchParams(window.location.search);
+        const oobCode = urlParams.get('oobCode');
+
+        // Khóa phiên ở cấp độ SessionStorage để chống double-trigger tuyệt đối
+        if (oobCode) {
+          const sessionKey = `famlykin_consumed_${oobCode}`;
+          if (sessionStorage.getItem(sessionKey)) {
+            console.warn('[Auth] oobCode already processed in this tab session:', oobCode);
+            return;
+          }
+          sessionStorage.setItem(sessionKey, 'true');
+        }
 
         setIsLoading(true);
-        // Xóa sạch session/token cũ (nếu trình duyệt đang đăng nhập tài khoản khác như Admin)
-        removeStoredToken();
-        setUser(null);
-
         const email = getEmailFromUrlOrStorage();
         if (email) {
           try {
@@ -220,7 +224,6 @@ const AppContent: React.FC = () => {
             return;
           } catch (fbErr: any) {
             console.error('Lỗi hoàn tất Firebase Magic Link:', fbErr);
-            isMagicLinkProcessingRef.current = false;
             const code = fbErr?.code || '';
             let msg = 'Liên kết xác thực đã hết hạn hoặc không hợp lệ. Vui lòng thử lại.';
             if (code === 'auth/invalid-action-code') {
@@ -236,7 +239,6 @@ const AppContent: React.FC = () => {
           }
         } else {
           // Trình duyệt mới (cross-browser / cross-device) chưa có email trong URL hoặc LocalStorage
-          isMagicLinkProcessingRef.current = false;
           setIsLoading(false);
           setShowMagicLinkPrompt(true);
           return;
