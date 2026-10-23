@@ -33,7 +33,8 @@ jobs:
           DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
         run: |
           npx prisma db push --accept-data-loss
-          npx ts-node-dev --transpile-only src/utils/seed.ts
+          npm run build
+          node dist/utils/seed.js
 
   # =========================================================
   # 2. BACKEND DEPLOYMENT (Cloudflare Workers)

@@ -200,7 +200,13 @@ const AppContent: React.FC = () => {
       const activeUser = currentUser !== undefined ? currentUser : user;
       let matchedMe: Person | undefined = undefined;
 
-      let trees = await apiGetTrees();
+      let trees: FamilyTree[] = [];
+      try {
+        trees = await apiGetTrees();
+      } catch (treesErr: any) {
+        console.warn('apiGetTrees warning, tiến hành kiểm tra fallback:', treesErr);
+      }
+
       // Nếu tài khoản mới chưa có bất kỳ cây gia phả nào, tự động tạo ngay 1 cây mặc định
       if (!trees || trees.length === 0) {
         try {

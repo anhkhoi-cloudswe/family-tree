@@ -15,7 +15,6 @@ export const getTrees = async (req: AuthRequest, res: Response) => {
         },
       },
       orderBy: [
-        { members: { _count: 'desc' } },
         { createdAt: 'desc' },
       ],
     });
@@ -34,7 +33,7 @@ export const getTrees = async (req: AuthRequest, res: Response) => {
             members: {
               create: {
                 fullName: userDisplayName,
-                nickname: 'Tôi (Khởi tạo)',
+                nickname: 'Tôi',
                 gender: 'MALE',
                 generation: 1,
                 biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
@@ -78,10 +77,27 @@ export const getTreeById = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Không tìm thấy cây gia phả.' });
     }
 
+    // Business Rule: Nếu cây chưa có thành viên nào, tự động tạo ngay thành viên "Tôi" cho chủ cây
+    if (tree.members.length === 0) {
+      const owner = await prisma.user.findUnique({ where: { id: tree.ownerId } });
+      const ownerDisplayName = owner?.fullName || owner?.email?.split('@')[0] || 'Tôi';
+      const rootMember = await prisma.person.create({
+        data: {
+          treeId: tree.id,
+          fullName: ownerDisplayName,
+          nickname: 'Tôi',
+          gender: 'MALE',
+          generation: 1,
+          biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
+        },
+      });
+      tree.members = [rootMember];
+    }
+
     return res.json(tree);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Lỗi chi tiết cây gia phả:', error);
-    return res.status(500).json({ error: 'Lỗi máy chủ.' });
+    return res.status(500).json({ error: error?.message || 'Lỗi máy chủ.' });
   }
 };
 

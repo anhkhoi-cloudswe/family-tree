@@ -357,5 +357,6 @@ if (typeof process !== 'undefined' && process.argv && process.argv[1] && process
     })
     .finally(async () => {
       await prisma.$disconnect();
+      process.exit(0);
     });
 }
