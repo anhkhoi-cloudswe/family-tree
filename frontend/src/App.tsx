@@ -199,64 +199,58 @@ const AppContent: React.FC = () => {
   const loadTreeData = async (preferredTreeId?: string, currentUser?: User | null) => {
     try {
       const activeUser = currentUser !== undefined ? currentUser : user;
-      let matchedMe: Person | undefined = undefined;
-
       let targetTreeId = preferredTreeId;
+      let fullTree: FamilyTree | null = null;
 
-      // Nếu chưa có preferredTreeId, tải danh sách cây để lấy cây đầu tiên
-      if (!targetTreeId) {
+      // 1. Nếu có targetTreeId, thử tải cây đó trước
+      if (targetTreeId) {
+        try {
+          fullTree = await apiGetTreeById(targetTreeId);
+        } catch (fetchErr) {
+          console.warn(`Cây ${targetTreeId} không tồn tại hoặc đã bị xóa khỏi cơ sở dữ liệu:`, fetchErr);
+          localStorage.removeItem('fam3_current_tree_id');
+          targetTreeId = undefined;
+          fullTree = null;
+        }
+      }
+
+      // 2. Nếu chưa có cây hợp lệ, lấy danh sách tất cả các cây của người dùng
+      if (!fullTree) {
         let trees: FamilyTree[] = [];
         try {
           trees = await apiGetTrees();
         } catch (treesErr: any) {
-          console.warn('apiGetTrees warning:', treesErr);
+          console.warn('Lỗi lấy danh sách cây gia phả:', treesErr);
         }
 
         if (trees && trees.length > 0) {
-          targetTreeId = trees[0].id;
+          try {
+            fullTree = await apiGetTreeById(trees[0].id);
+          } catch (firstTreeErr) {
+            console.error('Không thể tải cây đầu tiên trong danh sách:', firstTreeErr);
+          }
         } else {
-          // Nếu người dùng chưa có cây nào, tự động tạo mới
+          // Người dùng thực sự chưa có bất kỳ cây nào: tạo mới 1 cây ban đầu duy nhất
           try {
             const userDisplayName = activeUser?.fullName || activeUser?.email?.split('@')[0] || 'Gia Đình';
-            const newTree = await apiCreateTree({
+            fullTree = await apiCreateTree({
               name: `Gia phả Dòng họ ${userDisplayName}`,
               description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
               branchName: 'Chi Trưởng',
             });
-            targetTreeId = newTree.id;
           } catch (createTreeErr) {
             console.error('Lỗi tự động tạo cây mặc định:', createTreeErr);
           }
         }
       }
 
-      if (targetTreeId) {
-        const fullTree = await apiGetTreeById(targetTreeId);
-
-        // Đảm bảo luôn có ít nhất 1 thẻ "Tôi" trong cây của tài khoản mới
-        if (fullTree.members.length === 0 && activeUser) {
-          try {
-            const userDisplayName = activeUser.fullName || activeUser.email.split('@')[0];
-            const newMe = await apiCreatePerson({
-              treeId: fullTree.id,
-              fullName: userDisplayName,
-              nickname: 'Tôi',
-              gender: 'MALE',
-              generation: 1,
-              biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
-            });
-            fullTree.members = [newMe];
-            matchedMe = newMe;
-          } catch (createErr) {
-            console.error('Không thể tự động tạo thẻ Tôi:', createErr);
-          }
-        }
-
+      if (fullTree) {
         setTree(fullTree);
         localStorage.setItem('fam3_current_tree_id', fullTree.id);
 
         // Xác định ô "Tôi" (cá nhân người dùng)
-        if (!matchedMe && activeUser && activeUser.fullName) {
+        let matchedMe: Person | undefined = undefined;
+        if (activeUser && activeUser.fullName) {
           const userLower = activeUser.fullName.toLowerCase().trim();
           matchedMe = fullTree.members.find(
             (m) => m.fullName.toLowerCase().trim() === userLower
@@ -289,6 +283,9 @@ const AppContent: React.FC = () => {
 
         // Check upcoming birthday & anniversary reminders
         checkUpcomingReminders(fullTree, reminderSettings);
+      } else {
+        setTree(null);
+        setMePerson(null);
       }
     } catch (err) {
       console.error('Lỗi tải dữ liệu cây gia phả:', err);

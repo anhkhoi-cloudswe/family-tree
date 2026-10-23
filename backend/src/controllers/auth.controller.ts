@@ -147,7 +147,9 @@ export const login = async (req: Request, res: Response) => {
       if (populatedTree) {
         defaultTreeId = populatedTree.id;
       }
-    } else if (!defaultTreeId) {
+    }
+
+    if (!defaultTreeId) {
       // Tự động khởi tạo cây kèm ô "Tôi" nếu người dùng chưa có cây nào
       const userDisplayName = user.fullName || user.email.split('@')[0] || 'Tôi';
       const createdTree = await prisma.familyTree.create({

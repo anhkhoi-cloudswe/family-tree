@@ -7,7 +7,7 @@ export const getTrees = async (req: AuthRequest, res: Response) => {
     const userId = req.user?.userId;
     const isSuperAdmin = req.user?.role === 'ADMIN';
 
-    let trees = await prisma.familyTree.findMany({
+    const trees = await prisma.familyTree.findMany({
       where: isSuperAdmin ? {} : { ownerId: userId },
       select: {
         id: true,
@@ -20,44 +20,6 @@ export const getTrees = async (req: AuthRequest, res: Response) => {
       },
       orderBy: { createdAt: 'desc' },
     });
-
-    // Business Rule: Nếu người dùng chưa có bất kỳ cây gia phả nào, tự động tạo 1 cây cá nhân kèm ô "Tôi"
-    if (!isSuperAdmin && trees.length === 0 && userId) {
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-      if (user) {
-        const userDisplayName = user.fullName || user.email.split('@')[0];
-        const newTree = await prisma.familyTree.create({
-          data: {
-            name: `Gia phả Dòng họ ${userDisplayName}`,
-            description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
-            branchName: 'Chi Trưởng',
-            ownerId: user.id,
-          },
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            branchName: true,
-            ownerId: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        });
-
-        await prisma.person.create({
-          data: {
-            treeId: newTree.id,
-            fullName: userDisplayName,
-            nickname: 'Tôi',
-            gender: 'MALE',
-            generation: 1,
-            biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
-          },
-        });
-
-        trees = [newTree];
-      }
-    }
 
     return res.json(trees);
   } catch (error: any) {
@@ -79,23 +41,6 @@ export const getTreeById = async (req: AuthRequest, res: Response) => {
 
     if (!tree) {
       return res.status(404).json({ error: 'Không tìm thấy cây gia phả.' });
-    }
-
-    // Business Rule: Nếu cây chưa có thành viên nào, tự động tạo ngay thành viên "Tôi" cho chủ cây
-    if (!tree.members || tree.members.length === 0) {
-      const owner = await prisma.user.findUnique({ where: { id: tree.ownerId } });
-      const ownerDisplayName = owner?.fullName || owner?.email?.split('@')[0] || 'Tôi';
-      const rootMember = await prisma.person.create({
-        data: {
-          treeId: tree.id,
-          fullName: ownerDisplayName,
-          nickname: 'Tôi',
-          gender: 'MALE',
-          generation: 1,
-          biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
-        },
-      });
-      tree.members = [rootMember];
     }
 
     // Sắp xếp các thành viên theo thế hệ và ngày sinh trực tiếp trong bộ nhớ

@@ -1,4 +1,5 @@
 import { User, FamilyTree, Person, Relationship, KinshipResult } from '../types';
+import { isSupabaseConfigured, uploadAvatarToSupabase } from './supabase';
 
 const rawApiBase = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 const API_BASE = rawApiBase.endsWith('/') ? rawApiBase.slice(0, -1) : rawApiBase;
@@ -91,6 +92,14 @@ export const apiDeletePerson = (id: string) =>
   request<{ message: string }>(`/persons/${id}`, { method: 'DELETE' });
 
 export const apiUploadAvatar = async (file: File): Promise<string> => {
+  if (isSupabaseConfigured()) {
+    try {
+      return await uploadAvatarToSupabase(file);
+    } catch (sbErr) {
+      console.warn('Lỗi tải ảnh qua Supabase Storage, thử upload qua backend API:', sbErr);
+    }
+  }
+
   const formData = new FormData();
   formData.append('avatar', file);
   const result = await request<{ avatarUrl: string }>('/persons/upload-avatar', {
