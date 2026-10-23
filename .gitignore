@@ -12,6 +12,7 @@ frontend/dist/
 backend/uploads/
 uploads/
 *.mp4
+!frontend/public/videos/*.mp4
 
 # SQLite local databases
 *.db

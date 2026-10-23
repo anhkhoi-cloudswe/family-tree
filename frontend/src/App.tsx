@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Mail, Sparkles } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { TreeCanvas } from './components/TreeCanvas';
@@ -28,6 +28,7 @@ import {
   apiGetMe,
   apiGetTrees,
   apiGetTreeById,
+  apiCreateTree,
   apiCreatePerson,
   apiMagicLogin,
   getStoredToken,
@@ -183,12 +184,38 @@ const AppContent: React.FC = () => {
     initAuth();
   }, []);
 
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Khởi động video motion nền (chống policy chặn autoplay trên mobile/low power mode)
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // Trình duyệt có thể yêu cầu cử chỉ chạm đầu tiên của người dùng
+      });
+    }
+  }, []);
+
   const loadTreeData = async (preferredTreeId?: string, currentUser?: User | null) => {
     try {
       const activeUser = currentUser !== undefined ? currentUser : user;
       let matchedMe: Person | undefined = undefined;
 
-      const trees = await apiGetTrees();
+      let trees = await apiGetTrees();
+      // Nếu tài khoản mới chưa có bất kỳ cây gia phả nào, tự động tạo ngay 1 cây mặc định
+      if (!trees || trees.length === 0) {
+        try {
+          const userDisplayName = activeUser?.fullName || activeUser?.email?.split('@')[0] || 'Gia Đình';
+          const newTree = await apiCreateTree({
+            name: `Gia phả Dòng họ ${userDisplayName}`,
+            description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
+            branchName: 'Chi Trưởng',
+          });
+          trees = [newTree as any];
+        } catch (createTreeErr) {
+          console.error('Lỗi tự động tạo cây mặc định:', createTreeErr);
+        }
+      }
+
       if (trees && trees.length > 0) {
         const targetId = preferredTreeId || trees[0].id;
         const fullTree = await apiGetTreeById(targetId);
@@ -199,7 +226,7 @@ const AppContent: React.FC = () => {
             const newMe = await apiCreatePerson({
               treeId: fullTree.id,
               fullName: activeUser.fullName || activeUser.email.split('@')[0],
-              nickname: 'Tôi',
+              nickname: 'Tôi (Khởi tạo)',
               gender: 'MALE',
               generation: 1,
               biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
@@ -231,7 +258,11 @@ const AppContent: React.FC = () => {
           matchedMe = fullTree.members.find((m) => m.nickname === 'Tôi' || m.nickname === 'Tôi (Khởi tạo)');
         }
 
-        // If no match found, do NOT arbitrarily default to members[0] (which could be grandfather/ancestor)
+        // Nếu chỉ có duy nhất 1 thành viên trong cây mới, chắc chắn đó là ô "Tôi" của người dùng
+        if (!matchedMe && fullTree.members.length === 1) {
+          matchedMe = fullTree.members[0];
+        }
+
         setMePerson(matchedMe || null);
 
         // Auto show Quick Onboarding Wizard for brand new trees with 1 member ("Tôi")
@@ -359,6 +390,7 @@ const AppContent: React.FC = () => {
       {/* Dynamic Animated Motion Video Background (Looping Seamlessly, No Watermark) */}
       <div className="app-video-bg-layer" aria-hidden="true">
         <video
+          ref={videoRef}
           className="app-video-bg-media"
           autoPlay
           loop

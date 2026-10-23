@@ -6,7 +6,8 @@ export const getTrees = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
     const isSuperAdmin = req.user?.role === 'ADMIN';
-    const trees = await prisma.familyTree.findMany({
+
+    let trees = await prisma.familyTree.findMany({
       where: isSuperAdmin ? {} : { ownerId: userId },
       include: {
         _count: {
@@ -18,10 +19,42 @@ export const getTrees = async (req: AuthRequest, res: Response) => {
         { createdAt: 'desc' },
       ],
     });
+
+    // Nếu người dùng (thành viên thông thường) chưa có bất kỳ cây gia phả nào, tự động tạo 1 cây gia phả cá nhân kèm ô "Tôi"
+    if (!isSuperAdmin && trees.length === 0 && userId) {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (user) {
+        const userDisplayName = user.fullName || user.email.split('@')[0];
+        const newTree = await prisma.familyTree.create({
+          data: {
+            name: `Gia phả Dòng họ ${userDisplayName}`,
+            description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
+            branchName: 'Chi Trưởng',
+            ownerId: user.id,
+            members: {
+              create: {
+                fullName: userDisplayName,
+                nickname: 'Tôi (Khởi tạo)',
+                gender: 'MALE',
+                generation: 1,
+                biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
+              },
+            },
+          },
+          include: {
+            _count: {
+              select: { members: true },
+            },
+          },
+        });
+        trees = [newTree];
+      }
+    }
+
     return res.json(trees);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Lỗi lấy danh sách cây gia phả:', error);
-    return res.status(500).json({ error: 'Lỗi máy chủ.' });
+    return res.status(500).json({ error: error?.message || 'Lỗi máy chủ.' });
   }
 };
 
