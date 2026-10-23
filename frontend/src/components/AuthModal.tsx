@@ -13,6 +13,7 @@ import {
 import {
   apiLogin,
   apiRegister,
+  apiCompleteRegistration,
   apiCheckEmail,
   apiForgotPassword,
   apiResetPassword,
@@ -20,7 +21,10 @@ import {
   apiGetMe,
 } from '../services/api';
 import {
-  sendFirebaseMagicLink,
+  registerWithFirebaseAndSendVerification,
+  resendFirebaseVerificationEmail,
+  checkEmailVerified,
+  loginWithFirebase,
   sendFirebasePasswordReset,
 } from '../services/firebase';
 import { User } from '../types';
@@ -99,9 +103,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setError(null);
     setIsLoading(true);
 
+    const cleanEmail = email.toLowerCase().trim();
+
     try {
+      // 1. Thử đăng nhập qua backend PostgreSQL trước
       const res = await apiLogin({
-        email: email.toLowerCase().trim(),
+        email: cleanEmail,
         password,
       });
 
@@ -109,6 +116,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       toast.success(`Chào mừng ${res.user.fullName || res.user.email} trở lại!`);
       onSuccess(res.user, res.defaultTreeId);
     } catch (err: any) {
+      // 2. Nếu backend từ chối, kiểm tra trên Firebase Auth (có thể user vừa verify email nhưng chưa sync vào DB)
+      try {
+        const fbRes = await loginWithFirebase(cleanEmail, password);
+        if (!fbRes.emailVerified) {
+          setError('Tài khoản của bạn chưa được kích hoạt qua email. Vui lòng kiểm tra hộp thư để xác thực.');
+          setAuthMode('AWAITING_VERIFICATION');
+          setIsLoading(false);
+          return;
+        }
+
+        // Email đã được kích hoạt -> Hoàn tất khởi tạo dữ liệu vào PostgreSQL Database
+        const regRes = await apiCompleteRegistration({
+          email: cleanEmail,
+          password,
+        });
+
+        setStoredToken(regRes.token);
+        toast.success(`Xác thực thành công! Chào mừng ${regRes.user.fullName || regRes.user.email}!`);
+        onSuccess(regRes.user, regRes.defaultTreeId);
+        return;
+      } catch (fbErr: any) {
+        // Cả 2 đều thất bại
+      }
+
       const msg = err.message || '';
       if (msg.includes('chưa được xác thực')) {
         setError(msg);
@@ -123,7 +154,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   // Xử lý Đăng Ký Tài Khoản Mới
-  // Nghiệp vụ chuẩn: Chưa tạo tài khoản trong DB! Chỉ gửi email xác thực qua Firebase Magic Link.
+  // Best practice Firebase: Tạo user với emailVerified = false, bắn email xác thực (Hạn mức 1.000 mail/ngày).
+  // Chặn ở Database: Chưa ghi bất kỳ dữ liệu nào vào PostgreSQL DB cho đến khi email được kích hoạt!
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -145,7 +177,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     try {
-      // 1. Kiểm tra email đã có trong hệ thống chưa
+      // 1. Kiểm tra email đã có trong hệ thống Database chưa
       const checkRes = await apiCheckEmail(cleanEmail);
       if (checkRes.exists) {
         setError('Email này đã tồn tại trong hệ thống! Vui lòng đăng nhập hoặc chọn Quên mật khẩu.');
@@ -153,7 +185,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         return;
       }
 
-      // 2. Lưu thông tin đăng ký vào LocalStorage để khi người dùng click vào email sẽ hoàn tất tạo tài khoản
+      // 2. Lưu thông tin đăng ký vào LocalStorage để sẵn sàng khởi tạo dữ liệu vào PostgreSQL khi kích hoạt
       localStorage.setItem(
         'famlykin_pending_signup',
         JSON.stringify({
@@ -163,10 +195,39 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         })
       );
 
-      // 3. Gửi email xác thực Firebase Magic Link
-      await sendFirebaseMagicLink(cleanEmail);
+      // 3. Đăng ký qua Firebase Auth & Tự động gửi email xác thực kích hoạt (1.000 mail/ngày)
+      try {
+        await registerWithFirebaseAndSendVerification(cleanEmail, password);
+      } catch (fbRegErr: any) {
+        if (fbRegErr?.code === 'auth/email-already-in-use') {
+          // Email đã có trên Firebase Auth từ lần test trước -> thử login và gửi lại email
+          try {
+            const fbLogin = await loginWithFirebase(cleanEmail, password);
+            if (!fbLogin.emailVerified) {
+              await resendFirebaseVerificationEmail(fbLogin.user);
+            } else {
+              // Đã verify trên Firebase nhưng chưa có trong DB -> tạo luôn vào DB
+              const res = await apiCompleteRegistration({
+                email: cleanEmail,
+                fullName: cleanFullName,
+                password,
+              });
+              setStoredToken(res.token);
+              toast.success(`Chào mừng ${res.user.fullName || res.user.email}!`);
+              onSuccess(res.user, res.defaultTreeId);
+              return;
+            }
+          } catch {
+            setError('Email này đã được đăng ký trong hệ thống Firebase Auth. Vui lòng đăng nhập.');
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          throw fbRegErr;
+        }
+      }
 
-      toast.success('Đã gửi liên kết xác thực tới email của bạn!');
+      toast.success('Đã gửi email xác thực kích hoạt tài khoản!');
       setResendCooldown(60);
       setAuthMode('AWAITING_VERIFICATION');
     } catch (err: any) {
@@ -175,7 +236,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       if (code === 'auth/unauthorized-domain') {
         setError('Tên miền chưa được thêm vào Authorized domains trong Firebase Console (Authentication > Settings).');
       } else if (code === 'auth/operation-not-allowed') {
-        setError('Chức năng Email link (passwordless sign-in) chưa được bật trong Firebase Console (Authentication > Sign-in method).');
+        setError('Chức năng Email/Password chưa được bật trong Firebase Console (Authentication > Sign-in method).');
       } else if (code === 'auth/invalid-email') {
         setError('Địa chỉ email không hợp lệ.');
       } else {
@@ -262,7 +323,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       if (authMode === 'AWAITING_VERIFICATION') {
-        await sendFirebaseMagicLink(cleanEmail);
+        await resendFirebaseVerificationEmail();
       } else {
         await sendFirebasePasswordReset(cleanEmail);
       }
@@ -270,6 +331,38 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setResendCooldown(60);
     } catch (err: any) {
       toast.error(err.message || 'Không thể gửi lại email lúc này. Vui lòng thử lại sau.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Người dùng xác nhận "Tôi Đã Xác Thực Xong" -> Kiểm tra Firebase & Lưu vào Database
+  const handleCheckVerified = async () => {
+    setIsLoading(true);
+    try {
+      const isVerified = await checkEmailVerified();
+      if (isVerified) {
+        const pendingRaw = localStorage.getItem('famlykin_pending_signup');
+        let pending = null;
+        if (pendingRaw) {
+          try { pending = JSON.parse(pendingRaw); } catch {}
+        }
+
+        const res = await apiCompleteRegistration({
+          email: email.toLowerCase().trim(),
+          fullName: pending?.fullName || fullName,
+          password: pending?.password || password,
+        });
+
+        localStorage.removeItem('famlykin_pending_signup');
+        setStoredToken(res.token);
+        toast.success(`Xác thực thành công! Chào mừng ${res.user.fullName || res.user.email}`);
+        onSuccess(res.user, res.defaultTreeId);
+      } else {
+        toast.info('Hệ thống chưa nhận được tín hiệu kích hoạt. Vui lòng mở email và bấm vào liên kết xác thực trước.');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Chưa thể kích hoạt. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
@@ -794,6 +887,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem' }}>
+              <button
+                type="button"
+                onClick={handleCheckVerified}
+                disabled={isLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.55rem',
+                  padding: '0.82rem 1.2rem',
+                  fontSize: '0.92rem',
+                  fontWeight: 600,
+                  color: '#ffffff',
+                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                  border: '1px solid rgba(52, 211, 153, 0.4)',
+                  borderRadius: '11px',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 18px rgba(16, 185, 129, 0.35)',
+                }}
+              >
+                <span>{isLoading ? 'Đang kiểm tra...' : 'Tôi Đã Bấm Xác Thực Xong → Vào Ứng Dụng'}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleResend}

@@ -43,6 +43,7 @@ import {
   isFirebaseEmailLink,
   getEmailFromUrlOrStorage,
   completeFirebaseSignIn,
+  applyEmailVerificationCode,
 } from './services/firebase';
 import { getSupabaseClient } from './services/supabase';
 
@@ -171,10 +172,57 @@ const AppContent: React.FC = () => {
         return;
       }
 
-      // 1. Kiểm tra nếu URL hiện tại là Firebase Magic Link
+      // 1. Kiểm tra nếu URL hiện tại là Firebase Email Verification (mode=verifyEmail)
+      const urlParams = new URLSearchParams(window.location.search);
+      const authMode = urlParams.get('mode');
+      const oobCode = urlParams.get('oobCode');
+
+      if (authMode === 'verifyEmail' && oobCode) {
+        setIsLoading(true);
+        try {
+          await applyEmailVerificationCode(oobCode);
+          toast.success('Xác thực email thành công! Đang hoàn tất đăng nhập...');
+
+          // Kiểm tra xem có pending signup lưu ở LocalStorage không
+          const pendingRaw = localStorage.getItem('famlykin_pending_signup');
+          let pendingSignup = null;
+          if (pendingRaw) {
+            try { pendingSignup = JSON.parse(pendingRaw); } catch {}
+          }
+
+          if (pendingSignup && pendingSignup.email) {
+            const res = await apiCompleteRegistration({
+              email: pendingSignup.email,
+              fullName: pendingSignup.fullName,
+              password: pendingSignup.password,
+            });
+            localStorage.removeItem('famlykin_pending_signup');
+            setStoredToken(res.token);
+            setUser(res.user);
+            window.history.replaceState(null, '', window.location.pathname);
+            await loadTreeData(res.defaultTreeId || undefined, res.user);
+            setIsLoading(false);
+            return;
+          } else {
+            // Mở link trên thiết bị khác -> chuyển hướng về Đăng nhập để người dùng nhập mật khẩu
+            window.history.replaceState(null, '', window.location.pathname);
+            toast.success('Email đã được kích hoạt thành công! Vui lòng đăng nhập với mật khẩu của bạn.');
+            setIsLoading(false);
+            setShowAuthModal(true);
+            return;
+          }
+        } catch (fbErr: any) {
+          console.error('Lỗi kích hoạt email Firebase:', fbErr);
+          window.history.replaceState(null, '', window.location.pathname);
+          toast.error('Liên kết xác thực không hợp lệ hoặc đã được sử dụng.');
+          setIsLoading(false);
+          setShowAuthModal(true);
+          return;
+        }
+      }
+
+      // 2. Kiểm tra nếu URL hiện tại là Firebase Magic Link
       if (isFirebaseEmailLink()) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const oobCode = urlParams.get('oobCode');
 
         // Kiểm tra xem oobCode đã được xử lý trong phiên tab này chưa
         if (oobCode) {

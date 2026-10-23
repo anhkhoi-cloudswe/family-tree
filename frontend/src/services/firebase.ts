@@ -1,6 +1,12 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getAuth,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  signInWithEmailAndPassword,
+  applyActionCode,
+  reload,
+  User,
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
@@ -37,14 +43,72 @@ firebaseAuth.languageCode = 'vi';
 const EMAIL_FOR_SIGN_IN_KEY = 'fam3_email_for_sign_in';
 
 /**
+ * Đăng ký tài khoản mới qua Firebase Auth và tự động gửi email xác thực kích hoạt (Hạn mức 1.000 mail/ngày)
+ */
+export const registerWithFirebaseAndSendVerification = async (
+  email: string,
+  pass: string
+): Promise<{ user: User }> => {
+  const cleanEmail = email.toLowerCase().trim();
+  const cred = await createUserWithEmailAndPassword(firebaseAuth, cleanEmail, pass);
+
+  const actionCodeSettings: ActionCodeSettings = {
+    url: window.location.origin,
+    handleCodeInApp: true,
+  };
+  await sendEmailVerification(cred.user, actionCodeSettings);
+  return { user: cred.user };
+};
+
+/**
+ * Gửi lại email xác thực kích hoạt tài khoản
+ */
+export const resendFirebaseVerificationEmail = async (user?: User | null): Promise<void> => {
+  const targetUser = user || firebaseAuth.currentUser;
+  if (!targetUser) {
+    throw new Error('Không tìm thấy phiên người dùng. Vui lòng đăng nhập để gửi lại email.');
+  }
+  const actionCodeSettings: ActionCodeSettings = {
+    url: window.location.origin,
+    handleCodeInApp: true,
+  };
+  await sendEmailVerification(targetUser, actionCodeSettings);
+};
+
+/**
+ * Kiểm tra xem email người dùng đã được kích hoạt (verified) hay chưa
+ */
+export const checkEmailVerified = async (user?: User | null): Promise<boolean> => {
+  const targetUser = user || firebaseAuth.currentUser;
+  if (!targetUser) return false;
+  await reload(targetUser);
+  return targetUser.emailVerified;
+};
+
+/**
+ * Đăng nhập bằng Email & Mật khẩu qua Firebase Auth
+ */
+export const loginWithFirebase = async (
+  email: string,
+  pass: string
+): Promise<{ user: User; emailVerified: boolean }> => {
+  const cleanEmail = email.toLowerCase().trim();
+  const cred = await signInWithEmailAndPassword(firebaseAuth, cleanEmail, pass);
+  return { user: cred.user, emailVerified: cred.user.emailVerified };
+};
+
+/**
+ * Áp dụng mã kích hoạt email từ link
+ */
+export const applyEmailVerificationCode = async (oobCode: string): Promise<void> => {
+  await applyActionCode(firebaseAuth, oobCode);
+};
+
+/**
  * Gửi Email Link (Magic Link) tới hộp thư người dùng qua Firebase Authentication
- * Best practice: Nhúng trực tiếp email vào redirect URL để hỗ trợ đa thiết bị/đa trình duyệt
- * không phụ thuộc vào LocalStorage (ví dụ: đăng ký trên Chromium nhưng mở email trên Chrome)
  */
 export const sendFirebaseMagicLink = async (email: string): Promise<{ success: boolean; message: string }> => {
   const cleanEmail = email.toLowerCase().trim();
-
-  // Nhúng email vào callback URL để khi click trên bất kỳ trình duyệt/thiết bị nào cũng tự nhận diện
   const targetUrl = new URL(window.location.origin);
   targetUrl.searchParams.set('email', cleanEmail);
 
@@ -58,7 +122,7 @@ export const sendFirebaseMagicLink = async (email: string): Promise<{ success: b
 
   return {
     success: true,
-    message: `Đã gửi liên kết đăng nhập Magic Link tới ${cleanEmail}!`,
+    message: `Đã gửi liên kết đăng nhập tới ${cleanEmail}!`,
   };
 };
 
@@ -94,7 +158,6 @@ export const isFirebaseEmailLink = (): boolean => {
  * Trích xuất email sạch từ LocalStorage hoặc URL query params hoặc continueUrl
  */
 export const getEmailFromUrlOrStorage = (): string | null => {
-  // 1. Ưu tiên kiểm tra LocalStorage trước (chính xác tuyệt đối trên cùng trình duyệt, không bị URL encode)
   const stored = localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
   if (stored && stored.includes('@')) {
     return stored.toLowerCase().trim();
@@ -110,7 +173,6 @@ export const getEmailFromUrlOrStorage = (): string | null => {
     } catch {}
   }
 
-  // 2. Nếu mở trên trình duyệt khác, trích xuất từ URL params hoặc continueUrl
   const urlParams = new URLSearchParams(window.location.search);
   let email = urlParams.get('email');
 
@@ -123,7 +185,6 @@ export const getEmailFromUrlOrStorage = (): string | null => {
 
   if (email) {
     let clean = email.toLowerCase().trim();
-    // Giải mã nhiều lớp URL encoding (%2540 -> %40 -> @)
     for (let i = 0; i < 3; i++) {
       if (clean.includes('%')) {
         try {
