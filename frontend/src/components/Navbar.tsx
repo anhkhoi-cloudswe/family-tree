@@ -795,46 +795,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               )}
 
-              {/* 9. Cài Đặt Hiển Thị (Gọn / Chi Tiết) */}
-              <div className="drawer-setting-box">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <Layers size={18} color="#475569" />
-                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>
-                    Chế Độ Hiển Thị Thẻ:
-                  </span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                  <button
-                    type="button"
-                    className={`btn-secondary ${viewMode === 'COMPACT' ? 'active-toggle' : ''}`}
-                    onClick={() => onViewModeChange('COMPACT')}
-                    style={{
-                      minHeight: 44,
-                      fontWeight: 700,
-                      background: viewMode === 'COMPACT' ? '#14532d' : '#f8fafc',
-                      color: viewMode === 'COMPACT' ? '#ffffff' : '#334155',
-                      borderColor: viewMode === 'COMPACT' ? '#14532d' : '#cbd5e1',
-                    }}
-                  >
-                    📄 Chế Độ Gọn
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn-secondary ${viewMode === 'DETAILED' ? 'active-toggle' : ''}`}
-                    onClick={() => onViewModeChange('DETAILED')}
-                    style={{
-                      minHeight: 44,
-                      fontWeight: 700,
-                      background: viewMode === 'DETAILED' ? '#14532d' : '#f8fafc',
-                      color: viewMode === 'DETAILED' ? '#ffffff' : '#334155',
-                      borderColor: viewMode === 'DETAILED' ? '#14532d' : '#cbd5e1',
-                    }}
-                  >
-                    📑 Chế Độ Chi Tiết
-                  </button>
-                </div>
-              </div>
-
               {/* 10. Hướng Dẫn Sử Dụng */}
               {onOpenHelp && (
                 <button

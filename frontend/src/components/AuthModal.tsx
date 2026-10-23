@@ -12,6 +12,7 @@ import {
   EyeOff,
   ExternalLink,
   RotateCcw,
+  User as UserIcon,
 } from 'lucide-react';
 import { apiLogin, apiRegister, apiCheckEmail, apiForgotPassword, setStoredToken } from '../services/api';
 import { User } from '../types';
@@ -28,6 +29,7 @@ type AuthMode = 'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD' | 'AWAITING_VERIFICATIO
 export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
   const toast = useToast();
   const [authMode, setAuthMode] = useState<AuthMode>('LOGIN');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -51,11 +53,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
     setIsLoading(true);
 
     try {
-      const res = await apiLogin({ email, password });
+      const cleanEmail = email.toLowerCase().trim();
+      const res = await apiLogin({ email: cleanEmail, password });
       setStoredToken(res.token);
       onSuccess(res.user, res.defaultTreeId);
     } catch (err: any) {
-      setError(err.message || 'Tài khoản hoặc mật khẩu không chính xác.');
+      const msg = err.message || '';
+      if (msg === 'Failed to fetch' || msg.includes('Failed to fetch')) {
+        setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau!');
+      } else {
+        setError(msg || 'Tài khoản hoặc mật khẩu không chính xác.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -68,6 +76,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
     setIsLoading(true);
 
     const cleanEmail = email.toLowerCase().trim();
+    const cleanFullName = fullName.trim();
+
+    if (!cleanFullName) {
+      setError('Vui lòng nhập họ và tên của bạn.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       // 1. Kiểm tra email đã có trong hệ thống chưa
@@ -78,8 +93,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
         return;
       }
 
-      // 2. Tạo tài khoản trong cơ sở dữ liệu
-      await apiRegister({ email: cleanEmail, password });
+      // 2. Tạo tài khoản trong cơ sở dữ liệu kèm họ và tên
+      await apiRegister({ email: cleanEmail, password, fullName: cleanFullName });
 
       // 3. Tích hợp gửi Magic Link xác thực qua Firebase nếu có cấu hình
       try {
@@ -95,6 +110,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
       const msg = err.message || '';
       if (msg.includes('đã tồn tại')) {
         setError('Email này đã tồn tại trong hệ thống!');
+      } else if (msg === 'Failed to fetch' || msg.includes('Failed to fetch')) {
+        setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau!');
       } else {
         setError(msg || 'Không thể tạo tài khoản mới.');
       }
@@ -300,6 +317,48 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
 
             {/* Form Đăng Nhập / Đăng Ký */}
             <form onSubmit={authMode === 'LOGIN' ? handleLogin : handleRegister}>
+              {/* Họ và tên (Chỉ hiển thị khi Đăng Ký) */}
+              {authMode === 'REGISTER' && (
+                <div style={{ marginBottom: '1rem', position: 'relative' }}>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nhập họ và tên của bạn..."
+                    aria-label="Họ và tên"
+                    autoComplete="name"
+                    className="auth-input-dark"
+                    style={{
+                      width: '100%',
+                      padding: '0.78rem 1rem 0.78rem 2.6rem',
+                      background: '#0a1a12',
+                      backgroundColor: '#0a1a12',
+                      WebkitBoxShadow: '0 0 0 1000px #0a1a12 inset',
+                      boxShadow: '0 0 0 1000px #0a1a12 inset',
+                      border: '1px solid rgba(52, 211, 153, 0.3)',
+                      borderRadius: '11px',
+                      color: '#f1f5f9',
+                      fontSize: '0.9rem',
+                      fontWeight: 500,
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
+                  <UserIcon
+                    size={17}
+                    color="#34d399"
+                    style={{
+                      position: 'absolute',
+                      left: '0.9rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                </div>
+              )}
+
               {/* Email field (Màu tối đồng bộ nền, triệt tiêu viền trắng autofill) */}
               <div style={{ marginBottom: '1rem', position: 'relative' }}>
                 <input

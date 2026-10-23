@@ -1636,9 +1636,9 @@ button, input, select, textarea {
 
 .mobile-drawer-panel {
   width: 440px;
-  max-width: 90vw;
+  max-width: 100vw;
   height: 100%;
-  background: rgba(10, 26, 18, 0.96);
+  background: rgba(10, 26, 18, 0.97);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-left: 1px solid rgba(52, 211, 153, 0.25);
@@ -1652,8 +1652,16 @@ button, input, select, textarea {
   animation: slideRight 0.22s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
+@media (max-width: 480px) {
+  .mobile-drawer-panel {
+    width: 100vw;
+    max-width: 100vw;
+    border-left: none;
+  }
+}
+
 .mobile-drawer-header {
-  padding: 1.2rem 1.4rem;
+  padding: 1.1rem 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(6, 20, 13, 0.95);
   display: flex;
@@ -1693,27 +1701,31 @@ button, input, select, textarea {
 .mobile-drawer-body {
   flex: 1;
   overflow-y: auto;
-  padding: 1.2rem 1.4rem;
+  -webkit-overflow-scrolling: touch;
+  padding: 1rem 1.15rem;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.75rem;
 }
 
 .mobile-action-card {
   width: 100%;
-  min-height: 58px;
+  min-height: 60px;
+  height: auto;
+  box-sizing: border-box;
   padding: 0.85rem 1rem;
   border-radius: var(--radius-md);
   background: rgba(16, 36, 26, 0.75);
   border: 1.5px solid rgba(255, 255, 255, 0.1);
   display: flex;
-  align-items: center;
-  gap: 0.95rem;
+  align-items: flex-start;
+  gap: 0.85rem;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
   color: #f1f5f9;
+  overflow: hidden;
 }
 
 .mobile-action-card:hover {
@@ -1741,13 +1753,14 @@ button, input, select, textarea {
 }
 
 .mobile-action-icon-box {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-top: 2px;
   background: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #34d399;
@@ -1757,30 +1770,29 @@ button, input, select, textarea {
 }
 
 .mobile-action-content {
-  flex: 1;
+  flex: 1 1 0%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .mobile-action-title {
-  font-size: 0.96rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #ffffff;
-  line-height: 1.3;
+  line-height: 1.35;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .mobile-action-desc {
   font-size: 0.78rem;
   color: #94a3b8;
-  margin-top: 0.2rem;
-  line-height: 1.35;
-}
-
-.drawer-setting-box {
-  background: rgba(16, 36, 26, 0.75);
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-md);
-  padding: 0.9rem;
-  margin-top: 0.3rem;
-  color: #f1f5f9;
+  margin-top: 0.25rem;
+  line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .mobile-drawer-footer {

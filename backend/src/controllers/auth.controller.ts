@@ -115,8 +115,9 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Vui lòng nhập email và mật khẩu.' });
     }
 
+    const cleanEmail = email.toLowerCase().trim();
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: cleanEmail },
       include: { trees: { take: 1 } },
     });
 
