@@ -2,16 +2,22 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
-const connectionString = process.env.DATABASE_URL;
+let _prisma: PrismaClient | null = null;
 
-let prismaInstance: PrismaClient;
-
-if (connectionString) {
-  const pool = new Pool({ connectionString });
-  const adapter = new PrismaPg(pool);
-  prismaInstance = new PrismaClient({ adapter });
-} else {
-  prismaInstance = new PrismaClient();
+export function getPrismaClient(): PrismaClient {
+  if (!_prisma) {
+    const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres';
+    const pool = new Pool({ connectionString });
+    const adapter = new PrismaPg(pool);
+    _prisma = new PrismaClient({ adapter });
+  }
+  return _prisma;
 }
 
-export const prisma = prismaInstance;
+// Proxy để các file gọi prisma.user / prisma.person vẫn hoạt động bình thường
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    const client = getPrismaClient();
+    return (client as any)[prop];
+  },
+});

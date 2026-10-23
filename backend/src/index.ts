@@ -82,7 +82,7 @@ app.get('/api/health', (req, res) => {
 // Export app cho Cloudflare Workers / Serverless
 export default app;
 
-if (process.env.NODE_ENV !== 'production' || !process.env.CLOUDFLARE_WORKER) {
+if (!process.env.CLOUDFLARE_WORKER && process.env.NODE_ENV !== 'test') {
   app.listen(PORT, async () => {
     console.log(`[FamilyTree API] Server is running on http://localhost:${PORT}`);
     try {
