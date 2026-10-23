@@ -13,8 +13,10 @@ const router = Router();
 router.use(authenticateToken);
 
 router.get('/', getTrees);
+router.get('', getTrees);
 router.get('/:id', getTreeById);
 router.post('/', createTree);
+router.post('', createTree);
 router.put('/:id', updateTree);
 router.delete('/:id', deleteTree);
 

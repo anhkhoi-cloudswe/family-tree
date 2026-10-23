@@ -74,10 +74,10 @@ export const apiMagicLogin = (email: string) =>
 export const apiGetMe = () => request<User>('/auth/me');
 
 // Tree API
-export const apiGetTrees = () => request<FamilyTree[]>('/trees');
+export const apiGetTrees = () => request<FamilyTree[]>('/trees/');
 export const apiGetTreeById = (id: string) => request<FamilyTree>(`/trees/${id}`);
 export const apiCreateTree = (data: Partial<FamilyTree>) =>
-  request<FamilyTree>('/trees', { method: 'POST', body: JSON.stringify(data) });
+  request<FamilyTree>('/trees/', { method: 'POST', body: JSON.stringify(data) });
 export const apiUpdateTree = (id: string, data: Partial<FamilyTree>) =>
   request<FamilyTree>(`/trees/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const apiDeleteTree = (id: string) =>
