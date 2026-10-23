@@ -147,10 +147,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="brand-text-box">
               <div className="brand-title-row">
                 <h1 className="brand-title">Famlykin</h1>
-                {user?.role === 'ADMIN' ? (
+                {user?.role === 'ADMIN' && (
                   <span className="brand-admin-badge">Admin</span>
-                ) : (
-                  <span className="brand-sub-desktop">– Cây Gia Phả</span>
                 )}
               </div>
             </div>

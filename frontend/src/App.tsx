@@ -34,6 +34,7 @@ import {
   apiCreatePerson,
   apiMagicLogin,
   apiVerifyRegistration,
+  apiCompleteRegistration,
   getStoredToken,
   setStoredToken,
   removeStoredToken,
@@ -183,17 +184,36 @@ const AppContent: React.FC = () => {
         if (email) {
           try {
             await completeFirebaseSignIn(email);
-            const res = await apiMagicLogin(email);
+
+            // Kiểm tra xem đây có phải là tài khoản mới đang chờ đăng ký không
+            const pendingRaw = localStorage.getItem('famlykin_pending_signup');
+            let pendingSignup = null;
+            if (pendingRaw) {
+              try { pendingSignup = JSON.parse(pendingRaw); } catch {}
+            }
+
+            let res;
+            if (pendingSignup && pendingSignup.email?.toLowerCase().trim() === email.toLowerCase().trim()) {
+              res = await apiCompleteRegistration({
+                email: pendingSignup.email,
+                fullName: pendingSignup.fullName,
+                password: pendingSignup.password,
+              });
+              localStorage.removeItem('famlykin_pending_signup');
+            } else {
+              res = await apiMagicLogin(email);
+            }
+
             setStoredToken(res.token);
             setUser(res.user);
             window.history.replaceState(null, '', window.location.pathname);
-            toast.success(`Đăng nhập thành công với tài khoản: ${res.user.email}!`);
+            toast.success(`Xác thực thành công! Chào mừng ${res.user.fullName || res.user.email}`);
             await loadTreeData(res.defaultTreeId || undefined, res.user);
             setIsLoading(false);
             return;
           } catch (fbErr: any) {
             console.error('Lỗi hoàn tất Firebase Magic Link:', fbErr);
-            toast.error('Liên kết xác thực đã hết hạn hoặc đã được sử dụng. Vui lòng thử lại.');
+            toast.error('Liên kết xác thực đã hết hạn hoặc không hợp lệ. Vui lòng thử lại.');
             window.history.replaceState(null, '', window.location.pathname);
             setIsLoading(false);
             setShowAuthModal(true);
@@ -365,7 +385,26 @@ const AppContent: React.FC = () => {
 
     try {
       await completeFirebaseSignIn(cleanEmail);
-      const res = await apiMagicLogin(cleanEmail);
+
+      // Kiểm tra xem đây có phải là tài khoản mới đang chờ đăng ký không
+      const pendingRaw = localStorage.getItem('famlykin_pending_signup');
+      let pendingSignup = null;
+      if (pendingRaw) {
+        try { pendingSignup = JSON.parse(pendingRaw); } catch {}
+      }
+
+      let res;
+      if (pendingSignup && pendingSignup.email?.toLowerCase().trim() === cleanEmail) {
+        res = await apiCompleteRegistration({
+          email: pendingSignup.email,
+          fullName: pendingSignup.fullName,
+          password: pendingSignup.password,
+        });
+        localStorage.removeItem('famlykin_pending_signup');
+      } else {
+        res = await apiMagicLogin(cleanEmail);
+      }
+
       setStoredToken(res.token);
       setUser(res.user);
       setShowMagicLinkPrompt(false);

@@ -187,6 +187,88 @@ export const verifyRegistration = async (req: Request, res: Response) => {
 };
 
 /**
+ * Hoàn tất tạo tài khoản sau khi người dùng xác thực thành công qua Firebase Email Link
+ * ĐẢM BẢO: Chỉ tạo tài khoản trong DB SAU KHI người dùng bấm link trong email!
+ */
+export const completeRegistration = async (req: Request, res: Response) => {
+  try {
+    const { email, password, fullName } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email là bắt buộc.' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    let user = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+      include: { trees: { take: 1 } },
+    });
+
+    let defaultTreeId = user?.trees[0]?.id || null;
+
+    if (!user) {
+      const userDisplayName = (fullName && fullName.trim()) ? fullName.trim() : cleanEmail.split('@')[0];
+      const passwordHash = password ? bcrypt.hashSync(password, 10) : bcrypt.hashSync(Math.random().toString(36), 10);
+
+      // CHÍNH THỨC TẠO TÀI KHOẢN SAU KHI CLICK EMAIL XÁC THỰC
+      user = await prisma.user.create({
+        data: {
+          email: cleanEmail,
+          passwordHash,
+          fullName: userDisplayName,
+          role: 'MEMBER',
+          isVerified: true,
+        },
+        include: { trees: { take: 1 } },
+      });
+
+      const defaultTree = await prisma.familyTree.create({
+        data: {
+          name: `Gia phả Dòng họ ${userDisplayName}`,
+          description: `Cây gia phả khởi tạo bởi ${userDisplayName}`,
+          branchName: 'Chi Trưởng',
+          ownerId: user.id,
+        },
+      });
+      defaultTreeId = defaultTree.id;
+
+      await prisma.person.create({
+        data: {
+          treeId: defaultTree.id,
+          fullName: userDisplayName,
+          nickname: 'Tôi',
+          gender: 'MALE',
+          generation: 1,
+          biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
+        },
+      });
+    }
+
+    const secret = process.env.JWT_SECRET || 'family_tree_secret_key';
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      secret,
+      { expiresIn: '7d' }
+    );
+
+    return res.json({
+      message: 'Khởi tạo tài khoản thành công!',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+      },
+      defaultTreeId,
+    });
+  } catch (error: any) {
+    console.error('Lỗi completeRegistration:', error);
+    return res.status(500).json({ error: 'Đã xảy ra lỗi khi hoàn tất tạo tài khoản.' });
+  }
+};
+
+/**
  * Xử lý Đăng Nhập
  */
 export const login = async (req: Request, res: Response) => {

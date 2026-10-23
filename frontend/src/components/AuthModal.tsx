@@ -19,6 +19,10 @@ import {
   setStoredToken,
   apiGetMe,
 } from '../services/api';
+import {
+  sendFirebaseMagicLink,
+  sendFirebasePasswordReset,
+} from '../services/firebase';
 import { User } from '../types';
 import { useToast } from './Toast';
 import { FamilyTreeLogo } from './FamilyTreeLogo';
@@ -119,7 +123,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   // Xử lý Đăng Ký Tài Khoản Mới
-  // Nghiệp vụ chuẩn: Chưa tạo tài khoản trong DB! Chỉ gửi email xác thực qua Cloudflare.
+  // Nghiệp vụ chuẩn: Chưa tạo tài khoản trong DB! Chỉ gửi email xác thực qua Firebase Magic Link.
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -149,27 +153,40 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         return;
       }
 
-      // 2. Gửi email xác nhận qua Cloudflare (Chưa tạo User trong DB)
-      const res = await apiRegister({ email: cleanEmail, password, fullName: cleanFullName });
+      // 2. Lưu thông tin đăng ký vào LocalStorage để khi người dùng click vào email sẽ hoàn tất tạo tài khoản
+      localStorage.setItem(
+        'famlykin_pending_signup',
+        JSON.stringify({
+          email: cleanEmail,
+          fullName: cleanFullName,
+          password,
+        })
+      );
 
-      toast.success(res.message || 'Đã gửi liên kết xác thực tới email của bạn!');
+      // 3. Gửi email xác thực Firebase Magic Link
+      await sendFirebaseMagicLink(cleanEmail);
+
+      toast.success('Đã gửi liên kết xác thực tới email của bạn!');
       setResendCooldown(60);
       setAuthMode('AWAITING_VERIFICATION');
     } catch (err: any) {
-      const msg = err.message || '';
-      if (msg.includes('đã tồn tại')) {
-        setError('Email này đã tồn tại trong hệ thống!');
-      } else if (msg === 'Failed to fetch' || msg.includes('Failed to fetch')) {
-        setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau!');
+      console.error('Lỗi gửi email xác thực Firebase:', err);
+      const code = err.code || '';
+      if (code === 'auth/unauthorized-domain') {
+        setError('Tên miền chưa được thêm vào Authorized domains trong Firebase Console (Authentication > Settings).');
+      } else if (code === 'auth/operation-not-allowed') {
+        setError('Chức năng Email link (passwordless sign-in) chưa được bật trong Firebase Console (Authentication > Sign-in method).');
+      } else if (code === 'auth/invalid-email') {
+        setError('Địa chỉ email không hợp lệ.');
       } else {
-        setError(msg || 'Không thể gửi email xác thực.');
+        setError(err.message || 'Không thể gửi email xác thực qua Firebase.');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Xử lý Quên Mật Khẩu: Gửi email khôi phục qua Cloudflare
+  // Xử lý Quên Mật Khẩu: Gửi email khôi phục qua Firebase
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -178,12 +195,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const cleanEmail = email.toLowerCase().trim();
 
     try {
-      const res = await apiForgotPassword(cleanEmail);
-      toast.success(res.message || 'Đã gửi liên kết đặt lại mật khẩu tới email của bạn!');
+      const checkRes = await apiCheckEmail(cleanEmail);
+      if (!checkRes.exists) {
+        setError('Email này chưa được đăng ký trong hệ thống Famlykin!');
+        setIsLoading(false);
+        return;
+      }
+
+      await sendFirebasePasswordReset(cleanEmail);
+      toast.success('Đã gửi liên kết đặt lại mật khẩu tới email của bạn!');
       setResendCooldown(60);
       setAuthMode('AWAITING_RESET_EMAIL');
     } catch (err: any) {
-      setError(err.message || 'Email này chưa được đăng ký trong hệ thống Famlykin!');
+      console.error('Lỗi gửi email đặt lại mật khẩu:', err);
+      const code = err.code || '';
+      if (code === 'auth/unauthorized-domain') {
+        setError('Tên miền chưa được thêm vào Authorized domains trong Firebase Console (Authentication > Settings).');
+      } else if (code === 'auth/user-not-found') {
+        setError('Email này chưa tồn tại trong hệ thống xác thực.');
+      } else {
+        setError(err.message || 'Không thể gửi email đặt lại mật khẩu qua Firebase.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -230,9 +262,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       if (authMode === 'AWAITING_VERIFICATION') {
-        await apiRegister({ email: cleanEmail, password, fullName });
+        await sendFirebaseMagicLink(cleanEmail);
       } else {
-        await apiForgotPassword(cleanEmail);
+        await sendFirebasePasswordReset(cleanEmail);
       }
       toast.success('Đã gửi lại email xác thực thành công!');
       setResendCooldown(60);
@@ -300,7 +332,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               margin: 0,
             }}
           >
-            Famlykin - Cây Gia Phả
+            Famlykin
           </h2>
         </div>
 
@@ -759,10 +791,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               Chúng tôi đã gửi liên kết xác thực tới địa chỉ:
               <br />
               <strong style={{ color: '#34d399', fontSize: '0.98rem' }}>{email}</strong>
-              <br />
-              <span style={{ fontSize: '0.84rem', color: '#94a3b8', display: 'inline-block', marginTop: '0.35rem' }}>
-                Vui lòng mở email và nhấn vào liên kết để hoàn tất việc tạo tài khoản.
-              </span>
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem' }}>
