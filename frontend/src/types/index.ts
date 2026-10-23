@@ -4,6 +4,7 @@ export interface User {
   fullName: string;
   avatarUrl?: string;
   role: string;
+  trees?: FamilyTree[];
 }
 
 export interface Person {

@@ -171,7 +171,8 @@ const AppContent: React.FC = () => {
       try {
         const currentUser = await apiGetMe();
         setUser(currentUser);
-        await loadTreeData(undefined, currentUser);
+        const savedTreeId = localStorage.getItem('fam3_current_tree_id') || currentUser.trees?.[0]?.id;
+        await loadTreeData(savedTreeId, currentUser);
       } catch (err) {
         console.error('Lỗi khởi tạo phiên đăng nhập:', err);
         removeStoredToken();
@@ -252,6 +253,7 @@ const AppContent: React.FC = () => {
         }
 
         setTree(fullTree);
+        localStorage.setItem('fam3_current_tree_id', fullTree.id);
 
         // Xác định ô "Tôi" (cá nhân người dùng)
         if (!matchedMe && activeUser && activeUser.fullName) {
@@ -301,6 +303,25 @@ const AppContent: React.FC = () => {
     await loadTreeData(defaultTreeId, authUser);
     setIsLoading(false);
     toast.success(`Chào mừng ${authUser.fullName} đã đăng nhập!`);
+  };
+
+  const handleCreateInitialTree = async () => {
+    try {
+      setIsLoading(true);
+      const userDisplayName = user?.fullName || user?.email?.split('@')[0] || 'Gia Đình';
+      const newTree = await apiCreateTree({
+        name: `Gia phả Dòng họ ${userDisplayName}`,
+        description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
+        branchName: 'Chi Trưởng',
+      });
+      await loadTreeData(newTree.id, user);
+      toast.success('Đã tạo thành công cây gia phả ban đầu!');
+    } catch (err: any) {
+      console.error('Lỗi tạo cây ban đầu:', err);
+      toast.error('Không thể tạo cây gia phả, vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleConfirmMagicLinkEmail = async (e: React.FormEvent) => {
@@ -485,10 +506,7 @@ const AppContent: React.FC = () => {
             <button
               type="button"
               className="btn-primary"
-              onClick={() => {
-                setAddMemberTarget(null);
-                setShowAddMemberModal(true);
-              }}
+              onClick={handleCreateInitialTree}
             >
               + Tạo Cây Gia Phả Đầu Tiên
             </button>

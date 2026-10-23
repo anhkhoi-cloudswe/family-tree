@@ -56,6 +56,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
       const cleanEmail = email.toLowerCase().trim();
       const res = await apiLogin({ email: cleanEmail, password });
       setStoredToken(res.token);
+      if (res.defaultTreeId) {
+        localStorage.setItem('fam3_current_tree_id', res.defaultTreeId);
+      }
       onSuccess(res.user, res.defaultTreeId);
     } catch (err: any) {
       const msg = err.message || '';
@@ -94,16 +97,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
       }
 
       // 2. Tạo tài khoản trong cơ sở dữ liệu kèm họ và tên
-      await apiRegister({ email: cleanEmail, password, fullName: cleanFullName });
+      const regRes = await apiRegister({ email: cleanEmail, password, fullName: cleanFullName });
 
-      // 3. Tích hợp gửi Magic Link xác thực qua Firebase nếu có cấu hình
-      try {
-        await sendFirebaseMagicLink(cleanEmail);
-      } catch (fbErr: any) {
-        console.warn('Lưu ý gửi Magic Link qua Firebase:', fbErr.message);
+      if (regRes && regRes.token) {
+        setStoredToken(regRes.token);
+        if (regRes.defaultTreeId) {
+          localStorage.setItem('fam3_current_tree_id', regRes.defaultTreeId);
+        }
+        onSuccess(regRes.user, regRes.defaultTreeId);
+        return;
       }
 
-      // 4. Chuyển sang modal đợi nhận email xác thực
+      // 3. Fallback nếu không có token ngay lập tức
       setResendCooldown(60);
       setAuthMode('AWAITING_VERIFICATION');
     } catch (err: any) {
