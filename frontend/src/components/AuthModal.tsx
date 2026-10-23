@@ -218,7 +218,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               return;
             }
           } catch {
-            setError('Email này đã được đăng ký trong hệ thống Firebase Auth. Vui lòng đăng nhập.');
+            setError('Email này đã tồn tại trong danh sách Firebase Auth từ các lần thử nghiệm trước (nhưng chưa có trong Database). Vui lòng vào Firebase Console > Authentication > Users và Xóa (Delete) tài khoản này để tạo mới, hoặc chọn Quên mật khẩu.');
             setIsLoading(false);
             return;
           }
