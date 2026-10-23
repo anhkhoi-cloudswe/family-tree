@@ -73,7 +73,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
       // 1. Kiểm tra email đã có trong hệ thống chưa
       const checkRes = await apiCheckEmail(cleanEmail);
       if (checkRes.exists) {
-        setError('Email này đã tồn tại trong hệ thống! Vui lòng đăng nhập hoặc sử dụng Quên mật khẩu.');
+        setError('Email này đã tồn tại trong hệ thống!');
         setIsLoading(false);
         return;
       }
@@ -81,7 +81,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
       // 2. Tạo tài khoản trong cơ sở dữ liệu
       await apiRegister({ email: cleanEmail, password });
 
-      // 3. Tích hợp gửi Magic Link xác thực qua Firebase
+      // 3. Tích hợp gửi Magic Link xác thực qua Firebase nếu có cấu hình
       try {
         await sendFirebaseMagicLink(cleanEmail);
       } catch (fbErr: any) {
@@ -92,7 +92,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
       setResendCooldown(60);
       setAuthMode('AWAITING_VERIFICATION');
     } catch (err: any) {
-      setError(err.message || 'Không thể tạo tài khoản mới.');
+      const msg = err.message || '';
+      if (msg.includes('đã tồn tại')) {
+        setError('Email này đã tồn tại trong hệ thống!');
+      } else {
+        setError(msg || 'Không thể tạo tài khoản mới.');
+      }
     } finally {
       setIsLoading(false);
     }
