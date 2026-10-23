@@ -368,14 +368,18 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
 
                 {/* Details Sections */}
                 <div className="drawer-sections-container">
-                  {/* Ngày sinh / Ngày mất */}
+                  {/* Ngày sinh / Ngày mất & Ngày giỗ */}
                   <div className="drawer-info-card">
                     <div className="info-card-header">
                       <Calendar size={17} color="#2563eb" />
-                      <h4>Năm Sinh & Ngày Giỗ</h4>
+                      <h4>
+                        {person.isDeceased
+                          ? (person.birthDate ? 'Năm Sinh & Ngày Giỗ' : 'Ngày Giỗ')
+                          : 'Ngày Sinh'}
+                      </h4>
                     </div>
 
-                    <div className="info-grid-2">
+                    <div className={person.isDeceased ? 'info-grid-2' : 'info-grid-1'}>
                       <div className="info-item">
                         <span className="info-label">Ngày sinh</span>
                         <span className="info-val">
