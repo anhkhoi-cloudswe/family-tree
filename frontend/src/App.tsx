@@ -229,18 +229,6 @@ const AppContent: React.FC = () => {
           } catch (firstTreeErr) {
             console.error('Không thể tải cây đầu tiên trong danh sách:', firstTreeErr);
           }
-        } else {
-          // Người dùng thực sự chưa có bất kỳ cây nào: tạo mới 1 cây ban đầu duy nhất
-          try {
-            const userDisplayName = activeUser?.fullName || activeUser?.email?.split('@')[0] || 'Gia Đình';
-            fullTree = await apiCreateTree({
-              name: `Gia phả Dòng họ ${userDisplayName}`,
-              description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
-              branchName: 'Chi Trưởng',
-            });
-          } catch (createTreeErr) {
-            console.error('Lỗi tự động tạo cây mặc định:', createTreeErr);
-          }
         }
       }
 

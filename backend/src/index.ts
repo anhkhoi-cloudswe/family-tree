@@ -43,8 +43,21 @@ if (typeof __dirname !== 'undefined') {
   app.use('/uploads', express.static(uploadsPath));
 }
 
-import { prisma } from './prisma';
+import { prisma, prismaStorage, createPrismaInstance } from './prisma';
 import { seedDatabase } from './utils/seed';
+
+// Middleware thiết lập ngữ cảnh Prisma riêng biệt cho từng request (chống lỗi socket đóng băng trên Cloudflare Workers)
+app.use((req, res, next) => {
+  const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres';
+  const { prisma: reqPrisma, cleanup } = createPrismaInstance(connectionString);
+
+  res.on('finish', cleanup);
+  res.on('close', cleanup);
+
+  prismaStorage.run(reqPrisma, () => {
+    next();
+  });
+});
 
 // API Routes
 app.use('/api/auth', authRoutes);

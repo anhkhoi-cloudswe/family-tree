@@ -215,6 +215,31 @@ export const getMe = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
     }
 
+    // Business Rule: Nếu tài khoản mới khởi tạo hoặc chưa có nhánh nào, tự động tạo 1 nhánh cơ bản ban đầu kèm ô "Tôi"
+    if (!user.trees || user.trees.length === 0) {
+      const userDisplayName = user.fullName || user.email.split('@')[0] || 'Tôi';
+      const createdTree = await prisma.familyTree.create({
+        data: {
+          name: `Gia phả Dòng họ ${userDisplayName}`,
+          description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
+          branchName: 'Chi Trưởng',
+          ownerId: user.id,
+        },
+      });
+
+      await prisma.person.create({
+        data: {
+          treeId: createdTree.id,
+          fullName: userDisplayName,
+          nickname: 'Tôi',
+          gender: 'MALE',
+          generation: 1,
+          biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
+        },
+      });
+      user.trees = [createdTree];
+    }
+
     return res.json(user);
   } catch (error) {
     console.error('Lỗi lấy thông tin cá nhân:', error);
