@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../prisma';
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
 
 export async function seedDatabase() {
   console.log('--- Đang khởi tạo dữ liệu mẫu Gia phả Việt Nam ---');
@@ -361,7 +359,7 @@ export async function seedDatabase() {
   console.log(`  Cây gia phả mẫu: "${tree.name}" (ID: ${tree.id})`);
 }
 
-if (require.main === module) {
+if (typeof require !== 'undefined' && require.main === module) {
   seedDatabase()
     .catch((e) => {
       console.error('Lỗi khi nạp seed data:', e);
