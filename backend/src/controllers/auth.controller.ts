@@ -74,10 +74,10 @@ export const register = async (req: Request, res: Response) => {
         members: {
           create: {
             fullName: userDisplayName,
-            nickname: 'Tôi (Khởi tạo)',
+            nickname: 'Tôi',
             gender: 'MALE',
             generation: 1,
-            biography: 'Thành viên đầu tiên khởi tạo cây gia phả số.',
+            biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
           },
         },
       },
@@ -145,6 +145,27 @@ export const login = async (req: Request, res: Response) => {
       if (populatedTree) {
         defaultTreeId = populatedTree.id;
       }
+    } else if (!defaultTreeId) {
+      // Tự động khởi tạo cây kèm ô "Tôi" nếu người dùng chưa có cây nào
+      const userDisplayName = user.fullName || user.email.split('@')[0] || 'Tôi';
+      const createdTree = await prisma.familyTree.create({
+        data: {
+          name: `Gia phả Dòng họ ${userDisplayName}`,
+          description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
+          branchName: 'Chi Trưởng',
+          ownerId: user.id,
+          members: {
+            create: {
+              fullName: userDisplayName,
+              nickname: 'Tôi',
+              gender: 'MALE',
+              generation: 1,
+              biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
+            },
+          },
+        },
+      });
+      defaultTreeId = createdTree.id;
     }
 
     return res.json({

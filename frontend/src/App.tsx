@@ -200,39 +200,46 @@ const AppContent: React.FC = () => {
       const activeUser = currentUser !== undefined ? currentUser : user;
       let matchedMe: Person | undefined = undefined;
 
-      let trees: FamilyTree[] = [];
-      try {
-        trees = await apiGetTrees();
-      } catch (treesErr: any) {
-        console.warn('apiGetTrees warning, tiến hành kiểm tra fallback:', treesErr);
-      }
+      let targetTreeId = preferredTreeId;
 
-      // Nếu tài khoản mới chưa có bất kỳ cây gia phả nào, tự động tạo ngay 1 cây mặc định
-      if (!trees || trees.length === 0) {
+      // Nếu chưa có preferredTreeId, tải danh sách cây để lấy cây đầu tiên
+      if (!targetTreeId) {
+        let trees: FamilyTree[] = [];
         try {
-          const userDisplayName = activeUser?.fullName || activeUser?.email?.split('@')[0] || 'Gia Đình';
-          const newTree = await apiCreateTree({
-            name: `Gia phả Dòng họ ${userDisplayName}`,
-            description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
-            branchName: 'Chi Trưởng',
-          });
-          trees = [newTree as any];
-        } catch (createTreeErr) {
-          console.error('Lỗi tự động tạo cây mặc định:', createTreeErr);
+          trees = await apiGetTrees();
+        } catch (treesErr: any) {
+          console.warn('apiGetTrees warning:', treesErr);
+        }
+
+        if (trees && trees.length > 0) {
+          targetTreeId = trees[0].id;
+        } else {
+          // Nếu người dùng chưa có cây nào, tự động tạo mới
+          try {
+            const userDisplayName = activeUser?.fullName || activeUser?.email?.split('@')[0] || 'Gia Đình';
+            const newTree = await apiCreateTree({
+              name: `Gia phả Dòng họ ${userDisplayName}`,
+              description: `Cây gia phả số khởi tạo cho ${userDisplayName}`,
+              branchName: 'Chi Trưởng',
+            });
+            targetTreeId = newTree.id;
+          } catch (createTreeErr) {
+            console.error('Lỗi tự động tạo cây mặc định:', createTreeErr);
+          }
         }
       }
 
-      if (trees && trees.length > 0) {
-        const targetId = preferredTreeId || trees[0].id;
-        const fullTree = await apiGetTreeById(targetId);
+      if (targetTreeId) {
+        const fullTree = await apiGetTreeById(targetTreeId);
 
-        // If tree is completely empty (e.g. brand new user tree), auto-create the root "Tôi" member
+        // Đảm bảo luôn có ít nhất 1 thẻ "Tôi" trong cây của tài khoản mới
         if (fullTree.members.length === 0 && activeUser) {
           try {
+            const userDisplayName = activeUser.fullName || activeUser.email.split('@')[0];
             const newMe = await apiCreatePerson({
               treeId: fullTree.id,
-              fullName: activeUser.fullName || activeUser.email.split('@')[0],
-              nickname: 'Tôi (Khởi tạo)',
+              fullName: userDisplayName,
+              nickname: 'Tôi',
               gender: 'MALE',
               generation: 1,
               biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
@@ -246,7 +253,7 @@ const AppContent: React.FC = () => {
 
         setTree(fullTree);
 
-        // Determine who "Me" is (only match if member genuinely represents the logged-in user)
+        // Xác định ô "Tôi" (cá nhân người dùng)
         if (!matchedMe && activeUser && activeUser.fullName) {
           const userLower = activeUser.fullName.toLowerCase().trim();
           matchedMe = fullTree.members.find(
@@ -254,18 +261,12 @@ const AppContent: React.FC = () => {
           );
         }
 
-        // For demo trees, if user is demo and member named An exists
-        if (!matchedMe && activeUser?.email?.includes('demo')) {
-          matchedMe = fullTree.members.find((m) => m.fullName.includes('An'));
-        }
-
-        // If still not matched, check if any member has nickname "Tôi"
         if (!matchedMe) {
           matchedMe = fullTree.members.find((m) => m.nickname === 'Tôi' || m.nickname === 'Tôi (Khởi tạo)');
         }
 
-        // Nếu chỉ có duy nhất 1 thành viên trong cây mới, chắc chắn đó là ô "Tôi" của người dùng
-        if (!matchedMe && fullTree.members.length === 1) {
+        // Nếu chỉ có 1 thành viên hoặc chưa khớp, luôn gán thành viên đầu tiên làm "Tôi"
+        if (!matchedMe && fullTree.members.length > 0) {
           matchedMe = fullTree.members[0];
         }
 

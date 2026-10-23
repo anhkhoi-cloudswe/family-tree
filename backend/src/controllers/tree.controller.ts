@@ -9,17 +9,19 @@ export const getTrees = async (req: AuthRequest, res: Response) => {
 
     let trees = await prisma.familyTree.findMany({
       where: isSuperAdmin ? {} : { ownerId: userId },
-      include: {
-        _count: {
-          select: { members: true },
-        },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        branchName: true,
+        ownerId: true,
+        createdAt: true,
+        updatedAt: true,
       },
-      orderBy: [
-        { createdAt: 'desc' },
-      ],
+      orderBy: { createdAt: 'desc' },
     });
 
-    // Nếu người dùng (thành viên thông thường) chưa có bất kỳ cây gia phả nào, tự động tạo 1 cây gia phả cá nhân kèm ô "Tôi"
+    // Business Rule: Nếu người dùng chưa có bất kỳ cây gia phả nào, tự động tạo 1 cây cá nhân kèm ô "Tôi"
     if (!isSuperAdmin && trees.length === 0 && userId) {
       const user = await prisma.user.findUnique({ where: { id: userId } });
       if (user) {
@@ -40,10 +42,14 @@ export const getTrees = async (req: AuthRequest, res: Response) => {
               },
             },
           },
-          include: {
-            _count: {
-              select: { members: true },
-            },
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            branchName: true,
+            ownerId: true,
+            createdAt: true,
+            updatedAt: true,
           },
         });
         trees = [newTree];
@@ -111,6 +117,9 @@ export const createTree = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Vui lòng nhập tên gia phả.' });
     }
 
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const userDisplayName = user?.fullName || user?.email?.split('@')[0] || 'Tôi';
+
     const tree = await prisma.familyTree.create({
       data: {
         name,
@@ -118,6 +127,18 @@ export const createTree = async (req: AuthRequest, res: Response) => {
         branchName,
         ancestorInfo,
         ownerId: userId,
+        members: {
+          create: {
+            fullName: userDisplayName,
+            nickname: 'Tôi',
+            gender: 'MALE',
+            generation: 1,
+            biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
+          },
+        },
+      },
+      include: {
+        members: true,
       },
     });
 
