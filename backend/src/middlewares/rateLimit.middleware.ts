@@ -7,15 +7,16 @@ interface LoginAttemptRecord {
 
 const loginAttempts = new Map<string, LoginAttemptRecord>();
 
-// Clean up old entries every 10 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, record] of loginAttempts.entries()) {
-    if (now > record.resetTime) {
-      loginAttempts.delete(ip);
+// Clean up expired entries on-demand inside handler instead of top-level setInterval
+function cleanupExpiredAttempts(now: number) {
+  if (loginAttempts.size > 500) {
+    for (const [ip, record] of loginAttempts.entries()) {
+      if (now > record.resetTime) {
+        loginAttempts.delete(ip);
+      }
     }
   }
-}, 10 * 60 * 1000);
+}
 
 /**
  * Rate limiter middleware for sensitive endpoints like /api/auth/login
@@ -24,6 +25,7 @@ setInterval(() => {
 export const authRateLimiter = (req: Request, res: Response, next: NextFunction) => {
   const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
+  cleanupExpiredAttempts(now);
   const windowMs = 15 * 60 * 1000; // 15 minutes
   const maxAttempts = 15;
 
