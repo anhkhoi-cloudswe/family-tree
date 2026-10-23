@@ -12,6 +12,8 @@ import {
   signInWithEmailLink,
   sendPasswordResetEmail,
   ActionCodeSettings,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth';
 
 const env = (import.meta as any).env || {};
@@ -102,6 +104,20 @@ export const loginWithFirebase = async (
  */
 export const applyEmailVerificationCode = async (oobCode: string): Promise<void> => {
   await applyActionCode(firebaseAuth, oobCode);
+};
+
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account',
+});
+
+/**
+ * Đăng nhập / Đăng ký nhanh bằng tài khoản Google (Google Sign-In)
+ * Google tự động xác thực email (emailVerified = true), không lo quota giới hạn
+ */
+export const signInWithGoogle = async (): Promise<User> => {
+  const result = await signInWithPopup(firebaseAuth, googleProvider);
+  return result.user;
 };
 
 /**

@@ -26,6 +26,7 @@ import {
   checkEmailVerified,
   loginWithFirebase,
   sendFirebasePasswordReset,
+  signInWithGoogle,
 } from '../services/firebase';
 import { User } from '../types';
 import { useToast } from './Toast';
@@ -241,6 +242,44 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setError('Địa chỉ email không hợp lệ.');
       } else {
         setError(err.message || 'Không thể gửi email xác thực qua Firebase.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Xử lý Đăng Nhập / Đăng Ký bằng Google (Google Sign-In)
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const googleUser = await signInWithGoogle();
+      if (!googleUser.email) {
+        throw new Error('Không thể trích xuất địa chỉ email từ tài khoản Google.');
+      }
+
+      // Tài khoản Google luôn tự động xác thực email (emailVerified = true)
+      // Tự động khởi tạo hoặc đồng bộ vào PostgreSQL Database
+      const res = await apiCompleteRegistration({
+        email: googleUser.email.toLowerCase().trim(),
+        fullName: googleUser.displayName || undefined,
+      });
+
+      setStoredToken(res.token);
+      toast.success(`Đăng nhập Google thành công! Chào mừng ${res.user.fullName || res.user.email}`);
+      onSuccess(res.user, res.defaultTreeId);
+    } catch (err: any) {
+      console.error('Lỗi đăng nhập Google:', err);
+      const code = err.code || '';
+      if (code === 'auth/popup-closed-by-user') {
+        // Người dùng tự tắt popup Google, không cần hiển thị lỗi
+      } else if (code === 'auth/unauthorized-domain') {
+        setError('Tên miền famlykin.pages.dev chưa được bật trong Firebase Console > Authentication > Settings > Authorized domains.');
+      } else if (code === 'auth/operation-not-allowed') {
+        setError('Đăng nhập Google chưa được kích hoạt trong Firebase Console (Authentication > Sign-in method > Google).');
+      } else {
+        setError(err.message || 'Không thể đăng nhập bằng Google lúc này.');
       }
     } finally {
       setIsLoading(false);
@@ -736,6 +775,68 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </span>
               </button>
             </form>
+
+            {/* Dải phân cách "Hoặc" */}
+            <div style={{ display: 'flex', alignItems: 'center', margin: '1.15rem 0', gap: '0.75rem' }}>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.12)' }} />
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+                Hoặc
+              </span>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.12)' }} />
+            </div>
+
+            {/* Nút Đăng nhập / Đăng ký bằng Google */}
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.65rem',
+                padding: '0.72rem 1rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                borderRadius: '11px',
+                color: '#f1f5f9',
+                fontSize: '0.88rem',
+                fontWeight: 500,
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(52, 211, 153, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.18)';
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                />
+              </svg>
+              <span>
+                {authMode === 'LOGIN' ? 'Tiếp tục với Google' : 'Đăng ký bằng Google'}
+              </span>
+            </button>
           </>
         )}
 
@@ -907,7 +1008,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   boxShadow: '0 4px 18px rgba(16, 185, 129, 0.35)',
                 }}
               >
-                <span>{isLoading ? 'Đang kiểm tra...' : 'Tôi Đã Bấm Xác Thực Xong → Vào Ứng Dụng'}</span>
+                <span>{isLoading ? 'Đang kiểm tra...' : 'Tôi đã bấm xác thực'}</span>
               </button>
 
               <button
