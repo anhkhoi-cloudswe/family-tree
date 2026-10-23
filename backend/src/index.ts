@@ -25,26 +25,7 @@ app.use(
   })
 );
 
-// 2. Chống DDoS & Brute-force đánh sập Web (Rate Limiting)
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 phút
-  max: 1000, // Tối đa 1000 requests mỗi IP trong 15 phút
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Bạn đã gửi quá nhiều yêu cầu đến máy chủ. Vui lòng thử lại sau vài phút!' },
-});
-app.use('/api/', limiter);
-
-// 3. Giới hạn chặt hơn cho các cổng nhạy cảm (Đăng nhập / Đăng ký) chống dò pass
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 30, // Tối đa 30 lần thử đăng nhập/đăng ký trong 15 phút
-  message: { error: 'Thao tác xác thực quá nhiều lần. Vui lòng đợi 15 phút để đảm bảo an toàn!' },
-});
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
-
-// 4. CORS an toàn
+// 2. CORS an toàn
 app.use(
   cors({
     origin: true,
@@ -78,6 +59,13 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     message: 'Family Tree Heritage API Server đang hoạt động tốt!',
     timestamp: new Date().toISOString(),
+  });
+});
+
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('[Express Global Error]:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Đã xảy ra lỗi máy chủ nội bộ.',
   });
 });
 

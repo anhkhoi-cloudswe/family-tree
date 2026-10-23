@@ -2,13 +2,14 @@ import { prisma } from '../prisma';
 import bcrypt from 'bcryptjs';
 
 export async function seedDatabase() {
-  console.log('--- Đang khởi tạo dữ liệu mẫu Gia phả Việt Nam ---');
+  // Chỉ nạp dữ liệu khởi tạo nếu cơ sở dữ liệu hoàn toàn chưa có người dùng nào
+  const userCount = await prisma.user.count();
+  if (userCount > 0) {
+    console.log(`--- Cơ sở dữ liệu đã có ${userCount} người dùng. Giữ nguyên dữ liệu người dùng thực tế ---`);
+    return;
+  }
 
-  // Xóa dữ liệu cũ nếu có
-  await prisma.relationship.deleteMany({});
-  await prisma.person.deleteMany({});
-  await prisma.familyTree.deleteMany({});
-  await prisma.user.deleteMany({});
+  console.log('--- Đang khởi tạo dữ liệu quản trị viên ban đầu ---');
 
   const adminPasswordHash = await bcrypt.hash('123456', 10);
   const adminUser = await prisma.user.create({

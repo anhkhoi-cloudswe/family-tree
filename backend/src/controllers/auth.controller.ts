@@ -50,14 +50,14 @@ export const register = async (req: Request, res: Response) => {
     const cleanEmail = email.toLowerCase().trim();
     const existingUser = await prisma.user.findUnique({ where: { email: cleanEmail } });
     if (existingUser) {
-      return res.status(400).json({ error: 'Email này đã tồn tại trong hệ thống. Vui lòng đăng nhập hoặc dùng chức năng Quên mật khẩu!' });
+      return res.status(400).json({ error: 'Email này đã tồn tại trong hệ thống!' });
     }
 
-    const userDisplayName = (fullName && fullName.trim()) ? fullName.trim() : email.split('@')[0];
+    const userDisplayName = (fullName && fullName.trim()) ? fullName.trim() : cleanEmail.split('@')[0];
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: {
-        email,
+        email: cleanEmail,
         passwordHash,
         fullName: userDisplayName,
         role: 'MEMBER',

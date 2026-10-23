@@ -7,7 +7,16 @@ let _prisma: PrismaClient | null = null;
 export function getPrismaClient(): PrismaClient {
   if (!_prisma) {
     const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres';
-    const pool = new Pool({ connectionString });
+    const pool = new Pool({
+      connectionString,
+      max: 5,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    });
+    // Bắt buộc lắng nghe sự kiện error để tránh unhandled socket error làm crash Worker
+    pool.on('error', (err) => {
+      console.warn('[PostgreSQL Pool warning]:', err.message);
+    });
     const adapter = new PrismaPg(pool);
     _prisma = new PrismaClient({ adapter });
   }

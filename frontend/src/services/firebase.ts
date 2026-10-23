@@ -10,14 +10,23 @@ import {
 
 const env = (import.meta as any).env || {};
 
+const cleanConfigVal = (val?: string, defaultVal: string = '') => {
+  if (!val || typeof val !== 'string') return defaultVal;
+  const trimmed = val.trim();
+  if (trimmed.startsWith('VITE_FIREBASE') || trimmed.includes('${{') || trimmed.length < 5) {
+    return defaultVal;
+  }
+  return trimmed;
+};
+
 const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY || 'AIzaSyCis4Z1KoowS4WdweThx2qrR7_UEwL32Lg',
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || 'fam3-fam3.firebaseapp.com',
-  projectId: env.VITE_FIREBASE_PROJECT_ID || 'fam3-fam3',
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || 'fam3-fam3.firebasestorage.app',
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || '637965754376',
-  appId: env.VITE_FIREBASE_APP_ID || '1:637965754376:web:646ecb46f6551047a831bd',
-  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || 'G-ED5GG39XGD',
+  apiKey: cleanConfigVal(env.VITE_FIREBASE_API_KEY, 'AIzaSyCis4Z1KoowS4WdweThx2qrR7_UEwL32Lg'),
+  authDomain: cleanConfigVal(env.VITE_FIREBASE_AUTH_DOMAIN, 'fam3-fam3.firebaseapp.com'),
+  projectId: cleanConfigVal(env.VITE_FIREBASE_PROJECT_ID, 'fam3-fam3'),
+  storageBucket: cleanConfigVal(env.VITE_FIREBASE_STORAGE_BUCKET, 'fam3-fam3.firebasestorage.app'),
+  messagingSenderId: cleanConfigVal(env.VITE_FIREBASE_MESSAGING_SENDER_ID, '637965754376'),
+  appId: cleanConfigVal(env.VITE_FIREBASE_APP_ID, '1:637965754376:web:646ecb46f6551047a831bd'),
+  measurementId: cleanConfigVal(env.VITE_FIREBASE_MEASUREMENT_ID, 'G-ED5GG39XGD'),
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
