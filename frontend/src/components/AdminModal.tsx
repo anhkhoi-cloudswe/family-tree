@@ -248,7 +248,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
-                  Trung Tâm Quản Trị Hệ Thống Fam3
+                  Trung Tâm Quản Trị Hệ Thống Famlykin
                 </h3>
                 <span
                   style={{

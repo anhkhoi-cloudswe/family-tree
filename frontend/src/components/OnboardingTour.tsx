@@ -28,9 +28,9 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
 
   const steps = [
     {
-      title: 'Chào Mừng Bạn Đến Với Fam3!',
+      title: 'Chào Mừng Bạn Đến Với Famlykin!',
       subtitle: 'Không gian phả hệ số không giới hạn',
-      desc: 'Fam3 giúp kết nối các thế hệ dòng họ trên một mặt phẳng số tương tác trực quan. Bạn có thể giữ chuột trái kéo để di chuyển (Pan) và lăn bánh xe chuột để phóng to/thu nhỏ (Zoom) tự do trên mọi thiết bị.',
+      desc: 'Famlykin giúp kết nối các thế hệ dòng họ trên một mặt phẳng số tương tác trực quan. Bạn có thể giữ chuột trái kéo để di chuyển (Pan) và lăn bánh xe chuột để phóng to/thu nhỏ (Zoom) tự do trên mọi thiết bị.',
       icon: <Sparkles size={28} color="#fef08a" />,
       accentColor: '#10b981',
       badge: 'BƯỚC 1 / 4',
@@ -60,7 +60,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
     {
       title: 'Lịch Giỗ Âm Lịch & Lưu Trữ In Ấn',
       subtitle: 'Gắn kết con cháu hướng về tổ tiên',
-      desc: 'Fam3 tự động quy đổi ngày giỗ Âm lịch sang ngày Dương lịch năm nay kèm thông báo đếm ngược. Bạn có thể tải ảnh cây gia phả HD sắc nét hoặc xuất danh bạ Excel để in ấn lưu truyền.',
+      desc: 'Famlykin tự động quy đổi ngày giỗ Âm lịch sang ngày Dương lịch năm nay kèm thông báo đếm ngược. Bạn có thể tải ảnh cây gia phả HD sắc nét hoặc xuất danh bạ Excel để in ấn lưu truyền.',
       icon: <Calendar size={28} color="#fbbf24" />,
       accentColor: '#f59e0b',
       badge: 'BƯỚC 4 / 4',

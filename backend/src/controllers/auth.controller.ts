@@ -27,7 +27,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     const cleanEmail = email.toLowerCase().trim();
     const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
     if (!user) {
-      return res.status(404).json({ error: 'Email này chưa được đăng ký trong hệ thống Fam3!' });
+      return res.status(404).json({ error: 'Email này chưa được đăng ký trong hệ thống Famlykin!' });
     }
 
     return res.json({

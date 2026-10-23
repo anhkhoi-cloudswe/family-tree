@@ -5,3 +5,11 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 CLOUDFLARE_WORKER = "true"
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+

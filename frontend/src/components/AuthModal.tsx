@@ -13,6 +13,9 @@ import {
   ExternalLink,
   RotateCcw,
   User as UserIcon,
+  Copy,
+  Check,
+  AlertCircle,
 } from 'lucide-react';
 import { apiLogin, apiRegister, apiCheckEmail, apiForgotPassword, setStoredToken, apiGetMe, getStoredToken, apiMagicLogin } from '../services/api';
 import { User } from '../types';
@@ -39,6 +42,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [otpCode, setOtpCode] = useState('');
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
 
   // Đếm ngược gửi lại email
   useEffect(() => {
@@ -189,7 +193,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
       setResendCooldown(60);
       setAuthMode('AWAITING_RESET_EMAIL');
     } catch (err: any) {
-      setError(err.message || 'Email này chưa được đăng ký trong hệ thống Fam3!');
+      setError(err.message || 'Email này chưa được đăng ký trong hệ thống Famlykin!');
     } finally {
       setIsLoading(false);
     }
@@ -724,15 +728,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
           </div>
         )}
 
-        {/* Màn hình 4: Đợi Nhận Mail Xác Thực Đăng Ký (Thiết kế SaaS đẳng cấp) */}
+        {/* Màn hình 4: Đợi Nhận Mail Xác Thực Đăng Ký (Chuẩn Enterprise SaaS UI/UX) */}
         {authMode === 'AWAITING_VERIFICATION' && (
-          <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
+          <div style={{ textAlign: 'center', padding: '0.25rem 0' }}>
+            {/* Radiant Icon Badge */}
             <div
               style={{
                 position: 'relative',
-                width: '72px',
-                height: '72px',
-                margin: '0 auto 1.4rem auto',
+                width: '76px',
+                height: '76px',
+                margin: '0 auto 1.25rem auto',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -743,21 +748,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
                   position: 'absolute',
                   inset: 0,
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, rgba(16, 185, 129, 0) 70%)',
-                  animation: 'pulse 2s infinite',
+                  background: 'radial-gradient(circle, rgba(16, 185, 129, 0.45) 0%, rgba(16, 185, 129, 0) 70%)',
+                  animation: 'pulse 2.2s infinite',
                 }}
               />
               <div
                 style={{
-                  width: '64px',
-                  height: '64px',
+                  width: '66px',
+                  height: '66px',
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.35) 100%)',
-                  border: '1px solid rgba(52, 211, 153, 0.5)',
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.28) 0%, rgba(5, 150, 105, 0.4) 100%)',
+                  border: '1.5px solid rgba(52, 211, 153, 0.55)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 0 25px rgba(16, 185, 129, 0.35)',
+                  boxShadow: '0 0 30px rgba(16, 185, 129, 0.4)',
                   position: 'relative',
                   zIndex: 2,
                 }}
@@ -766,54 +771,153 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
               </div>
             </div>
 
-            <h3 style={{ fontSize: '1.25rem', color: '#ffffff', margin: '0 0 0.5rem 0', fontWeight: 700 }}>
+            {/* Title & Description */}
+            <h3 style={{ fontSize: '1.35rem', color: '#ffffff', margin: '0 0 0.45rem 0', fontWeight: 800, letterSpacing: '-0.02em' }}>
               Kiểm Tra Hộp Thư Của Bạn
             </h3>
 
-            <p style={{ fontSize: '0.88rem', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 1.25rem 0' }}>
-              Tài khoản đã được tạo! Fam3 đã gửi liên kết Magic Link xác thực tới địa chỉ:
-              <br />
-              <span
-                style={{
-                  display: 'inline-block',
-                  marginTop: '0.35rem',
-                  padding: '0.2rem 0.65rem',
-                  borderRadius: '6px',
-                  background: 'rgba(52, 211, 153, 0.12)',
-                  border: '1px solid rgba(52, 211, 153, 0.35)',
-                  color: '#34d399',
-                  fontWeight: 600,
-                  fontSize: '0.9rem',
-                }}
-              >
-                {email}
-              </span>
+            <p style={{ fontSize: '0.86rem', color: '#94a3b8', lineHeight: 1.55, margin: '0 0 0.85rem 0' }}>
+              Tài khoản đã được tạo! Famlykin đã gửi liên kết xác thực an toàn tới địa chỉ:
             </p>
 
-            {/* Live Verification Waiting Indicator */}
+            {/* Interactive Email Pill with Copy & Edit */}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.55rem',
+                padding: '0.42rem 0.85rem',
+                borderRadius: '8px',
+                background: 'rgba(52, 211, 153, 0.1)',
+                border: '1px solid rgba(52, 211, 153, 0.35)',
+                color: '#34d399',
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                marginBottom: '1rem',
+                maxWidth: '100%',
+              }}
+            >
+              <Mail size={15} color="#34d399" style={{ flexShrink: 0 }} />
+              <span style={{ wordBreak: 'break-all' }}>{email}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(email);
+                  setCopiedEmail(true);
+                  setTimeout(() => setCopiedEmail(false), 2000);
+                  toast.success('Đã sao chép địa chỉ email!');
+                }}
+                title="Sao chép email"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '3px 5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  color: '#a7f3d0',
+                }}
+              >
+                {copiedEmail ? <Check size={13} color="#34d399" /> : <Copy size={13} />}
+              </button>
+            </div>
+
+            {/* Live Waiting Indicator */}
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                padding: '0.42rem 0.95rem',
+                padding: '0.38rem 0.9rem',
                 borderRadius: '999px',
                 background: 'rgba(52, 211, 153, 0.12)',
-                border: '1px solid rgba(52, 211, 153, 0.32)',
+                border: '1px solid rgba(52, 211, 153, 0.3)',
                 color: '#34d399',
-                fontSize: '0.8rem',
+                fontSize: '0.78rem',
                 fontWeight: 600,
-                marginBottom: '1.25rem',
+                marginBottom: '1rem',
               }}
             >
               <span className="pulsing-dot" style={{ background: '#34d399', boxShadow: '0 0 8px #34d399' }} />
-              <span>Hệ thống đang đợi bạn nhấp liên kết trong thư...</span>
+              <span>Hệ thống đang sẵn sàng tự kích hoạt khi bạn nhấp liên kết...</span>
             </div>
 
-            {/* Nhập mã OTP 6 số từ email */}
-            <form onSubmit={handleVerifyOtp} style={{ marginBottom: '1.25rem', padding: '1rem', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#e2e8f0', marginBottom: '0.5rem', textAlign: 'left' }}>
-                Hoặc nhập mã số xác thực (OTP) nhận được trong email:
+            {/* Primary Action: Direct Mailbox Link */}
+            <div style={{ marginBottom: '1rem' }}>
+              <a
+                href={isGmail ? 'https://mail.google.com' : `https://${email.split('@')[1] || 'mail.google.com'}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.55rem',
+                  padding: '0.75rem 1rem',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                  borderRadius: '11px',
+                  textDecoration: 'none',
+                  boxShadow: '0 4px 18px rgba(16, 185, 129, 0.35)',
+                  border: '1px solid rgba(52, 211, 153, 0.4)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <ExternalLink size={17} />
+                <span>{isGmail ? 'Mở Hộp Thư Gmail' : 'Mở Hộp Thư Email'}</span>
+              </a>
+            </div>
+
+            {/* Enterprise Important Tip Banner (Crucial for Spam detection) */}
+            <div
+              style={{
+                padding: '0.68rem 0.85rem',
+                background: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.28)',
+                borderRadius: '10px',
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.55rem',
+                fontSize: '0.78rem',
+                color: '#fef3c7',
+                lineHeight: 1.5,
+                marginBottom: '1.15rem',
+              }}
+            >
+              <AlertCircle size={15} color="#fbbf24" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong>Chưa thấy email gửi tới?</strong> Vui lòng kiểm tra kỹ mục <b>Thư rác (Spam)</b> hoặc <b>Quảng cáo (Promotions)</b> trong hộp thư của bạn.
+              </div>
+            </div>
+
+            {/* OTP Code Entry Section */}
+            <form
+              onSubmit={handleVerifyOtp}
+              style={{
+                marginBottom: '1.15rem',
+                padding: '0.9rem',
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.09)',
+              }}
+            >
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: '#cbd5e1',
+                  marginBottom: '0.55rem',
+                  textAlign: 'left',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                Hoặc nhập mã số xác thực (OTP) từ email:
               </label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
@@ -824,30 +928,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
                   maxLength={8}
                   style={{
                     flex: 1,
-                    padding: '0.65rem 0.85rem',
+                    padding: '0.62rem 0.85rem',
                     borderRadius: '8px',
                     border: '1px solid rgba(52, 211, 153, 0.35)',
-                    background: 'rgba(0, 0, 0, 0.4)',
+                    background: 'rgba(0, 0, 0, 0.45)',
                     color: '#ffffff',
-                    fontSize: '1.1rem',
+                    fontSize: '1.05rem',
                     fontWeight: 700,
-                    letterSpacing: '0.18em',
+                    letterSpacing: '0.22em',
                     textAlign: 'center',
+                    fontFamily: 'monospace',
                   }}
                 />
                 <button
                   type="submit"
                   disabled={isVerifyingOtp || !otpCode.trim()}
                   style={{
-                    padding: '0.65rem 1rem',
+                    padding: '0.62rem 1.05rem',
                     borderRadius: '8px',
                     background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
                     border: 'none',
                     color: '#ffffff',
                     fontWeight: 700,
-                    fontSize: '0.86rem',
+                    fontSize: '0.84rem',
                     cursor: (isVerifyingOtp || !otpCode.trim()) ? 'not-allowed' : 'pointer',
                     opacity: (isVerifyingOtp || !otpCode.trim()) ? 0.6 : 1,
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {isVerifyingOtp ? 'Đang duyệt...' : 'Xác Thực'}
@@ -855,33 +961,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
               </div>
             </form>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.25rem' }}>
-              {isGmail && (
-                <a
-                  href="https://mail.google.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.45rem',
-                    padding: '0.72rem 1rem',
-                    fontSize: '0.88rem',
-                    fontWeight: 600,
-                    color: '#ffffff',
-                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-                    borderRadius: '10px',
-                    textDecoration: 'none',
-                    boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
-                  }}
-                >
-                  <ExternalLink size={16} />
-                  <span>Mở Hộp Thư Gmail</span>
-                </a>
-              )}
-
-              {/* Check button: Kiểm tra xác thực thực tế */}
+            {/* Action Buttons: Check Status & Resend */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', marginBottom: '1.15rem' }}>
               <button
                 type="button"
                 onClick={async () => {
@@ -900,7 +981,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.45rem',
-                  padding: '0.68rem 1rem',
+                  padding: '0.65rem 1rem',
                   fontSize: '0.84rem',
                   fontWeight: 600,
                   color: '#ffffff',
@@ -912,7 +993,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
                 }}
               >
                 <CheckCircle2 size={16} color="#34d399" />
-                <span>Tôi đã nhấp liên kết trong thư</span>
+                <span>Tôi đã nhấp liên kết xác thực</span>
               </button>
 
               <button
@@ -924,14 +1005,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.45rem',
-                  padding: '0.68rem 1rem',
-                  fontSize: '0.84rem',
+                  padding: '0.65rem 1rem',
+                  fontSize: '0.82rem',
                   fontWeight: 500,
                   color: resendCooldown > 0 ? '#64748b' : '#34d399',
                   background: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(52, 211, 153, 0.25)',
+                  border: '1px solid rgba(52, 211, 153, 0.22)',
                   borderRadius: '10px',
                   cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s ease',
                 }}
               >
                 <RotateCcw size={14} />
@@ -943,6 +1025,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
               </button>
             </div>
 
+            {/* Back link */}
             <button
               type="button"
               onClick={() => {
@@ -957,6 +1040,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
                 cursor: 'pointer',
                 textDecoration: 'underline',
                 textUnderlineOffset: '3px',
+                padding: '0.3rem',
               }}
             >
               ← Quay về Trang Đăng Nhập

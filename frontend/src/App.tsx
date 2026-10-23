@@ -15,6 +15,7 @@ import { AdminDashboard, AdminTab } from './components/AdminDashboard';
 import { OnboardingTour } from './components/OnboardingTour';
 import { QuickOnboardingModal } from './components/QuickOnboardingModal';
 import { FamilyFlashcardModal } from './components/FamilyFlashcardModal';
+import { FamilyTreeLogo } from './components/FamilyTreeLogo';
 import { ToastProvider, useToast } from './components/Toast';
 import { User, FamilyTree, Person } from './types';
 import {
@@ -441,10 +442,29 @@ const AppContent: React.FC = () => {
   if (isLoading) {
     return (
       <div className="app-loading-screen">
+        <div className="app-loading-bg-layer" aria-hidden="true">
+          <video
+            className="app-video-bg-media"
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster="/images/bg-green-gradient.png"
+          >
+            <source src="/videos/bg-green-motion.mp4" type="video/mp4" />
+          </video>
+          <div className="app-video-bg-overlay" />
+        </div>
         <div className="loading-card">
-          <div className="loading-spinner" />
-          <h2 className="loading-title">Famlykin - Cây Gia Phả</h2>
-          <p className="loading-desc">Đang tải cấu trúc gia phả và phân tầng thế hệ...</p>
+          <div className="loading-logo-box">
+            <div className="loading-ring-spinner" />
+            <FamilyTreeLogo size={34} />
+          </div>
+          <h2 className="loading-title">Famlykin</h2>
+          <p className="loading-desc">Đang tải gia phả...</p>
+          <div className="loading-progress-bar">
+            <div className="loading-progress-indeterminate" />
+          </div>
         </div>
       </div>
     );
