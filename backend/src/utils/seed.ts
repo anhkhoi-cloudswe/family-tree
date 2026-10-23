@@ -20,12 +20,12 @@ export async function seedDatabase() {
     },
   });
 
-  const adminPasswordHash = await bcrypt.hash('Admin@Fam3_2026!', 10);
+  const adminPasswordHash = await bcrypt.hash('123456', 10);
   const adminUser = await prisma.user.create({
     data: {
-      email: 'admin@fam3.vn',
+      email: 'admin@famlykin.vn',
       passwordHash: adminPasswordHash,
-      fullName: 'Quản Trị Viên Fam3',
+      fullName: 'Quản Trị Viên Famlykin',
       role: 'ADMIN',
     },
   });
@@ -355,7 +355,7 @@ export async function seedDatabase() {
 
   console.log('✓ Khởi tạo dữ liệu mẫu hoàn tất thành công!');
   console.log('  1. Tài khoản Demo (MEMBER): demo@giapha.vn / Password123!');
-  console.log('  2. Tài khoản Admin (ADMIN): admin@fam3.vn / Admin@Fam3_2026!');
+  console.log('  2. Tài khoản Admin (ADMIN): admin@famlykin.vn / 123456');
   console.log(`  Cây gia phả mẫu: "${tree.name}" (ID: ${tree.id})`);
 }
 

@@ -31,7 +31,9 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
-        run: npx prisma db push --accept-data-loss
+        run: |
+          npx prisma db push --accept-data-loss
+          npx ts-node-dev --transpile-only src/utils/seed.ts
 
   # =========================================================
   # 2. BACKEND DEPLOYMENT (Cloudflare Workers)
@@ -112,5 +114,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: '4.152.0'
-          preCommands: npx wrangler pages project create familytree-frontend --production-branch=main || true
-          command: pages deploy frontend/dist --project-name=familytree-frontend
+          preCommands: npx wrangler pages project create famlykin --production-branch=main || true
+          command: pages deploy frontend/dist --project-name=famlykin
