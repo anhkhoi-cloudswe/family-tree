@@ -1,4 +1,65 @@
 import { Person, Relationship } from '../types';
+import { getYearFromDate } from './dateHelper';
+
+/**
+ * So sánh độ tuổi hoặc thứ bậc giữa 2 người:
+ * 1. Ưu tiên số năm sinh / ngày sinh nếu có nhập:
+ *    - Nếu cả 2 đều có ngày sinh / năm sinh: so sánh năm sinh (hoặc timestamp). Người sinh trước sẽ lớn hơn.
+ *    - Nếu chỉ 1 người có năm sinh: người có năm sinh sớm hơn hoặc thông tin thứ bậc được kiểm tra qua nickname/ghi chú.
+ * 2. Phân tích ngữ nghĩa nickname/tên gọi/vai vế:
+ *    - Bác, Cả, Anh, Chị, Hai, Lớn -> lớn hơn.
+ *    - Chú, Cô, Cậu, Dì, Em, Út, Nhỏ -> nhỏ hơn.
+ */
+export function compareAgeOrRank(personA: Person, personB?: Person | null): boolean {
+  if (!personB) {
+    const nickA = (personA.nickname || '').toLowerCase();
+    return nickA.includes('bác') || nickA.includes('cả') || nickA.includes('anh') || nickA.includes('chị') || nickA.includes('hai');
+  }
+
+  // 1. So sánh ngày sinh / năm sinh
+  const yearA = getYearFromDate(personA.birthDate);
+  const yearB = getYearFromDate(personB.birthDate);
+
+  if (yearA !== null && yearB !== null) {
+    if (yearA !== yearB) {
+      return yearA < yearB; // Năm sinh nhỏ hơn tức là sinh trước -> lớn tuổi hơn
+    }
+    // Cùng năm sinh thì so sánh chi tiết ngày tháng nếu có
+    if (personA.birthDate && personB.birthDate) {
+      const timeA = new Date(personA.birthDate).getTime();
+      const timeB = new Date(personB.birthDate).getTime();
+      if (!isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+        return timeA < timeB;
+      }
+    }
+  }
+
+  // 2. Nếu thiếu năm sinh của 1 trong 2 người, kiểm tra nickname hoặc danh xưng
+  const nickA = (personA.nickname || '').toLowerCase();
+  const nickB = (personB.nickname || '').toLowerCase();
+
+  // personA có dấu hiệu là vai anh/chị/bác
+  if (nickA.includes('bác') || nickA.includes('cả') || nickA.includes('anh') || nickA.includes('chị') || nickA.includes('hai') || nickA.includes('lớn')) {
+    return true;
+  }
+  // personA có dấu hiệu là em/chú/cô/cậu/dì/út
+  if (nickA.includes('chú') || nickA.includes('cô') || nickA.includes('cậu') || nickA.includes('dì') || nickA.includes('em') || nickA.includes('út')) {
+    return false;
+  }
+
+  // personB có dấu hiệu là anh/chị/bác mà personA không có -> personA nhỏ hơn
+  if (nickB.includes('bác') || nickB.includes('cả') || nickB.includes('anh') || nickB.includes('chị') || nickB.includes('hai')) {
+    return false;
+  }
+
+  // personB có dấu hiệu là em/út -> personA có thể lớn hơn
+  if (nickB.includes('em') || nickB.includes('út')) {
+    return true;
+  }
+
+  // Fallback mặc định
+  return false;
+}
 
 /**
  * Tính toán danh xưng vai vế chuẩn hóa theo góc nhìn của "Tôi" (Người quan sát)
@@ -71,17 +132,21 @@ export function getKinshipToMe(
     .filter((r) => r.type === 'PARENT_CHILD' && r.parentId === me.id && r.childId)
     .map((r) => r.childId as string);
 
-  // 5. Anh / Chị / Em ruột (Cùng cha hoặc cùng mẹ)
+  // 5. Anh / Chị / Em ruột (Cùng cha hoặc cùng mẹ hoặc có quan hệ SIBLING trực tiếp)
   const isSibling = allRels.some(
     (r) =>
       r.type === 'PARENT_CHILD' &&
       r.childId === target.id &&
       myParentIds.includes(r.parentId as string)
   );
-  if (isSibling) {
-    const isTargetOlder =
-      (target.birthDate && me.birthDate && new Date(target.birthDate) < new Date(me.birthDate)) ||
-      (target.nickname && target.nickname.toLowerCase().includes('cả'));
+  const isDirectSibling = allRels.some(
+    (r) =>
+      r.type === 'SIBLING' &&
+      ((r.spouse1Id === me.id && r.spouse2Id === target.id) ||
+        (r.spouse2Id === me.id && r.spouse1Id === target.id))
+  );
+  if (isSibling || isDirectSibling) {
+    const isTargetOlder = compareAgeOrRank(target, me);
     if (target.gender === 'MALE') {
       return isTargetOlder ? 'Anh trai' : 'Em trai';
     } else {
@@ -160,12 +225,20 @@ export function getKinshipToMe(
       .filter((r) => r.type === 'PARENT_CHILD' && r.childId === myFather.id && r.parentId)
       .map((r) => r.parentId as string);
 
-    isPaternalUncleAunt = allRels.some(
-      (r) =>
-        r.type === 'PARENT_CHILD' &&
-        r.childId === target.id &&
-        paternalGrandparentIds.includes(r.parentId as string)
-    );
+    isPaternalUncleAunt =
+      (paternalGrandparentIds.length > 0 &&
+        allRels.some(
+          (r) =>
+            r.type === 'PARENT_CHILD' &&
+            r.childId === target.id &&
+            paternalGrandparentIds.includes(r.parentId as string)
+        )) ||
+      allRels.some(
+        (r) =>
+          r.type === 'SIBLING' &&
+          ((r.spouse1Id === myFather.id && r.spouse2Id === target.id) ||
+            (r.spouse2Id === myFather.id && r.spouse1Id === target.id))
+      );
   }
 
   if (myMother) {
@@ -173,37 +246,43 @@ export function getKinshipToMe(
       .filter((r) => r.type === 'PARENT_CHILD' && r.childId === myMother.id && r.parentId)
       .map((r) => r.parentId as string);
 
-    isMaternalUncleAunt = allRels.some(
-      (r) =>
-        r.type === 'PARENT_CHILD' &&
-        r.childId === target.id &&
-        maternalGrandparentIds.includes(r.parentId as string)
-    );
+    isMaternalUncleAunt =
+      (maternalGrandparentIds.length > 0 &&
+        allRels.some(
+          (r) =>
+            r.type === 'PARENT_CHILD' &&
+            r.childId === target.id &&
+            maternalGrandparentIds.includes(r.parentId as string)
+        )) ||
+      allRels.some(
+        (r) =>
+          r.type === 'SIBLING' &&
+          ((r.spouse1Id === myMother.id && r.spouse2Id === target.id) ||
+            (r.spouse2Id === myMother.id && r.spouse1Id === target.id))
+      );
   }
 
   if (isPaternalUncleAunt) {
     const isMale = target.gender === 'MALE';
-    const isOlder =
-      target.nickname?.toLowerCase().includes('cả') ||
-      target.nickname?.toLowerCase().includes('bác') ||
-      (target.birthDate && myFather?.birthDate && new Date(target.birthDate) < new Date(myFather.birthDate));
+    const isOlder = compareAgeOrRank(target, myFather);
     if (isMale) {
+      // Anh trai của bố -> Bác ruột; Em trai của bố -> Chú ruột
       return isOlder ? 'Bác ruột' : 'Chú ruột';
     } else {
-      return isOlder ? 'Bác gái' : 'Cô ruột';
+      // Chị gái của bố -> Bác ruột (hoặc Bác gái); Em gái của bố -> Cô ruột
+      return isOlder ? 'Bác ruột' : 'Cô ruột';
     }
   }
 
   if (isMaternalUncleAunt) {
     const isMale = target.gender === 'MALE';
-    const isOlder =
-      target.nickname?.toLowerCase().includes('cả') ||
-      target.nickname?.toLowerCase().includes('bác') ||
-      (target.birthDate && myMother?.birthDate && new Date(target.birthDate) < new Date(myMother.birthDate));
+    const isOlder = compareAgeOrRank(target, myMother);
     if (isMale) {
-      return isOlder ? 'Bác trai' : 'Cậu ruột';
+      // Anh trai của mẹ -> Bác ruột (hoặc Bác trai); Em trai của mẹ -> Cậu ruột
+      return isOlder ? 'Bác ruột' : 'Cậu ruột';
     } else {
-      return isOlder ? 'Bác gái' : 'Dì ruột';
+      // Chị gái của mẹ -> Bác ruột (hoặc Bác gái); Em gái của mẹ -> Dì ruột
+      return isOlder ? 'Bác ruột' : 'Dì ruột';
     }
   }
 
@@ -221,16 +300,21 @@ export function getKinshipToMe(
       }
 
       // 9.2 Partner là anh / chị / em ruột của Tôi
-      const isPartnerSibling = allRels.some(
-        (r) =>
-          r.type === 'PARENT_CHILD' &&
-          r.childId === partner.id &&
-          myParentIds.includes(r.parentId as string)
-      );
+      const isPartnerSibling =
+        allRels.some(
+          (r) =>
+            r.type === 'PARENT_CHILD' &&
+            r.childId === partner.id &&
+            myParentIds.includes(r.parentId as string)
+        ) ||
+        allRels.some(
+          (r) =>
+            r.type === 'SIBLING' &&
+            ((r.spouse1Id === me.id && r.spouse2Id === partner.id) ||
+              (r.spouse2Id === me.id && r.spouse1Id === partner.id))
+        );
       if (isPartnerSibling) {
-        const isPartnerOlder =
-          (partner.birthDate && me.birthDate && new Date(partner.birthDate) < new Date(me.birthDate)) ||
-          (partner.nickname && partner.nickname.toLowerCase().includes('cả'));
+        const isPartnerOlder = compareAgeOrRank(partner, me);
         if (partner.gender === 'MALE') {
           return isPartnerOlder ? 'Chị dâu' : 'Em dâu';
         } else {
@@ -244,44 +328,58 @@ export function getKinshipToMe(
           .filter((r) => r.type === 'PARENT_CHILD' && r.childId === myFather.id && r.parentId)
           .map((r) => r.parentId as string);
 
-        const isPartnerPaternalUncleAunt = allRels.some(
-          (r) =>
-            r.type === 'PARENT_CHILD' &&
-            r.childId === partner.id &&
-            paternalGrandparentIds.includes(r.parentId as string)
-        );
+        const isPartnerPaternalUncleAunt =
+          (paternalGrandparentIds.length > 0 &&
+            allRels.some(
+              (r) =>
+                r.type === 'PARENT_CHILD' &&
+                r.childId === partner.id &&
+                paternalGrandparentIds.includes(r.parentId as string)
+            )) ||
+          allRels.some(
+            (r) =>
+              r.type === 'SIBLING' &&
+              ((r.spouse1Id === myFather.id && r.spouse2Id === partner.id) ||
+                (r.spouse2Id === myFather.id && r.spouse1Id === partner.id))
+          );
 
         if (isPartnerPaternalUncleAunt) {
+          const isOlder = compareAgeOrRank(partner, myFather);
           if (partner.gender === 'MALE') {
-            const isOlder =
-              partner.nickname?.toLowerCase().includes('cả') ||
-              partner.nickname?.toLowerCase().includes('bác') ||
-              (partner.birthDate && myFather.birthDate && new Date(partner.birthDate) < new Date(myFather.birthDate));
-            return isOlder ? 'Vợ của Bác ruột' : 'Vợ của Chú ruột';
+            return isOlder ? 'Bác dâu' : 'Thím (Vợ của Chú)';
           } else {
-            return 'Chồng của Cô ruột';
+            return isOlder ? 'Bác rể' : 'Dượng (Chồng của Cô)';
           }
         }
       }
 
-      // 9.4 Partner là anh/chị/em ruột của Mẹ (Cậu ruột / Dì ruột)
+      // 9.4 Partner là anh/chị/em ruột của Mẹ (Cậu ruột / Dì ruột / Bác ruột)
       if (myMother) {
         const maternalGrandparentIds = allRels
           .filter((r) => r.type === 'PARENT_CHILD' && r.childId === myMother.id && r.parentId)
           .map((r) => r.parentId as string);
 
-        const isPartnerMaternalUncleAunt = allRels.some(
-          (r) =>
-            r.type === 'PARENT_CHILD' &&
-            r.childId === partner.id &&
-            maternalGrandparentIds.includes(r.parentId as string)
-        );
+        const isPartnerMaternalUncleAunt =
+          (maternalGrandparentIds.length > 0 &&
+            allRels.some(
+              (r) =>
+                r.type === 'PARENT_CHILD' &&
+                r.childId === partner.id &&
+                maternalGrandparentIds.includes(r.parentId as string)
+            )) ||
+          allRels.some(
+            (r) =>
+              r.type === 'SIBLING' &&
+              ((r.spouse1Id === myMother.id && r.spouse2Id === partner.id) ||
+                (r.spouse2Id === myMother.id && r.spouse1Id === partner.id))
+          );
 
         if (isPartnerMaternalUncleAunt) {
+          const isOlder = compareAgeOrRank(partner, myMother);
           if (partner.gender === 'MALE') {
-            return 'Vợ của Cậu ruột';
+            return isOlder ? 'Bác dâu' : 'Mợ (Vợ của Cậu)';
           } else {
-            return 'Chồng của Dì ruột';
+            return isOlder ? 'Bác rể' : 'Dượng (Chồng của Dì)';
           }
         }
       }
@@ -396,40 +494,30 @@ export function getPaternalMaternalMemberIds(
   // Helper: Lấy tất cả con cháu hậu duệ đệ quy của 1 danh sách người
   const addAllDescendantsAndSpouses = (rootIds: string[], targetSet: Set<string>) => {
     const queue = [...rootIds];
+    const visited = new Set<string>();
     while (queue.length > 0) {
       const currentId = queue.shift()!;
-      if (!targetSet.has(currentId)) {
-        targetSet.add(currentId);
+      if (visited.has(currentId)) continue;
+      visited.add(currentId);
+      targetSet.add(currentId);
 
-        // Thêm vợ/chồng của người này
-        allRels.forEach((r) => {
-          if (r.type === 'SPOUSE') {
-            if (r.spouse1Id === currentId && r.spouse2Id && !targetSet.has(r.spouse2Id)) {
-              targetSet.add(r.spouse2Id);
-            } else if (r.spouse2Id === currentId && r.spouse1Id && !targetSet.has(r.spouse1Id)) {
-              targetSet.add(r.spouse1Id);
-            }
+      // Thêm vợ/chồng của người này
+      allRels.forEach((r) => {
+        if (r.type === 'SPOUSE' && r.spouse1Id && r.spouse2Id) {
+          if (r.spouse1Id === currentId) {
+            targetSet.add(r.spouse2Id);
+          } else if (r.spouse2Id === currentId) {
+            targetSet.add(r.spouse1Id);
           }
-        });
+        }
+      });
 
-        // Thêm anh/chị/em ruột (nếu liên kết trực tiếp SIBLING)
-        allRels.forEach((r) => {
-          if (r.type === 'SIBLING') {
-            if (r.spouse1Id === currentId && r.spouse2Id && !targetSet.has(r.spouse2Id)) {
-              queue.push(r.spouse2Id);
-            } else if (r.spouse2Id === currentId && r.spouse1Id && !targetSet.has(r.spouse1Id)) {
-              queue.push(r.spouse1Id);
-            }
-          }
-        });
-
-        // Thêm con ruột của người này vào queue
-        allRels.forEach((r) => {
-          if (r.type === 'PARENT_CHILD' && r.parentId === currentId && r.childId) {
-            queue.push(r.childId);
-          }
-        });
-      }
+      // Thêm con ruột của người này vào queue
+      allRels.forEach((r) => {
+        if (r.type === 'PARENT_CHILD' && r.parentId === currentId && r.childId) {
+          queue.push(r.childId);
+        }
+      });
     }
   };
 
@@ -472,30 +560,7 @@ export function getPaternalMaternalMemberIds(
     return Array.from(ancestors);
   };
 
-  // 1. Gia đình hạt nhân của Tôi: Tôi, vợ/chồng, anh chị em ruột, con cái, cháu chắt
-  const nuclearIds = new Set<string>();
-  addAllDescendantsAndSpouses([targetMe.id], nuclearIds);
-  nuclearIds.add(targetMe.id);
-
-  // Thêm vợ/chồng và anh/chị/em của Tôi
-  allRels.forEach((r) => {
-    if (r.type === 'SPOUSE') {
-      if (r.spouse1Id === targetMe.id && r.spouse2Id) nuclearIds.add(r.spouse2Id);
-      if (r.spouse2Id === targetMe.id && r.spouse1Id) nuclearIds.add(r.spouse1Id);
-    }
-    if (r.type === 'SIBLING') {
-      if (r.spouse1Id === targetMe.id && r.spouse2Id) nuclearIds.add(r.spouse2Id);
-      if (r.spouse2Id === targetMe.id && r.spouse1Id) nuclearIds.add(r.spouse1Id);
-    }
-  });
-
-  // Gia đình hạt nhân luôn thuộc cả Bên Nội và Bên Ngoại
-  nuclearIds.forEach((id) => {
-    pSet.add(id);
-    mSet.add(id);
-  });
-
-  // 2. Tìm Cha và Mẹ trực tiếp của targetMe
+  // 1. Tìm Cha và Mẹ trực tiếp của targetMe
   const myParents = allPersons.filter((p) =>
     allRels.some((r) => r.type === 'PARENT_CHILD' && r.parentId === p.id && r.childId === targetMe.id)
   );
@@ -509,6 +574,52 @@ export function getPaternalMaternalMemberIds(
     if (myParents.length >= 2) myMother = myParents[1];
   }
 
+  const myParentIdList = myParents.map((p) => p.id);
+
+  // 2. Gia đình hạt nhân của Tôi: Tôi, vợ/chồng, anh chị em ruột, con cái, cháu chắt
+  const nuclearIds = new Set<string>();
+  nuclearIds.add(targetMe.id);
+
+  // Tìm tất cả anh/chị/em ruột của Tôi (cùng cha hoặc cùng mẹ, hoặc nối quan hệ SIBLING)
+  const directSiblingIds = allPersons
+    .filter((p) => p.id !== targetMe.id)
+    .filter((p) => {
+      const sharesParent = allRels.some(
+        (r) =>
+          r.type === 'PARENT_CHILD' &&
+          r.childId === p.id &&
+          r.parentId &&
+          myParentIdList.includes(r.parentId)
+      );
+      const isDirectSibling = allRels.some(
+        (r) =>
+          r.type === 'SIBLING' &&
+          ((r.spouse1Id === targetMe.id && r.spouse2Id === p.id) ||
+            (r.spouse2Id === targetMe.id && r.spouse1Id === p.id))
+      );
+      return sharesParent || isDirectSibling;
+    })
+    .map((p) => p.id);
+
+  directSiblingIds.forEach((sibId) => nuclearIds.add(sibId));
+
+  // Thêm vợ/chồng của Tôi và của anh/chị/em
+  allRels.forEach((r) => {
+    if (r.type === 'SPOUSE' && r.spouse1Id && r.spouse2Id) {
+      if (nuclearIds.has(r.spouse1Id)) nuclearIds.add(r.spouse2Id);
+      if (nuclearIds.has(r.spouse2Id)) nuclearIds.add(r.spouse1Id);
+    }
+  });
+
+  // Thêm toàn bộ con cháu hậu duệ của Tôi và của anh/chị/em
+  addAllDescendantsAndSpouses(Array.from(nuclearIds), nuclearIds);
+
+  // Gia đình hạt nhân luôn thuộc cả Bên Nội và Bên Ngoại
+  nuclearIds.forEach((id) => {
+    pSet.add(id);
+    mSet.add(id);
+  });
+
   // 3. Xử lý BÊN NỘI: Tính từ Cha của Tôi ra
   if (myFather) {
     pSet.add(myFather.id);
@@ -520,6 +631,9 @@ export function getPaternalMaternalMemberIds(
         if (r.spouse2Id === myFather!.id && r.spouse1Id) pSet.add(r.spouse1Id);
       }
     });
+
+    // Thêm toàn bộ con cháu của Bố vào Bên Nội (đảm bảo Tôi và anh chị em ruột luôn có mặt)
+    addAllDescendantsAndSpouses([myFather.id], pSet);
 
     // Lấy toàn bộ tổ phụ của Bố: Luôn gồm đầy đủ cả Ông Nội & Bà Nội, Cụ ông & Cụ bà
     const fatherAncestors = getAncestors(myFather.id);
@@ -567,6 +681,9 @@ export function getPaternalMaternalMemberIds(
         if (r.spouse2Id === myMother!.id && r.spouse1Id) mSet.add(r.spouse1Id);
       }
     });
+
+    // Thêm toàn bộ con cháu của Mẹ vào Bên Ngoại (đảm bảo Tôi và anh chị em ruột luôn có mặt)
+    addAllDescendantsAndSpouses([myMother.id], mSet);
 
     // Lấy toàn bộ tổ phụ của Mẹ: Luôn gồm đầy đủ cả Ông Ngoại & Bà Ngoại, Cụ ông & Cụ bà ngoại
     const motherAncestors = getAncestors(myMother.id);

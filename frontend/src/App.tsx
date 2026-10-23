@@ -13,6 +13,7 @@ import { HelpModal } from './components/HelpModal';
 import { AdminModal } from './components/AdminModal';
 import { OnboardingTour } from './components/OnboardingTour';
 import { QuickOnboardingModal } from './components/QuickOnboardingModal';
+import { FamilyFlashcardModal } from './components/FamilyFlashcardModal';
 import { ToastProvider, useToast } from './components/Toast';
 import { User, FamilyTree, Person } from './types';
 import {
@@ -67,6 +68,7 @@ const AppContent: React.FC = () => {
   const [showAdminModal, setShowAdminModal] = useState<boolean>(false);
   const [showTour, setShowTour] = useState<boolean>(false);
   const [showQuickOnboarding, setShowQuickOnboarding] = useState<boolean>(false);
+  const [showFlashcardModal, setShowFlashcardModal] = useState<boolean>(false);
 
   // Filters & View Mode
   const [branchFilter, setBranchFilter] = useState<'ALL' | 'PATERNAL' | 'MATERNAL'>('ALL');
@@ -387,6 +389,7 @@ const AppContent: React.FC = () => {
         }}
         onOpenLunar={() => setShowLunarModal(true)}
         onOpenReminder={() => setShowReminderModal(true)}
+        onOpenFlashcard={() => setShowFlashcardModal(true)}
         onExportImage={handleExportImageClick}
         isExportingImage={isExportingImage}
         onLogout={handleLogout}
@@ -475,6 +478,7 @@ const AppContent: React.FC = () => {
         <AddMemberModal
           tree={tree}
           relativeTarget={addMemberTarget}
+          mePerson={mePerson}
           onClose={() => {
             setShowAddMemberModal(false);
             setAddMemberTarget(null);
@@ -548,6 +552,20 @@ const AppContent: React.FC = () => {
 
       {/* Admin Management Dashboard Modal */}
       <AdminModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} />
+
+      {/* Family Flashcard Quiz Modal */}
+      {showFlashcardModal && tree && (
+        <FamilyFlashcardModal
+          isOpen={showFlashcardModal}
+          tree={tree}
+          mePerson={mePerson}
+          onClose={() => setShowFlashcardModal(false)}
+          onOpenAddMember={() => {
+            setAddMemberTarget(null);
+            setShowAddMemberModal(true);
+          }}
+        />
+      )}
 
       {/* Modal Nhập Email Xác Nhận Magic Link (Cross-browser / Cross-device Fallback) */}
       {showMagicLinkPrompt && (

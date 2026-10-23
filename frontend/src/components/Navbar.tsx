@@ -18,6 +18,8 @@ import {
   Users,
   Crown,
   Check,
+  Sparkles,
+  MoreHorizontal,
 } from 'lucide-react';
 import { User, FamilyTree, Person } from '../types';
 import { downloadTreeExcel } from '../services/api';
@@ -38,6 +40,7 @@ interface NavbarProps {
   onOpenAddMember: () => void;
   onOpenLunar: () => void;
   onOpenReminder?: () => void;
+  onOpenFlashcard?: () => void;
   onExportImage: () => void;
   isExportingImage: boolean;
   onLogout: () => void;
@@ -62,6 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAddMember,
   onOpenLunar,
   onOpenReminder,
+  onOpenFlashcard,
   onExportImage,
   isExportingImage,
   onLogout,
@@ -75,6 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDrawerClosing, setIsDrawerClosing] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const [isToolsDropdownOpen, setIsToolsDropdownOpen] = useState(false);
   const toast = useToast();
 
   // Lock canvas and body scroll when drawer is open
@@ -169,6 +174,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <Calendar size={15} color="#f472b6" />
                 <span>Nhắc Lịch</span>
+              </button>
+            )}
+
+            {/* 🎮 Đố Vui Gia Phả (Flashcard Game) */}
+            {onOpenFlashcard && (
+              <button
+                type="button"
+                className="framer-nav-pill flashcard-nav-pill"
+                onClick={onOpenFlashcard}
+                title="Trò chơi Flashcard: Đoán người thân và vai vế gia đình"
+              >
+                <Sparkles size={15} color="#c084fc" />
+                <span>Đố Vui</span>
               </button>
             )}
 
@@ -550,6 +568,34 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </div>
                     <div className="mobile-action-desc">
                       Quản lý tài khoản, phân quyền & giám sát các cây gia phả
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* 0. Đố Vui Gia Phả (Flashcard Quiz) */}
+              {onOpenFlashcard && (
+                <button
+                  type="button"
+                  className="mobile-action-card"
+                  onClick={() => {
+                    closeDrawer();
+                    onOpenFlashcard();
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(126, 34, 206, 0.2) 100%)',
+                    borderColor: 'rgba(168, 85, 247, 0.45)',
+                  }}
+                >
+                  <div className="mobile-action-icon-box" style={{ background: '#f3e8ff' }}>
+                    <Sparkles size={22} color="#9333ea" />
+                  </div>
+                  <div className="mobile-action-content">
+                    <div className="mobile-action-title" style={{ color: '#d8b4fe' }}>
+                      🎮 Đố Vui Gia Phả (Flashcard)
+                    </div>
+                    <div className="mobile-action-desc">
+                      Trò chơi tương tác đoán người thân và vai vế gia đình 4 đáp án
                     </div>
                   </div>
                 </button>

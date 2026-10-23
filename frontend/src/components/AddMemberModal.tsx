@@ -4,6 +4,8 @@ import { Person, FamilyTree } from '../types';
 import { apiCreatePerson, apiUploadAvatar } from '../services/api';
 import { calculateLunarDeathDayFromSolar, getSolarAnniversaryForYear } from '../utils/lunarHelper';
 import { getInitials } from '../utils/formatHelper';
+import { getKinshipToMe } from '../utils/kinshipHelper';
+import { DateInputVN } from './DateInputVN';
 import { useToast } from './Toast';
 
 export type RelationType =
@@ -18,6 +20,7 @@ export type RelationType =
 interface AddMemberModalProps {
   tree: FamilyTree;
   relativeTarget: Person | null;
+  mePerson?: Person | null;
   onClose: () => void;
   onCreated: () => void;
 }
@@ -25,11 +28,12 @@ interface AddMemberModalProps {
 export const AddMemberModal: React.FC<AddMemberModalProps> = ({
   tree,
   relativeTarget,
+  mePerson,
   onClose,
   onCreated,
 }) => {
   const [selectedTargetId, setSelectedTargetId] = useState<string>(
-    relativeTarget ? relativeTarget.id : (tree.members[0]?.id || '')
+    relativeTarget ? relativeTarget.id : (mePerson ? mePerson.id : tree.members[0]?.id || '')
   );
 
   const [relationType, setRelationType] = useState<RelationType>(
@@ -42,23 +46,115 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
   // 1. Phụ huynh trực tiếp của currentTarget (Bố, Mẹ)
   const targetParents = useMemo(() => {
     if (!currentTarget) return [];
-    return rels
+    const directParents = rels
       .filter((r) => r.type === 'PARENT_CHILD' && r.childId === currentTarget.id)
       .map((r) => tree.members.find((m) => m.id === r.parentId))
       .filter((m): m is Person => Boolean(m));
+
+    let father = directParents.find((p) => p.gender === 'MALE') || null;
+    let mother = directParents.find((p) => p.gender === 'FEMALE') || null;
+
+    // Nếu đã có Bố nhưng chưa có Mẹ: tìm bạn đời (vợ) của Bố -> người đó chính là Mẹ
+    if (father && !mother) {
+      const spouseRel = rels.find(
+        (r) => r.type === 'SPOUSE' && (r.spouse1Id === father!.id || r.spouse2Id === father!.id)
+      );
+      if (spouseRel) {
+        const spouseId = spouseRel.spouse1Id === father.id ? spouseRel.spouse2Id : spouseRel.spouse1Id;
+        const spouse = tree.members.find((m) => m.id === spouseId);
+        if (spouse && spouse.gender === 'FEMALE') {
+          mother = spouse;
+          directParents.push(spouse);
+        }
+      }
+    }
+
+    // Nếu đã có Mẹ nhưng chưa có Bố: tìm bạn đời (chồng) của Mẹ -> người đó chính là Bố
+    if (mother && !father) {
+      const spouseRel = rels.find(
+        (r) => r.type === 'SPOUSE' && (r.spouse1Id === mother!.id || r.spouse2Id === mother!.id)
+      );
+      if (spouseRel) {
+        const spouseId = spouseRel.spouse1Id === mother.id ? spouseRel.spouse2Id : spouseRel.spouse1Id;
+        const spouse = tree.members.find((m) => m.id === spouseId);
+        if (spouse && spouse.gender === 'MALE') {
+          father = spouse;
+          directParents.push(spouse);
+        }
+      }
+    }
+
+    return directParents;
   }, [currentTarget, rels, tree.members]);
 
   const targetFather = useMemo(() => targetParents.find((p) => p.gender === 'MALE') || null, [targetParents]);
   const targetMother = useMemo(() => targetParents.find((p) => p.gender === 'FEMALE') || null, [targetParents]);
   const hasBothParents = Boolean(targetFather && targetMother);
 
+  // Bạn đời hiện tại của currentTarget
+  const targetSpouse = useMemo(() => {
+    if (!currentTarget) return null;
+    const spouseRel = rels.find(
+      (r) => r.type === 'SPOUSE' && (r.spouse1Id === currentTarget.id || r.spouse2Id === currentTarget.id)
+    );
+    if (!spouseRel) return null;
+    const spouseId = spouseRel.spouse1Id === currentTarget.id ? spouseRel.spouse2Id : spouseRel.spouse1Id;
+    return tree.members.find((m) => m.id === spouseId) || null;
+  }, [currentTarget, rels, tree.members]);
+
+  // Danh sách con cái hiện tại của currentTarget (bao gồm cả con chung với bạn đời nếu có)
+  const targetChildren = useMemo(() => {
+    if (!currentTarget) return [];
+    const directChildIds = new Set<string>();
+
+    rels
+      .filter((r) => r.type === 'PARENT_CHILD' && r.parentId === currentTarget.id)
+      .forEach((r) => {
+        if (r.childId) directChildIds.add(r.childId);
+      });
+
+    // Nếu có bạn đời, cũng lấy thêm con của bạn đời nếu có
+    if (targetSpouse) {
+      rels
+        .filter((r) => r.type === 'PARENT_CHILD' && r.parentId === targetSpouse.id)
+        .forEach((r) => {
+          if (r.childId) directChildIds.add(r.childId);
+        });
+    }
+
+    return Array.from(directChildIds)
+      .map((id) => tree.members.find((m) => m.id === id))
+      .filter((m): m is Person => Boolean(m));
+  }, [currentTarget, targetSpouse, rels, tree.members]);
+
   // 2. Bên Nội của currentTarget (Cha mẹ của Bố: Ông nội, Bà nội)
   const paternalGrandparents = useMemo(() => {
     if (!targetFather) return [];
-    return rels
+    const direct = rels
       .filter((r) => r.type === 'PARENT_CHILD' && r.childId === targetFather.id)
       .map((r) => tree.members.find((m) => m.id === r.parentId))
       .filter((m): m is Person => Boolean(m));
+
+    let ongNoi = direct.find((p) => p.gender === 'MALE');
+    let baNoi = direct.find((p) => p.gender === 'FEMALE');
+
+    if (ongNoi && !baNoi) {
+      const sp = rels.find((r) => r.type === 'SPOUSE' && (r.spouse1Id === ongNoi!.id || r.spouse2Id === ongNoi!.id));
+      if (sp) {
+        const spId = sp.spouse1Id === ongNoi.id ? sp.spouse2Id : sp.spouse1Id;
+        const sPerson = tree.members.find((m) => m.id === spId);
+        if (sPerson && sPerson.gender === 'FEMALE') direct.push(sPerson);
+      }
+    } else if (baNoi && !ongNoi) {
+      const sp = rels.find((r) => r.type === 'SPOUSE' && (r.spouse1Id === baNoi!.id || r.spouse2Id === baNoi!.id));
+      if (sp) {
+        const spId = sp.spouse1Id === baNoi.id ? sp.spouse2Id : sp.spouse1Id;
+        const sPerson = tree.members.find((m) => m.id === spId);
+        if (sPerson && sPerson.gender === 'MALE') direct.push(sPerson);
+      }
+    }
+
+    return direct;
   }, [targetFather, rels, tree.members]);
 
   const targetOngNoi = useMemo(() => paternalGrandparents.find((p) => p.gender === 'MALE') || null, [paternalGrandparents]);
@@ -68,10 +164,31 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
   // 3. Bên Ngoại của currentTarget (Cha mẹ của Mẹ: Ông ngoại, Bà ngoại)
   const maternalGrandparents = useMemo(() => {
     if (!targetMother) return [];
-    return rels
+    const direct = rels
       .filter((r) => r.type === 'PARENT_CHILD' && r.childId === targetMother.id)
       .map((r) => tree.members.find((m) => m.id === r.parentId))
       .filter((m): m is Person => Boolean(m));
+
+    let ongNgoai = direct.find((p) => p.gender === 'MALE');
+    let baNgoai = direct.find((p) => p.gender === 'FEMALE');
+
+    if (ongNgoai && !baNgoai) {
+      const sp = rels.find((r) => r.type === 'SPOUSE' && (r.spouse1Id === ongNgoai!.id || r.spouse2Id === ongNgoai!.id));
+      if (sp) {
+        const spId = sp.spouse1Id === ongNgoai.id ? sp.spouse2Id : sp.spouse1Id;
+        const sPerson = tree.members.find((m) => m.id === spId);
+        if (sPerson && sPerson.gender === 'FEMALE') direct.push(sPerson);
+      }
+    } else if (baNgoai && !ongNgoai) {
+      const sp = rels.find((r) => r.type === 'SPOUSE' && (r.spouse1Id === baNgoai!.id || r.spouse2Id === baNgoai!.id));
+      if (sp) {
+        const spId = sp.spouse1Id === baNgoai.id ? sp.spouse2Id : sp.spouse1Id;
+        const sPerson = tree.members.find((m) => m.id === spId);
+        if (sPerson && sPerson.gender === 'MALE') direct.push(sPerson);
+      }
+    }
+
+    return direct;
   }, [targetMother, rels, tree.members]);
 
   const targetOngNgoai = useMemo(() => maternalGrandparents.find((p) => p.gender === 'MALE') || null, [maternalGrandparents]);
@@ -137,12 +254,14 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
   useEffect(() => {
     if (relationType === 'PARENT' && hasBothParents) {
       setRelationType('CHILD');
+    } else if (relationType === 'SPOUSE' && targetSpouse) {
+      setRelationType('CHILD');
     } else if (relationType === 'GRANDPARENT_PATERNAL' && (hasBothNoi || !targetFather)) {
       setRelationType('CHILD');
     } else if (relationType === 'GRANDPARENT_MATERNAL' && (hasBothNgoai || !targetMother)) {
       setRelationType('CHILD');
     }
-  }, [selectedTargetId, hasBothParents, hasBothNoi, hasBothNgoai, targetFather, targetMother]);
+  }, [selectedTargetId, hasBothParents, targetSpouse, hasBothNoi, hasBothNgoai, targetFather, targetMother]);
 
   // Cập nhật generation & nickname & gender phù hợp
   useEffect(() => {
@@ -216,6 +335,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
       setFormData((prev) => ({
         ...prev,
         generation: currentTarget.generation,
+        nickname: '',
       }));
     }
   }, [relationType, currentTarget, targetFather, targetMother, targetOngNoi, targetBaNoi, targetOngNgoai, targetBaNgoai]);
@@ -260,6 +380,11 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
       if (relationType === 'CHILD' && currentTarget) {
         payload.parentId = currentTarget.id;
       } else if (relationType === 'SPOUSE' && currentTarget) {
+        if (targetSpouse) {
+          toast.error(`"${currentTarget.fullName}" đã có Bạn đời là "${targetSpouse.fullName}". Không thể tạo thêm Bạn đời!`);
+          setIsSubmitting(false);
+          return;
+        }
         payload.spouseId = currentTarget.id;
       } else if (relationType === 'PARENT' && currentTarget) {
         if (hasBothParents) {
@@ -402,7 +527,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               background: 'rgba(16, 36, 26, 0.75)',
               border: '1.5px solid rgba(52, 211, 153, 0.25)',
               borderRadius: '12px',
-              padding: '1.1rem',
+              padding: '0.85rem',
             }}
           >
             <div
@@ -410,9 +535,9 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '0.85rem',
+                marginBottom: '0.7rem',
                 flexWrap: 'wrap',
-                gap: '0.5rem',
+                gap: '0.4rem',
               }}
             >
               <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f1f5f9' }}>
@@ -420,11 +545,11 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               </span>
 
               {tree.members.length > 0 && relationType !== 'INDEPENDENT' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Gắn với:</span>
                   <select
                     className="form-select-clean"
-                    style={{ padding: '0.35rem 0.6rem', fontSize: '0.84rem', maxWidth: '250px', fontWeight: 600 }}
+                    style={{ padding: '0.35rem 0.6rem', fontSize: '0.84rem', maxWidth: '280px', fontWeight: 600 }}
                     value={selectedTargetId}
                     onChange={(e) => setSelectedTargetId(e.target.value)}
                   >
@@ -437,11 +562,23 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                         >
                           {tree.members
                             .filter((m) => m.generation === gen)
-                            .map((m) => (
-                              <option key={m.id} value={m.id}>
-                                {m.fullName} {m.nickname ? `(${m.nickname})` : ''}
-                              </option>
-                            ))}
+                            .map((m) => {
+                              let roleLabel = '';
+                              if (mePerson) {
+                                if (m.id === mePerson.id) {
+                                  roleLabel = 'Tôi';
+                                } else {
+                                  roleLabel = getKinshipToMe(mePerson, m, tree.members, tree.relationships) || m.nickname || '';
+                                }
+                              } else {
+                                roleLabel = m.nickname || '';
+                              }
+                              return (
+                                <option key={m.id} value={m.id}>
+                                  {m.fullName} {roleLabel ? `(${roleLabel})` : ''}
+                                </option>
+                              );
+                            })}
                         </optgroup>
                       ))}
                   </select>
@@ -450,7 +587,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
             </div>
 
             {/* 7 Action Cards for Relations (Con cái, Bạn đời, Cha/Mẹ, Ông Bà Nội, Ông Bà Ngoại, Anh Chị Em, Độc lập) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(88px, 1fr))', gap: '0.45rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '0.4rem' }}>
               {/* Card 1: Con cái */}
               <div
                 onClick={() => setRelationType('CHILD')}
@@ -458,7 +595,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   border: `2px solid ${relationType === 'CHILD' ? '#10b981' : 'rgba(255, 255, 255, 0.12)'}`,
                   background: relationType === 'CHILD' ? 'rgba(16, 185, 129, 0.22)' : 'rgba(255, 255, 255, 0.04)',
                   borderRadius: '10px',
-                  padding: '0.6rem 0.25rem',
+                  padding: '0.45rem 0.2rem',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -469,63 +606,67 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               >
                 <div
                   style={{
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: relationType === 'CHILD' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.08)',
                     color: relationType === 'CHILD' ? '#6ee7b7' : '#94a3b8',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginBottom: '0.25rem',
+                    marginBottom: '0.2rem',
                   }}
                 >
-                  <Baby size={15} />
+                  <Baby size={14} />
                 </div>
-                <strong style={{ fontSize: '0.8rem', color: relationType === 'CHILD' ? '#a7f3d0' : '#f1f5f9' }}>
+                <strong style={{ fontSize: '0.78rem', color: relationType === 'CHILD' ? '#a7f3d0' : '#f1f5f9' }}>
                   Con Cái
                 </strong>
-                <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.1rem' }}>
-                  Đời sau (+1)
+                <span style={{ fontSize: '0.62rem', color: targetChildren.length > 0 ? '#34d399' : '#94a3b8', marginTop: '0.1rem', fontWeight: targetChildren.length > 0 ? 600 : 400 }}>
+                  {targetChildren.length > 0 ? `Đã có (${targetChildren.length})` : 'Đời sau (+1)'}
                 </span>
               </div>
 
               {/* Card 2: Bạn đời */}
               <div
-                onClick={() => setRelationType('SPOUSE')}
+                onClick={() => {
+                  if (!targetSpouse) setRelationType('SPOUSE');
+                }}
                 style={{
                   border: `2px solid ${relationType === 'SPOUSE' ? '#f43f5e' : 'rgba(255, 255, 255, 0.12)'}`,
                   background: relationType === 'SPOUSE' ? 'rgba(244, 63, 94, 0.22)' : 'rgba(255, 255, 255, 0.04)',
                   borderRadius: '10px',
-                  padding: '0.6rem 0.25rem',
+                  padding: '0.45rem 0.2rem',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   textAlign: 'center',
-                  cursor: 'pointer',
+                  cursor: targetSpouse ? 'not-allowed' : 'pointer',
+                  opacity: targetSpouse ? 0.45 : 1,
                   transition: 'all 0.15s ease',
+                  position: 'relative',
                 }}
               >
                 <div
                   style={{
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: relationType === 'SPOUSE' ? 'rgba(244, 63, 94, 0.35)' : 'rgba(255, 255, 255, 0.08)',
                     color: relationType === 'SPOUSE' ? '#fda4af' : '#94a3b8',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginBottom: '0.25rem',
+                    marginBottom: '0.2rem',
                   }}
                 >
-                  <Heart size={15} />
+                  <Heart size={14} />
                 </div>
-                <strong style={{ fontSize: '0.8rem', color: relationType === 'SPOUSE' ? '#fecdd3' : '#f1f5f9' }}>
+                <strong style={{ fontSize: '0.78rem', color: relationType === 'SPOUSE' ? '#fecdd3' : '#f1f5f9' }}>
                   Bạn Đời
                 </strong>
-                <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.1rem' }}>
-                  Vợ / Chồng
+                <span style={{ fontSize: '0.62rem', color: targetSpouse ? '#ef4444' : '#94a3b8', marginTop: '0.1rem', fontWeight: targetSpouse ? 600 : 400 }}>
+                  {targetSpouse ? 'Đã có (1/1)' : 'Vợ / Chồng'}
                 </span>
               </div>
 
@@ -538,7 +679,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   border: `2px solid ${relationType === 'PARENT' ? '#f59e0b' : 'rgba(255, 255, 255, 0.12)'}`,
                   background: relationType === 'PARENT' ? 'rgba(245, 158, 11, 0.22)' : 'rgba(255, 255, 255, 0.04)',
                   borderRadius: '10px',
-                  padding: '0.6rem 0.25rem',
+                  padding: '0.45rem 0.2rem',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -551,23 +692,23 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               >
                 <div
                   style={{
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: relationType === 'PARENT' ? 'rgba(245, 158, 11, 0.35)' : 'rgba(255, 255, 255, 0.08)',
                     color: relationType === 'PARENT' ? '#fde68a' : '#94a3b8',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginBottom: '0.25rem',
+                    marginBottom: '0.2rem',
                   }}
                 >
-                  <Users size={15} />
+                  <Users size={14} />
                 </div>
-                <strong style={{ fontSize: '0.8rem', color: relationType === 'PARENT' ? '#fef3c7' : '#f1f5f9' }}>
+                <strong style={{ fontSize: '0.78rem', color: relationType === 'PARENT' ? '#fef3c7' : '#f1f5f9' }}>
                   Cha / Mẹ
                 </strong>
-                <span style={{ fontSize: '0.63rem', color: hasBothParents ? '#ef4444' : '#94a3b8', marginTop: '0.1rem', fontWeight: hasBothParents ? 600 : 400 }}>
+                <span style={{ fontSize: '0.62rem', color: hasBothParents ? '#ef4444' : '#94a3b8', marginTop: '0.1rem', fontWeight: hasBothParents ? 600 : 400 }}>
                   {hasBothParents ? 'Đã đủ (2/2)' : targetFather ? 'Thêm Mẹ' : targetMother ? 'Thêm Bố' : 'Đời trước (-1)'}
                 </span>
               </div>
@@ -581,7 +722,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   border: `2px solid ${relationType === 'GRANDPARENT_PATERNAL' ? '#8b5cf6' : 'rgba(255, 255, 255, 0.12)'}`,
                   background: relationType === 'GRANDPARENT_PATERNAL' ? 'rgba(139, 92, 246, 0.22)' : 'rgba(255, 255, 255, 0.04)',
                   borderRadius: '10px',
-                  padding: '0.6rem 0.25rem',
+                  padding: '0.45rem 0.2rem',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -594,23 +735,23 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               >
                 <div
                   style={{
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: relationType === 'GRANDPARENT_PATERNAL' ? 'rgba(139, 92, 246, 0.35)' : 'rgba(255, 255, 255, 0.08)',
                     color: relationType === 'GRANDPARENT_PATERNAL' ? '#c4b5fd' : '#94a3b8',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginBottom: '0.25rem',
+                    marginBottom: '0.2rem',
                   }}
                 >
-                  <Crown size={15} />
+                  <Crown size={14} />
                 </div>
-                <strong style={{ fontSize: '0.8rem', color: relationType === 'GRANDPARENT_PATERNAL' ? '#ddd6fe' : '#f1f5f9' }}>
+                <strong style={{ fontSize: '0.78rem', color: relationType === 'GRANDPARENT_PATERNAL' ? '#ddd6fe' : '#f1f5f9' }}>
                   Ông/Bà Nội
                 </strong>
-                <span style={{ fontSize: '0.63rem', color: hasBothNoi ? '#ef4444' : !targetFather ? '#f59e0b' : '#94a3b8', marginTop: '0.1rem', fontWeight: (hasBothNoi || !targetFather) ? 600 : 400 }}>
+                <span style={{ fontSize: '0.62rem', color: hasBothNoi ? '#ef4444' : !targetFather ? '#f59e0b' : '#94a3b8', marginTop: '0.1rem', fontWeight: (hasBothNoi || !targetFather) ? 600 : 400 }}>
                   {!targetFather ? 'Cần có Bố' : hasBothNoi ? 'Đã đủ (2/2)' : targetOngNoi ? 'Thêm Bà nội' : targetBaNoi ? 'Thêm Ông nội' : 'Đời (-2)'}
                 </span>
               </div>
@@ -624,7 +765,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   border: `2px solid ${relationType === 'GRANDPARENT_MATERNAL' ? '#ec4899' : 'rgba(255, 255, 255, 0.12)'}`,
                   background: relationType === 'GRANDPARENT_MATERNAL' ? 'rgba(236, 72, 153, 0.22)' : 'rgba(255, 255, 255, 0.04)',
                   borderRadius: '10px',
-                  padding: '0.6rem 0.25rem',
+                  padding: '0.45rem 0.2rem',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -637,23 +778,23 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               >
                 <div
                   style={{
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: relationType === 'GRANDPARENT_MATERNAL' ? 'rgba(236, 72, 153, 0.35)' : 'rgba(255, 255, 255, 0.08)',
                     color: relationType === 'GRANDPARENT_MATERNAL' ? '#fbcfe8' : '#94a3b8',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginBottom: '0.25rem',
+                    marginBottom: '0.2rem',
                   }}
                 >
-                  <Crown size={15} />
+                  <Crown size={14} />
                 </div>
-                <strong style={{ fontSize: '0.8rem', color: relationType === 'GRANDPARENT_MATERNAL' ? '#fce7f3' : '#f1f5f9' }}>
+                <strong style={{ fontSize: '0.78rem', color: relationType === 'GRANDPARENT_MATERNAL' ? '#fce7f3' : '#f1f5f9' }}>
                   Ông/Bà Ngoại
                 </strong>
-                <span style={{ fontSize: '0.63rem', color: hasBothNgoai ? '#ef4444' : !targetMother ? '#f59e0b' : '#94a3b8', marginTop: '0.1rem', fontWeight: (hasBothNgoai || !targetMother) ? 600 : 400 }}>
+                <span style={{ fontSize: '0.62rem', color: hasBothNgoai ? '#ef4444' : !targetMother ? '#f59e0b' : '#94a3b8', marginTop: '0.1rem', fontWeight: (hasBothNgoai || !targetMother) ? 600 : 400 }}>
                   {!targetMother ? 'Cần có Mẹ' : hasBothNgoai ? 'Đã đủ (2/2)' : targetOngNgoai ? 'Thêm Bà ngoại' : targetBaNgoai ? 'Thêm Ông ngoại' : 'Đời (-2)'}
                 </span>
               </div>
@@ -665,7 +806,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   border: `2px solid ${relationType === 'SIBLING' ? '#38bdf8' : 'rgba(255, 255, 255, 0.12)'}`,
                   background: relationType === 'SIBLING' ? 'rgba(56, 189, 248, 0.22)' : 'rgba(255, 255, 255, 0.04)',
                   borderRadius: '10px',
-                  padding: '0.6rem 0.25rem',
+                  padding: '0.45rem 0.2rem',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -676,23 +817,23 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               >
                 <div
                   style={{
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: relationType === 'SIBLING' ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255, 255, 255, 0.08)',
                     color: relationType === 'SIBLING' ? '#bae6fd' : '#94a3b8',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginBottom: '0.25rem',
+                    marginBottom: '0.2rem',
                   }}
                 >
-                  <UserPlus size={15} />
+                  <UserPlus size={14} />
                 </div>
-                <strong style={{ fontSize: '0.8rem', color: relationType === 'SIBLING' ? '#e0f2fe' : '#f1f5f9' }}>
+                <strong style={{ fontSize: '0.78rem', color: relationType === 'SIBLING' ? '#e0f2fe' : '#f1f5f9' }}>
                   Anh Chị Em
                 </strong>
-                <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                <span style={{ fontSize: '0.62rem', color: '#94a3b8', marginTop: '0.1rem' }}>
                   Cùng đời (0)
                 </span>
               </div>
@@ -704,7 +845,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   border: `2px solid ${relationType === 'INDEPENDENT' ? '#10b981' : 'rgba(255, 255, 255, 0.12)'}`,
                   background: relationType === 'INDEPENDENT' ? 'rgba(16, 185, 129, 0.18)' : 'rgba(255, 255, 255, 0.04)',
                   borderRadius: '10px',
-                  padding: '0.6rem 0.25rem',
+                  padding: '0.45rem 0.2rem',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -715,23 +856,23 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               >
                 <div
                   style={{
-                    width: '28px',
-                    height: '28px',
+                    width: '24px',
+                    height: '24px',
                     borderRadius: '50%',
                     background: relationType === 'INDEPENDENT' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.08)',
                     color: relationType === 'INDEPENDENT' ? '#6ee7b7' : '#94a3b8',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginBottom: '0.25rem',
+                    marginBottom: '0.2rem',
                   }}
                 >
-                  <Sparkles size={15} />
+                  <Sparkles size={14} />
                 </div>
-                <strong style={{ fontSize: '0.8rem', color: relationType === 'INDEPENDENT' ? '#a7f3d0' : '#f1f5f9' }}>
+                <strong style={{ fontSize: '0.78rem', color: relationType === 'INDEPENDENT' ? '#a7f3d0' : '#f1f5f9' }}>
                   Độc Lập
                 </strong>
-                <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                <span style={{ fontSize: '0.62rem', color: '#94a3b8', marginTop: '0.1rem' }}>
                   Thế hệ mới
                 </span>
               </div>
@@ -741,12 +882,12 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
             {currentTarget && (
               <div
                 style={{
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.09)',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
                   borderRadius: '8px',
                   padding: '0.5rem 0.75rem',
-                  marginTop: '0.65rem',
-                  fontSize: '0.74rem',
+                  marginTop: '0.55rem',
+                  fontSize: '0.73rem',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '0.25rem',
@@ -754,37 +895,96 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontWeight: 600, color: '#e2e8f0' }}>
-                    Phả hệ hiện tại của <span style={{ color: '#38bdf8' }}>{currentTarget.fullName}</span>:
+                    Phả hệ của <span style={{ color: '#38bdf8' }}>{currentTarget.fullName}</span>:
                   </span>
-                  {hasBothParents && hasBothNoi && hasBothNgoai && (
-                    <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
-                      <Check size={12} /> Đầy đủ gốc phả hệ
-                    </span>
-                  )}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.35rem', color: '#cbd5e1' }}>
-                  <div>
-                    <span style={{ color: '#94a3b8' }}>Bố mẹ:</span>{' '}
-                    <span style={{ color: targetFather ? '#6ee7b7' : '#f59e0b', fontWeight: targetFather ? 600 : 400 }}>
-                      {targetFather ? targetFather.fullName : 'Chưa có Bố'}
-                    </span>
-                    {' / '}
-                    <span style={{ color: targetMother ? '#fda4af' : '#f59e0b', fontWeight: targetMother ? 600 : 400 }}>
-                      {targetMother ? targetMother.fullName : 'Chưa có Mẹ'}
-                    </span>
-                  </div>
-                  <div>
-                    <span style={{ color: '#94a3b8' }}>Nội:</span>{' '}
-                    <span style={{ color: targetOngNoi ? '#6ee7b7' : '#94a3b8' }}>{targetOngNoi ? targetOngNoi.fullName : 'Chưa có Ông'}</span>
-                    {' & '}
-                    <span style={{ color: targetBaNoi ? '#fda4af' : '#94a3b8' }}>{targetBaNoi ? targetBaNoi.fullName : 'Chưa có Bà'}</span>
-                  </div>
-                  <div>
-                    <span style={{ color: '#94a3b8' }}>Ngoại:</span>{' '}
-                    <span style={{ color: targetOngNgoai ? '#6ee7b7' : '#94a3b8' }}>{targetOngNgoai ? targetOngNgoai.fullName : 'Chưa có Ông'}</span>
-                    {' & '}
-                    <span style={{ color: targetBaNgoai ? '#fda4af' : '#94a3b8' }}>{targetBaNgoai ? targetBaNgoai.fullName : 'Chưa có Bà'}</span>
-                  </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.25rem', color: '#cbd5e1' }}>
+                  {(targetFather || targetMother) && (
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.3rem' }}>
+                      <span style={{ color: '#94a3b8', minWidth: '60px', fontWeight: 500 }}>• Bố mẹ:</span>
+                      {targetFather && (
+                        <span>
+                          <span style={{ color: '#6ee7b7', fontWeight: 600 }}>{targetFather.fullName}</span>{' '}
+                          <span style={{ color: '#94a3b8' }}>(Bố{targetFather.isDeceased ? ' - 🕯️ Đã khuất' : ''})</span>
+                        </span>
+                      )}
+                      {targetFather && targetMother && <span style={{ color: '#64748b' }}> / </span>}
+                      {targetMother && (
+                        <span>
+                          <span style={{ color: '#fda4af', fontWeight: 600 }}>{targetMother.fullName}</span>{' '}
+                          <span style={{ color: '#94a3b8' }}>(Mẹ{targetMother.isDeceased ? ' - 🕯️ Đã khuất' : ''})</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {targetSpouse && (
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.3rem' }}>
+                      <span style={{ color: '#94a3b8', minWidth: '60px', fontWeight: 500 }}>• Bạn đời:</span>
+                      <span style={{ color: targetSpouse.gender === 'FEMALE' ? '#fda4af' : '#6ee7b7', fontWeight: 600 }}>
+                        {targetSpouse.fullName}
+                      </span>{' '}
+                      <span style={{ color: '#94a3b8' }}>
+                        ({targetSpouse.gender === 'FEMALE' ? 'Vợ' : 'Chồng'}{targetSpouse.isDeceased ? ' - 🕯️ Đã khuất' : ''})
+                      </span>
+                    </div>
+                  )}
+
+                  {targetChildren.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.3rem' }}>
+                      <span style={{ color: '#94a3b8', minWidth: '60px', fontWeight: 500 }}>• Con cái:</span>
+                      <span style={{ color: '#f1f5f9' }}>
+                        {targetChildren.map((c, idx) => (
+                          <span key={c.id}>
+                            {idx > 0 && ', '}
+                            <span style={{ color: c.gender === 'FEMALE' ? '#fda4af' : '#6ee7b7', fontWeight: 600 }}>{c.fullName}</span>
+                          </span>
+                        ))} ({targetChildren.length})
+                      </span>
+                    </div>
+                  )}
+
+                  {(targetOngNoi || targetBaNoi) && (
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.3rem' }}>
+                      <span style={{ color: '#94a3b8', minWidth: '60px', fontWeight: 500 }}>• Nội:</span>
+                      {targetOngNoi && (
+                        <span>
+                          <span style={{ color: '#6ee7b7', fontWeight: 600 }}>{targetOngNoi.fullName}</span>{' '}
+                          <span style={{ color: '#94a3b8' }}>(Ông nội{targetOngNoi.isDeceased ? ' - 🕯️ Đã khuất' : ''})</span>
+                        </span>
+                      )}
+                      {targetOngNoi && targetBaNoi && <span style={{ color: '#64748b' }}> & </span>}
+                      {targetBaNoi && (
+                        <span>
+                          <span style={{ color: '#fda4af', fontWeight: 600 }}>{targetBaNoi.fullName}</span>{' '}
+                          <span style={{ color: '#94a3b8' }}>(Bà nội{targetBaNoi.isDeceased ? ' - 🕯️ Đã khuất' : ''})</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {(targetOngNgoai || targetBaNgoai) && (
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.3rem' }}>
+                      <span style={{ color: '#94a3b8', minWidth: '60px', fontWeight: 500 }}>• Ngoại:</span>
+                      {targetOngNgoai && (
+                        <span>
+                          <span style={{ color: '#6ee7b7', fontWeight: 600 }}>{targetOngNgoai.fullName}</span>{' '}
+                          <span style={{ color: '#94a3b8' }}>(Ông ngoại{targetOngNgoai.isDeceased ? ' - 🕯️ Đã khuất' : ''})</span>
+                        </span>
+                      )}
+                      {targetOngNgoai && targetBaNgoai && <span style={{ color: '#64748b' }}> & </span>}
+                      {targetBaNgoai && (
+                        <span>
+                          <span style={{ color: '#fda4af', fontWeight: 600 }}>{targetBaNgoai.fullName}</span>{' '}
+                          <span style={{ color: '#94a3b8' }}>(Bà ngoại{targetBaNgoai.isDeceased ? ' - 🕯️ Đã khuất' : ''})</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {!targetFather && !targetMother && !targetSpouse && targetChildren.length === 0 && !targetOngNoi && !targetBaNoi && !targetOngNgoai && !targetBaNgoai && (
+                    <span style={{ color: '#64748b', fontStyle: 'italic' }}>Chưa có thông tin thân nhân liên kết.</span>
+                  )}
                 </div>
               </div>
             )}
@@ -937,17 +1137,42 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
           {/* 5. Thế Hệ & Tình Trạng */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
-            <div className="form-field">
-              <label className="form-label-clean">Thế Hệ (Đời thứ)</label>
-              <input
-                type="number"
-                min="1"
-                max="30"
-                className="form-input-clean"
-                value={formData.generation}
-                onChange={(e) => setFormData({ ...formData, generation: Number(e.target.value) })}
-              />
-            </div>
+            {relationType === 'INDEPENDENT' ? (
+              <div className="form-field">
+                <label className="form-label-clean">Thế Hệ (Đời thứ)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="30"
+                  className="form-input-clean"
+                  value={formData.generation}
+                  onChange={(e) => setFormData({ ...formData, generation: Number(e.target.value) })}
+                />
+              </div>
+            ) : (
+              <div className="form-field">
+                <label className="form-label-clean">Thế Hệ (Tự động xác định)</label>
+                <div
+                  style={{
+                    padding: '0.65rem 0.85rem',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '8px',
+                    color: '#6ee7b7',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                  }}
+                >
+                  <span>Thế hệ {formData.generation}</span>
+                  <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 400 }}>
+                    (Tự động theo quan hệ)
+                  </span>
+                </div>
+              </div>
+            )}
             <div className="form-field">
               <label className="form-label-clean">Tình trạng hiện tại</label>
               <select
@@ -976,12 +1201,11 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               />
             </div>
             <div className="form-field">
-              <label className="form-label-clean">Ngày sinh (Dương lịch)</label>
-              <input
-                type="date"
-                className="form-input-clean"
+              <label className="form-label-clean">Ngày sinh</label>
+              <DateInputVN
                 value={formData.birthDate}
-                onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                onChange={(val) => setFormData({ ...formData, birthDate: val })}
+                placeholder="DD/MM/YYYY"
               />
             </div>
           </div>
@@ -1020,20 +1244,26 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
                 <div className="form-field">
-                  <label className="form-label-clean">Ngày mất (Dương lịch)</label>
-                  <input
-                    type="date"
-                    className="form-input-clean"
+                  <label className="form-label-clean">Ngày mất</label>
+                  <DateInputVN
                     value={formData.deathDate}
-                    onChange={(e) => {
-                      const newDate = e.target.value;
-                      const calculatedLunar = calculateLunarDeathDayFromSolar(newDate);
-                      setFormData((prev) => ({
-                        ...prev,
-                        deathDate: newDate,
-                        lunarDeathDay: calculatedLunar || prev.lunarDeathDay,
-                      }));
+                    onChange={(newDate) => {
+                      if (!newDate) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          deathDate: '',
+                          lunarDeathDay: '',
+                        }));
+                      } else {
+                        const calculatedLunar = calculateLunarDeathDayFromSolar(newDate);
+                        setFormData((prev) => ({
+                          ...prev,
+                          deathDate: newDate,
+                          lunarDeathDay: calculatedLunar || prev.lunarDeathDay,
+                        }));
+                      }
                     }}
+                    placeholder="DD/MM/YYYY"
                   />
                 </div>
                 <div className="form-field">

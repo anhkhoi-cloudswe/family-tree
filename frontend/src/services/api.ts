@@ -1,6 +1,6 @@
 import { User, FamilyTree, Person, Relationship, KinshipResult } from '../types';
 
-const API_BASE = '/api';
+const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 
 export const getStoredToken = () => localStorage.getItem('gia_pha_token');
 export const setStoredToken = (token: string) => localStorage.setItem('gia_pha_token', token);

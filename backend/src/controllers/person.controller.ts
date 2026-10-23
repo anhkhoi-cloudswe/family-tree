@@ -75,6 +75,23 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
           finalGeneration = targetChild.generation - 1;
         }
       }
+    } else if (spouseId) {
+      const existingSpouses = await prisma.relationship.findMany({
+        where: {
+          treeId,
+          type: 'SPOUSE',
+          OR: [{ spouse1Id: spouseId }, { spouse2Id: spouseId }],
+        },
+      });
+      if (existingSpouses.length > 0) {
+        return res.status(400).json({
+          error: 'Thành viên này đã có Bạn đời trong gia phả. Không thể tạo thêm Bạn đời để tránh trùng lặp.',
+        });
+      }
+      const targetSpouse = await prisma.person.findUnique({ where: { id: spouseId } });
+      if (targetSpouse) {
+        finalGeneration = targetSpouse.generation;
+      }
     } else if (siblingId) {
       const targetSibling = await prisma.person.findUnique({ where: { id: siblingId } });
       if (targetSibling) {
@@ -199,6 +216,23 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
           spouse2Id: person.id,
         },
       });
+
+      // Tự động gắn người bạn đời mới làm Cha/Mẹ của tất cả các con hiện có của spouseId
+      const spouseChildren = await prisma.relationship.findMany({
+        where: { treeId, type: 'PARENT_CHILD', parentId: spouseId },
+      });
+      for (const sc of spouseChildren) {
+        if (sc.childId) {
+          const exists = await prisma.relationship.findFirst({
+            where: { treeId, type: 'PARENT_CHILD', parentId: person.id, childId: sc.childId },
+          });
+          if (!exists) {
+            await prisma.relationship.create({
+              data: { treeId, type: 'PARENT_CHILD', parentId: person.id, childId: sc.childId },
+            });
+          }
+        }
+      }
     }
 
     // Khi người mới là ANH / CHỊ / EM của siblingId
@@ -365,18 +399,20 @@ export const createRelationship = async (req: AuthRequest, res: Response) => {
     }
 
     if (type === 'SPOUSE' && spouse1Id && spouse2Id) {
-      const existing = await prisma.relationship.findFirst({
+      const existing = await prisma.relationship.findMany({
         where: {
           treeId,
           type: 'SPOUSE',
           OR: [
-            { spouse1Id, spouse2Id },
-            { spouse1Id: spouse2Id, spouse2Id: spouse1Id },
+            { spouse1Id },
+            { spouse2Id: spouse1Id },
+            { spouse1Id: spouse2Id },
+            { spouse2Id },
           ],
         },
       });
-      if (existing) {
-        return res.status(400).json({ error: 'Mối quan hệ vợ chồng này đã tồn tại trong gia phả.' });
+      if (existing.length > 0) {
+        return res.status(400).json({ error: 'Một trong hai thành viên đã có Bạn đời trong gia phả. Không thể tạo thêm mối quan hệ bạn đời để tránh trùng lặp.' });
       }
     }
 
@@ -390,6 +426,41 @@ export const createRelationship = async (req: AuthRequest, res: Response) => {
         spouse2Id,
       },
     });
+
+    // Nếu vừa tạo quan hệ SPOUSE, tự động đồng bộ con cái giữa 2 người bạn đời
+    if (type === 'SPOUSE' && spouse1Id && spouse2Id) {
+      const s1Children = await prisma.relationship.findMany({
+        where: { treeId, type: 'PARENT_CHILD', parentId: spouse1Id },
+      });
+      for (const sc of s1Children) {
+        if (sc.childId) {
+          const exists = await prisma.relationship.findFirst({
+            where: { treeId, type: 'PARENT_CHILD', parentId: spouse2Id, childId: sc.childId },
+          });
+          if (!exists) {
+            await prisma.relationship.create({
+              data: { treeId, type: 'PARENT_CHILD', parentId: spouse2Id, childId: sc.childId },
+            });
+          }
+        }
+      }
+
+      const s2Children = await prisma.relationship.findMany({
+        where: { treeId, type: 'PARENT_CHILD', parentId: spouse2Id },
+      });
+      for (const sc of s2Children) {
+        if (sc.childId) {
+          const exists = await prisma.relationship.findFirst({
+            where: { treeId, type: 'PARENT_CHILD', parentId: spouse1Id, childId: sc.childId },
+          });
+          if (!exists) {
+            await prisma.relationship.create({
+              data: { treeId, type: 'PARENT_CHILD', parentId: spouse1Id, childId: sc.childId },
+            });
+          }
+        }
+      }
+    }
 
     return res.status(201).json(rel);
   } catch (error) {

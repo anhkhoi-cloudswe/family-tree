@@ -25,6 +25,7 @@ import { getKinshipToMe } from '../utils/kinshipHelper';
 import { calculateLunarDeathDayFromSolar, getSolarAnniversaryForYear } from '../utils/lunarHelper';
 import { formatDateVN } from '../utils/dateHelper';
 import { getInitials } from '../utils/formatHelper';
+import { DateInputVN } from './DateInputVN';
 import { useToast } from './Toast';
 import { ConfirmModal } from './ConfirmModal';
 
@@ -376,7 +377,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
 
                     <div className="info-grid-2">
                       <div className="info-item">
-                        <span className="info-label">Ngày sinh (Dương lịch)</span>
+                        <span className="info-label">Ngày sinh</span>
                         <span className="info-val">
                           {person.birthDate
                             ? formatDateVN(person.birthDate)
@@ -386,7 +387,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
 
                       {person.isDeceased && (
                         <div className="info-item">
-                          <span className="info-label">Ngày mất (Dương lịch)</span>
+                          <span className="info-label">Ngày mất</span>
                           <span className="info-val">
                             {person.deathDate
                               ? formatDateVN(person.deathDate)
@@ -736,12 +737,11 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
 
                   <div className="form-grid-2">
                     <div className="form-field">
-                      <label className="form-label-clean">Ngày sinh (Dương lịch)</label>
-                      <input
-                        type="date"
-                        className="form-input-clean"
+                      <label className="form-label-clean">Ngày sinh</label>
+                      <DateInputVN
                         value={formData.birthDate || ''}
-                        onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                        onChange={(val) => setFormData({ ...formData, birthDate: val })}
+                        placeholder="DD/MM/YYYY"
                       />
                     </div>
                     <div className="form-field">
@@ -778,20 +778,26 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
 
                     <div className="form-grid-2">
                       <div className="form-field">
-                        <label className="form-label-clean">Ngày mất (Dương lịch)</label>
-                        <input
-                          type="date"
-                          className="form-input-clean"
+                        <label className="form-label-clean">Ngày mất</label>
+                        <DateInputVN
                           value={formData.deathDate || ''}
-                          onChange={(e) => {
-                            const newDate = e.target.value;
-                            const calculatedLunar = calculateLunarDeathDayFromSolar(newDate);
-                            setFormData((prev) => ({
-                              ...prev,
-                              deathDate: newDate,
-                              lunarDeathDay: calculatedLunar || prev.lunarDeathDay,
-                            }));
+                          onChange={(newDate) => {
+                            if (!newDate) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                deathDate: '',
+                                lunarDeathDay: '',
+                              }));
+                            } else {
+                              const calculatedLunar = calculateLunarDeathDayFromSolar(newDate);
+                              setFormData((prev) => ({
+                                ...prev,
+                                deathDate: newDate,
+                                lunarDeathDay: calculatedLunar || prev.lunarDeathDay,
+                              }));
+                            }
                           }}
+                          placeholder="DD/MM/YYYY"
                         />
                       </div>
                       <div className="form-field">

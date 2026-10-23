@@ -40,10 +40,12 @@ interface TreeCanvasProps {
 
 interface LineConnector {
   id: string;
-  parentId: string;
+  parentId?: string;
   spouseParentId?: string;
-  childId: string;
+  childId?: string;
+  childIds?: string[];
   d: string;
+  hasArrow?: boolean;
 }
 
 interface GenerationUnit {
@@ -383,7 +385,11 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
     const spouseRels = tree.relationships.filter((r) => r.type === 'SPOUSE');
     const parentChildRels = tree.relationships.filter((r) => r.type === 'PARENT_CHILD');
 
-    // Group parents by childId to prevent duplicate overlapping lines
+    // 1. Group children by their parental union (Family Unit)
+    // Map of unionKey -> { parent1Id: string; parent2Id?: string; childIds: string[] }
+    const unionsMap = new Map<string, { parent1Id: string; parent2Id?: string; childIds: string[] }>();
+
+    // For each child, find all parentId(s)
     const childParentMap = new Map<string, string[]>();
     parentChildRels.forEach((rel) => {
       if (rel.childId && rel.parentId) {
@@ -393,82 +399,167 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
       }
     });
 
-    const newConnectors: LineConnector[] = [];
-
     childParentMap.forEach((parentIds, childId) => {
-      const childEl = content.querySelector(`[data-person-id="${childId}"]`) as HTMLElement;
-      if (!childEl) return;
-      const cBox = getOffsetInContent(childEl, content);
-
-      const parent1Id = parentIds[0];
-      const parent1El = content.querySelector(`[data-person-id="${parent1Id}"]`) as HTMLElement;
-      if (!parent1El) return;
-      const p1Box = getOffsetInContent(parent1El, content);
-
-      // Check if second parent exists
-      let parent2Id = parentIds.length > 1 ? parentIds[1] : null;
-      if (!parent2Id) {
+      const p1 = parentIds[0];
+      let p2 = parentIds.length > 1 ? parentIds[1] : null;
+      if (!p2) {
         const spRel = spouseRels.find(
-          (r) => r.spouse1Id === parent1Id || r.spouse2Id === parent1Id
+          (r) => r.spouse1Id === p1 || r.spouse2Id === p1
         );
         if (spRel) {
-          parent2Id = spRel.spouse1Id === parent1Id ? spRel.spouse2Id! : spRel.spouse1Id!;
+          p2 = spRel.spouse1Id === p1 ? spRel.spouse2Id! : spRel.spouse1Id!;
         }
       }
 
-      const parent2El = parent2Id
-        ? (content.querySelector(`[data-person-id="${parent2Id}"]`) as HTMLElement)
+      const unionKey = p2 ? [p1, p2].sort().join('___') : p1;
+      let union = unionsMap.get(unionKey);
+      if (!union) {
+        union = { parent1Id: p1, parent2Id: p2 || undefined, childIds: [] };
+        unionsMap.set(unionKey, union);
+      }
+      if (!union.childIds.includes(childId)) {
+        union.childIds.push(childId);
+      }
+    });
+
+    const newConnectors: LineConnector[] = [];
+
+    unionsMap.forEach((union, unionKey) => {
+      const p1El = content.querySelector(`[data-person-id="${union.parent1Id}"]`) as HTMLElement;
+      const p2El = union.parent2Id
+        ? (content.querySelector(`[data-person-id="${union.parent2Id}"]`) as HTMLElement)
         : null;
+
+      if (!p1El && !p2El) return;
 
       let startX: number;
       let startY: number;
 
-      if (parent2El) {
-        // Tìm biểu tượng kết nối vợ chồng (marriage-link-badge ⚭) trong khung đôi
-        const coupleFrame =
-          parent1El.closest('.couple-card-frame') || parent2El.closest('.couple-card-frame');
-        const marriageBadge = coupleFrame
-          ? (coupleFrame.querySelector('.marriage-link-badge') as HTMLElement)
-          : null;
+      const coupleFrame = ((p1El?.closest('.couple-card-frame') || p2El?.closest('.couple-card-frame')) as HTMLElement) || null;
+      const marriageBadge = coupleFrame
+        ? (coupleFrame.querySelector('.marriage-link-badge') as HTMLElement)
+        : null;
 
-        if (marriageBadge) {
-          const badgeBox = getOffsetInContent(marriageBadge, content);
-          startX = badgeBox.left + badgeBox.width / 2;
-          startY = badgeBox.top + badgeBox.height;
-        } else {
-          const p2Box = getOffsetInContent(parent2El, content);
-          const p1CenterX = p1Box.left + p1Box.width / 2;
-          const p2CenterX = p2Box.left + p2Box.width / 2;
-          startX = (p1CenterX + p2CenterX) / 2;
-          startY = Math.max(p1Box.top + p1Box.height, p2Box.top + p2Box.height);
-        }
-      } else {
+      if (coupleFrame) {
+        const frameBox = getOffsetInContent(coupleFrame, content);
+        startX = frameBox.left + frameBox.width / 2;
+        startY = frameBox.top + frameBox.height;
+      } else if (marriageBadge) {
+        const badgeBox = getOffsetInContent(marriageBadge, content);
+        startX = badgeBox.left + badgeBox.width / 2;
+        startY = badgeBox.top + badgeBox.height;
+      } else if (p1El && p2El) {
+        const p1Box = getOffsetInContent(p1El, content);
+        const p2Box = getOffsetInContent(p2El, content);
+        startX = (p1Box.left + p1Box.width / 2 + p2Box.left + p2Box.width / 2) / 2;
+        startY = Math.max(p1Box.top + p1Box.height, p2Box.top + p2Box.height);
+      } else if (p1El) {
+        const p1Box = getOffsetInContent(p1El, content);
         startX = p1Box.left + p1Box.width / 2;
         startY = p1Box.top + p1Box.height;
-      }
-
-      const endX = cBox.left + cBox.width / 2;
-      const endY = cBox.top;
-      const midY = (startY + endY) / 2;
-
-      let d: string;
-      // Đường trục chính cắm thẳng hoặc phân nhánh:
-      // Bất kể gia đình có 1 con hay nhiều con:
-      // - Nếu con nằm thẳng hàng với trục kết nối cha mẹ (< 10px), đâm thẳng trục đứng xuống thẻ con
-      // - Nếu con lệch trục hoặc nhiều con, hạ trục chính xuống midY, rẽ nhánh ngang sang endX và cắm thẳng xuống endY
-      if (Math.abs(startX - endX) < 10) {
-        d = `M ${startX} ${startY} L ${endX} ${endY}`;
+      } else if (p2El) {
+        const p2Box = getOffsetInContent(p2El, content);
+        startX = p2Box.left + p2Box.width / 2;
+        startY = p2Box.top + p2Box.height;
       } else {
-        d = `M ${startX} ${startY} V ${midY} H ${endX} V ${endY}`;
+        return;
       }
 
-      newConnectors.push({
-        id: `conn-${childId}`,
-        parentId: parent1Id,
-        spouseParentId: parent2Id || undefined,
-        childId,
-        d,
+      // Collect visible children in DOM
+      interface ChildInfo {
+        id: string;
+        endX: number;
+        endY: number;
+        top: number;
+        gen?: number;
+      }
+      const visibleChildren: ChildInfo[] = [];
+
+      union.childIds.forEach((childId) => {
+        const childEl = content.querySelector(`[data-person-id="${childId}"]`) as HTMLElement;
+        if (!childEl) return;
+        const cBox = getOffsetInContent(childEl, content);
+        const hasMeBadge = childEl.classList.contains('is-me') || childEl.querySelector('.me-badge');
+        const endX = cBox.left + cBox.width / 2;
+        const endY = hasMeBadge ? cBox.top - 8 : cBox.top - 2;
+
+        const genContainer = childEl.closest('.generation-container') as HTMLElement;
+        const genNum = genContainer?.getAttribute('data-generation')
+          ? Number(genContainer.getAttribute('data-generation'))
+          : undefined;
+
+        visibleChildren.push({ id: childId, endX, endY, top: cBox.top, gen: genNum });
       });
+
+      if (visibleChildren.length === 0) return;
+
+      // Sort children from left to right
+      visibleChildren.sort((a, b) => a.endX - b.endX);
+
+      // Determine busY (midway between bottom of parent and top of children)
+      const minChildTop = Math.min(...visibleChildren.map((c) => c.top));
+      let busY = (startY + minChildTop) / 2;
+
+      // If there is a generation divider between startY and minChildTop, align busY to the divider row
+      const childGen = visibleChildren[0].gen;
+      if (childGen) {
+        const genDivider = content.querySelector(
+          `[data-generation="${childGen}"] .generation-divider-row`
+        ) as HTMLElement;
+        if (genDivider) {
+          const divBox = getOffsetInContent(genDivider, content);
+          if (divBox.top > startY && divBox.top + divBox.height < minChildTop) {
+            busY = divBox.top + divBox.height / 2;
+          }
+        }
+      }
+
+      if (visibleChildren.length === 1) {
+        const c = visibleChildren[0];
+        let d: string;
+        if (Math.abs(startX - c.endX) < 8) {
+          d = `M ${startX} ${startY} V ${c.endY}`;
+        } else {
+          d = `M ${startX} ${startY} V ${busY} H ${c.endX} V ${c.endY}`;
+        }
+        newConnectors.push({
+          id: `conn-single-${c.id}`,
+          parentId: union.parent1Id,
+          spouseParentId: union.parent2Id,
+          childId: c.id,
+          d,
+          hasArrow: true,
+        });
+      } else {
+        const minChildX = visibleChildren[0].endX;
+        const maxChildX = visibleChildren[visibleChildren.length - 1].endX;
+        const busLeft = Math.min(startX, minChildX);
+        const busRight = Math.max(startX, maxChildX);
+
+        // 1. Trunk from parents & continuous horizontal bus connecting all siblings
+        const trunkAndBusPath = `M ${startX} ${startY} V ${busY} M ${busLeft} ${busY} H ${busRight}`;
+        newConnectors.push({
+          id: `conn-bus-${unionKey}`,
+          parentId: union.parent1Id,
+          spouseParentId: union.parent2Id,
+          childIds: visibleChildren.map((c) => c.id),
+          d: trunkAndBusPath,
+          hasArrow: false,
+        });
+
+        // 2. Vertical drop lines with arrow for every child
+        visibleChildren.forEach((child) => {
+          const dropPath = `M ${child.endX} ${busY} V ${child.endY}`;
+          newConnectors.push({
+            id: `conn-drop-${child.id}`,
+            parentId: union.parent1Id,
+            spouseParentId: union.parent2Id,
+            childId: child.id,
+            d: dropPath,
+            hasArrow: true,
+          });
+        });
+      }
     });
 
     setConnectors(newConnectors);
@@ -786,6 +877,31 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
                 <stop offset="0%" stopColor="#6ee7b7" stopOpacity="1" />
                 <stop offset="100%" stopColor="#fbbf24" stopOpacity="0.95" />
               </linearGradient>
+
+              {/* Mũi tên chĩa xuống thế hệ con */}
+              <marker
+                id="tree-arrow"
+                viewBox="0 0 10 10"
+                refX="5"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#10b981" />
+              </marker>
+
+              <marker
+                id="tree-arrow-hovered"
+                viewBox="0 0 10 10"
+                refX="5"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#fbbf24" />
+              </marker>
             </defs>
 
             {connectors.map((c) => {
@@ -793,16 +909,25 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
                 hoveredPersonId &&
                 (hoveredPersonId === c.parentId ||
                   hoveredPersonId === c.spouseParentId ||
-                  hoveredPersonId === c.childId);
+                  hoveredPersonId === c.childId ||
+                  (c.childIds && c.childIds.includes(hoveredPersonId)));
 
               return (
                 <path
                   key={c.id}
                   d={c.d}
                   fill="none"
-                  stroke={isHovered ? 'url(#highlight-grad)' : 'url(#bloodline-grad)'}
-                  strokeWidth={isHovered ? 3.5 : 2}
+                  stroke={isHovered ? '#fbbf24' : '#10b981'}
+                  strokeWidth={isHovered ? 3.5 : 2.5}
                   strokeLinecap="round"
+                  strokeLinejoin="round"
+                  markerEnd={
+                    c.hasArrow !== false
+                      ? isHovered
+                        ? 'url(#tree-arrow-hovered)'
+                        : 'url(#tree-arrow)'
+                      : undefined
+                  }
                   className={isHovered ? 'tree-path-hovered' : 'tree-path'}
                   style={{
                     transition: 'stroke 0.2s, stroke-width 0.2s',
@@ -942,8 +1067,8 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
                           key={`couple-${p1.id}-${p2.id}-${branchFilter}`}
                           className="couple-unit-container filter-animate-enter"
                         >
-                          {/* Branch badge for Gen 1 (Ông bà nội / ngoại) */}
-                          {genNumber === 1 && (
+                          {/* Branch badge for Gen 1 (Ông bà nội / ngoại) hoặc Ba Mẹ (Gen 2) */}
+                          {genNumber === 1 ? (
                             <span
                               className={`branch-family-pill ${
                                 isPaternal ? 'paternal' : isMaternal ? 'maternal' : 'neutral'
@@ -955,6 +1080,14 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
                                 ? 'Ông Bà Ngoại'
                                 : 'Đôi Bạn Đời (Thủy Tổ)'}
                             </span>
+                          ) : (
+                            // Kiểm tra nếu cặp đôi này là Ba Mẹ của "Tôi" (hoặc có vai vế là Bố / Mẹ)
+                            ((kin1.includes('Bố') || kin1.includes('Mẹ')) && (kin2.includes('Bố') || kin2.includes('Mẹ'))) ||
+                            (mePerson && (p1.id === mePerson.id || p2.id === mePerson.id) ? false : false) ? (
+                              <span className="branch-family-pill parents">
+                                Ba Mẹ
+                              </span>
+                            ) : null
                           )}
 
                           <div
