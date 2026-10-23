@@ -72,12 +72,7 @@ export const getTreeById = async (req: AuthRequest, res: Response) => {
     const tree = await prisma.familyTree.findUnique({
       where: { id },
       include: {
-        members: {
-          orderBy: [
-            { generation: 'asc' },
-            { birthDate: 'asc' },
-          ],
-        },
+        members: true,
         relationships: true,
       },
     });
@@ -87,7 +82,7 @@ export const getTreeById = async (req: AuthRequest, res: Response) => {
     }
 
     // Business Rule: Nếu cây chưa có thành viên nào, tự động tạo ngay thành viên "Tôi" cho chủ cây
-    if (tree.members.length === 0) {
+    if (!tree.members || tree.members.length === 0) {
       const owner = await prisma.user.findUnique({ where: { id: tree.ownerId } });
       const ownerDisplayName = owner?.fullName || owner?.email?.split('@')[0] || 'Tôi';
       const rootMember = await prisma.person.create({
@@ -101,6 +96,17 @@ export const getTreeById = async (req: AuthRequest, res: Response) => {
         },
       });
       tree.members = [rootMember];
+    }
+
+    // Sắp xếp các thành viên theo thế hệ và ngày sinh trực tiếp trong bộ nhớ
+    if (tree.members && tree.members.length > 0) {
+      tree.members.sort((a, b) => {
+        if (a.generation !== b.generation) return a.generation - b.generation;
+        if (a.birthDate && b.birthDate) {
+          return new Date(a.birthDate).getTime() - new Date(b.birthDate).getTime();
+        }
+        return 0;
+      });
     }
 
     return res.json(tree);
