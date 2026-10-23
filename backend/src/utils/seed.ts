@@ -359,7 +359,7 @@ export async function seedDatabase() {
   console.log(`  Cây gia phả mẫu: "${tree.name}" (ID: ${tree.id})`);
 }
 
-if (typeof require !== 'undefined' && require.main === module) {
+if (typeof process !== 'undefined' && process.argv && process.argv[1] && process.argv[1].includes('seed')) {
   seedDatabase()
     .catch((e) => {
       console.error('Lỗi khi nạp seed data:', e);
