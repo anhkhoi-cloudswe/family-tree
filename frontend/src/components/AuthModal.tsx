@@ -14,11 +14,12 @@ import {
   RotateCcw,
   User as UserIcon,
 } from 'lucide-react';
-import { apiLogin, apiRegister, apiCheckEmail, apiForgotPassword, setStoredToken, apiGetMe, getStoredToken } from '../services/api';
+import { apiLogin, apiRegister, apiCheckEmail, apiForgotPassword, setStoredToken, apiGetMe, getStoredToken, apiMagicLogin } from '../services/api';
 import { User } from '../types';
 import { useToast } from './Toast';
 import { FamilyTreeLogo } from './FamilyTreeLogo';
 import { sendFirebaseMagicLink, sendFirebasePasswordReset } from '../services/firebase';
+import { sendMagicLink, verifySupabaseOtp, isSupabaseConfigured } from '../services/supabase';
 
 interface AuthModalProps {
   onSuccess: (user: User, defaultTreeId?: string) => void;
@@ -36,6 +37,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [otpCode, setOtpCode] = useState('');
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
   // Đếm ngược gửi lại email
   useEffect(() => {
@@ -79,7 +82,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
       onSuccess(res.user, res.defaultTreeId);
     } catch (err: any) {
       const msg = err.message || '';
-      if (msg === 'Failed to fetch' || msg.includes('Failed to fetch')) {
+      if (msg.includes('chưa được xác thực qua email')) {
+        setError(msg);
+        setAuthMode('AWAITING_VERIFICATION');
+        toast.info('Vui lòng kiểm tra hộp thư để xác thực tài khoản.');
+      } else if (msg === 'Failed to fetch' || msg.includes('Failed to fetch')) {
         setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau!');
       } else {
         setError(msg || 'Tài khoản hoặc mật khẩu không chính xác.');
@@ -113,18 +120,35 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
         return;
       }
 
-      // 2. Tạo tài khoản trong cơ sở dữ liệu kèm họ và tên
+      // 2. Tạo tài khoản trong cơ sở dữ liệu kèm họ và tên (trạng thái isVerified: false)
       await apiRegister({ email: cleanEmail, password, fullName: cleanFullName });
 
-      // 3. Gửi Firebase Magic Link xác thực an toàn qua email (Best Practices)
+      // 3. Gửi email xác thực an toàn: Ưu tiên Supabase (GitHub Secrets), fallback Firebase
+      let sentSuccess = false;
+      let lastErrMsg = '';
+
       try {
-        await sendFirebaseMagicLink(cleanEmail);
-        toast.success('Đã gửi email xác thực an toàn tới hộp thư của bạn!');
-      } catch (fbErr: any) {
-        console.error('Lỗi gửi email xác thực Firebase:', fbErr);
-        toast.info('Đã tạo tài khoản. Bạn có thể bấm gửi lại email xác thực nếu chưa nhận được thư.');
+        await sendMagicLink(cleanEmail);
+        sentSuccess = true;
+      } catch (sbErr: any) {
+        console.warn('Lỗi gửi email xác thực qua Supabase, thử Firebase:', sbErr.message);
+        lastErrMsg = sbErr.message;
+        try {
+          await sendFirebaseMagicLink(cleanEmail);
+          sentSuccess = true;
+        } catch (fbErr: any) {
+          console.error('Lỗi gửi email xác thực qua Firebase:', fbErr.message);
+          lastErrMsg = fbErr.message;
+        }
       }
 
+      if (!sentSuccess) {
+        setError(`Không thể gửi email xác thực: ${lastErrMsg}. Vui lòng kiểm tra lại email hoặc cấu hình.`);
+        setIsLoading(false);
+        return;
+      }
+
+      toast.success('Đã gửi email xác thực an toàn tới hộp thư của bạn!');
       // 4. Chuyển sang trạng thái đợi người dùng nhấp liên kết trong email (KHÔNG cho vào trực tiếp)
       setResendCooldown(60);
       setAuthMode('AWAITING_VERIFICATION');
@@ -177,14 +201,48 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
     const cleanEmail = email.toLowerCase().trim();
     try {
       if (authMode === 'AWAITING_VERIFICATION') {
-        await sendFirebaseMagicLink(cleanEmail);
+        let sent = false;
+        try {
+          await sendMagicLink(cleanEmail);
+          sent = true;
+        } catch {
+          await sendFirebaseMagicLink(cleanEmail);
+          sent = true;
+        }
       } else {
-        await sendFirebasePasswordReset(cleanEmail);
+        try {
+          await sendFirebasePasswordReset(cleanEmail);
+        } catch {
+          await sendMagicLink(cleanEmail);
+        }
       }
       toast.success('Đã gửi lại email xác thực thành công!');
       setResendCooldown(60);
     } catch (err: any) {
       toast.error('Không thể gửi lại email lúc này. Vui lòng thử lại sau.');
+    }
+  };
+
+  // Xác thực mã OTP 6 số
+  const handleVerifyOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!otpCode.trim()) {
+      toast.error('Vui lòng nhập mã số xác thực (OTP 6 số) từ email');
+      return;
+    }
+    setIsVerifyingOtp(true);
+    try {
+      const cleanEmail = email.toLowerCase().trim();
+      await verifySupabaseOtp(cleanEmail, otpCode.trim());
+      const res = await apiMagicLogin(cleanEmail);
+      setStoredToken(res.token);
+      toast.success(`Xác thực thành công! Chào mừng ${res.user.fullName || res.user.email}`);
+      onSuccess(res.user, res.defaultTreeId);
+    } catch (err: any) {
+      console.error('Lỗi xác thực OTP:', err);
+      toast.error(err.message || 'Mã xác thực không hợp lệ hoặc đã hết hạn.');
+    } finally {
+      setIsVerifyingOtp(false);
     }
   };
 
@@ -752,6 +810,51 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
               <span>Hệ thống đang đợi bạn nhấp liên kết trong thư...</span>
             </div>
 
+            {/* Nhập mã OTP 6 số từ email */}
+            <form onSubmit={handleVerifyOtp} style={{ marginBottom: '1.25rem', padding: '1rem', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#e2e8f0', marginBottom: '0.5rem', textAlign: 'left' }}>
+                Hoặc nhập mã số xác thực (OTP) nhận được trong email:
+              </label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: 123456"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 8))}
+                  maxLength={8}
+                  style={{
+                    flex: 1,
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(52, 211, 153, 0.35)',
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    color: '#ffffff',
+                    fontSize: '1.1rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.18em',
+                    textAlign: 'center',
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={isVerifyingOtp || !otpCode.trim()}
+                  style={{
+                    padding: '0.65rem 1rem',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    fontSize: '0.86rem',
+                    cursor: (isVerifyingOtp || !otpCode.trim()) ? 'not-allowed' : 'pointer',
+                    opacity: (isVerifyingOtp || !otpCode.trim()) ? 0.6 : 1,
+                  }}
+                >
+                  {isVerifyingOtp ? 'Đang duyệt...' : 'Xác Thực'}
+                </button>
+              </div>
+            </form>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.25rem' }}>
               {isGmail && (
                 <a
@@ -778,20 +881,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
                 </a>
               )}
 
-              {/* Check button */}
+              {/* Check button: Kiểm tra xác thực thực tế */}
               <button
                 type="button"
                 onClick={async () => {
-                  const token = getStoredToken();
-                  if (token) {
-                    try {
-                      const verifiedUser = await apiGetMe();
-                      toast.success(`Chào mừng ${verifiedUser.fullName}!`);
-                      onSuccess(verifiedUser);
-                      return;
-                    } catch {}
+                  try {
+                    const cleanEmail = email.toLowerCase().trim();
+                    const res = await apiMagicLogin(cleanEmail);
+                    setStoredToken(res.token);
+                    toast.success(`Chào mừng ${res.user.fullName || res.user.email}!`);
+                    onSuccess(res.user, res.defaultTreeId);
+                  } catch (err: any) {
+                    toast.info('Tài khoản chưa được kích hoạt. Vui lòng mở email và nhấn vào liên kết xác thực (hoặc nhập mã OTP phía trên).');
                   }
-                  toast.info('Vui lòng kiểm tra hộp thư đến (hoặc hòm thư Spam) và nhấp vào liên kết để tiếp tục.');
                 }}
                 style={{
                   display: 'flex',
@@ -810,7 +912,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
                 }}
               >
                 <CheckCircle2 size={16} color="#34d399" />
-                <span>Tôi đã nhấp liên kết xác thực</span>
+                <span>Tôi đã nhấp liên kết trong thư</span>
               </button>
 
               <button

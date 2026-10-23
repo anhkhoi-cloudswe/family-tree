@@ -18,6 +18,7 @@ export async function seedDatabase() {
       passwordHash: adminPasswordHash,
       fullName: 'Quản Trị Viên Famlykin',
       role: 'ADMIN',
+      isVerified: true,
     },
   });
 

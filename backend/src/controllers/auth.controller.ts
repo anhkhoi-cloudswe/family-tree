@@ -61,6 +61,7 @@ export const register = async (req: Request, res: Response) => {
         passwordHash,
         fullName: userDisplayName,
         role: 'MEMBER',
+        isVerified: false, // Bắt buộc xác thực qua email mới được kích hoạt!
       },
     });
 
@@ -85,22 +86,11 @@ export const register = async (req: Request, res: Response) => {
       },
     });
 
-    const secret = process.env.JWT_SECRET || 'family_tree_secret_key';
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      secret,
-      { expiresIn: '7d' }
-    );
-
+    // Tuyệt đối KHÔNG cấp token đăng nhập ngay tại thời điểm đăng ký
     return res.status(201).json({
-      message: 'Đăng ký tài khoản thành công!',
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-      },
+      message: 'Đăng ký tài khoản thành công! Vui lòng xác thực liên kết gửi tới email của bạn để kích hoạt tài khoản.',
+      email: user.email,
+      requiresVerification: true,
       defaultTreeId: defaultTree.id,
     });
   } catch (error: any) {
@@ -130,6 +120,15 @@ export const login = async (req: Request, res: Response) => {
     const isMatch = bcrypt.compareSync(password, user.passwordHash);
     if (!isMatch) {
       return res.status(401).json({ error: 'Tài khoản hoặc mật khẩu không chính xác.' });
+    }
+
+    // BẮT BUỘC XÁC THỰC EMAIL (CHỐNG VÀO HỆ THỐNG KHI CHƯA XÁC THỰC)
+    if (user.role !== 'ADMIN' && user.isVerified === false) {
+      return res.status(403).json({
+        error: 'Tài khoản của bạn chưa được xác thực qua email! Vui lòng kiểm tra hộp thư (hoặc mục Spam) và nhấp vào liên kết xác thực để kích hoạt tài khoản.',
+        requiresVerification: true,
+        email: user.email,
+      });
     }
 
     const secret = process.env.JWT_SECRET || 'family_tree_secret_key';
@@ -254,22 +253,32 @@ export const magicLogin = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email là bắt buộc.' });
     }
 
+    const cleanEmail = email.toLowerCase().trim();
     let user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: cleanEmail },
       include: { trees: { take: 1 } },
     });
 
     let defaultTreeId = user?.trees[0]?.id || null;
 
+    if (user && !user.isVerified) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { isVerified: true },
+        include: { trees: { take: 1 } },
+      });
+    }
+
     if (!user) {
-      const userDisplayName = email.split('@')[0];
+      const userDisplayName = cleanEmail.split('@')[0];
       const randomPassword = bcrypt.hashSync(Math.random().toString(36), 10);
       user = await prisma.user.create({
         data: {
-          email,
+          email: cleanEmail,
           passwordHash: randomPassword,
           fullName: userDisplayName,
           role: 'MEMBER',
+          isVerified: true, // Kích hoạt ngay sau khi click liên kết
         },
         include: { trees: { take: 1 } },
       });
@@ -294,6 +303,10 @@ export const magicLogin = async (req: Request, res: Response) => {
         },
       });
       defaultTreeId = newTree.id;
+    }
+
+    if (!user) {
+      return res.status(500).json({ error: 'Không thể khởi tạo tài khoản.' });
     }
 
     const secret = process.env.JWT_SECRET || 'family_tree_secret_key';

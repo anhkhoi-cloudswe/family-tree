@@ -8,8 +8,18 @@ const LS_URL_KEY = 'fam3_supabase_url';
 const LS_KEY_KEY = 'fam3_supabase_anon_key';
 
 export const getSupabaseConfig = () => {
-  const url = localStorage.getItem(LS_URL_KEY) || ENV_SUPABASE_URL || '';
-  const anonKey = localStorage.getItem(LS_KEY_KEY) || ENV_SUPABASE_ANON_KEY || '';
+  const envUrl = ((import.meta as any).env?.VITE_SUPABASE_URL || '').trim();
+  const envAnonKey = ((import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '').trim();
+
+  // Ưu tiên biến môi trường từ GitHub Secrets / Cloudflare Pages nếu hợp lệ
+  const url = (envUrl && envUrl.startsWith('https://'))
+    ? envUrl
+    : (localStorage.getItem(LS_URL_KEY) || 'https://ggefsinnmmrfcfvyhvko.supabase.co');
+
+  const anonKey = (envAnonKey && envAnonKey.length > 20)
+    ? envAnonKey
+    : (localStorage.getItem(LS_KEY_KEY) || '');
+
   return { url, anonKey };
 };
 
@@ -47,34 +57,60 @@ export const getSupabaseClient = (): SupabaseClient | null => {
 };
 
 /**
- * Gửi Magic Link (Passwordless Authentication) tới Email người dùng
- * Người dùng chỉ cần mở email và click vào nút đăng nhập được gửi bởi Supabase
+ * Gửi Magic Link (Passwordless Authentication) tới Email người dùng qua Supabase
  */
 export const sendMagicLink = async (email: string): Promise<{ success: boolean; message: string }> => {
   const client = getSupabaseClient();
   if (!client) {
     throw new Error(
-      'Chưa cấu hình Supabase! Vui lòng nhập Supabase Project URL và Anon Key trong phần Cấu Hình để kích hoạt gửi Magic Link.'
+      'Chưa cấu hình Supabase! Vui lòng kiểm tra lại Secret Key trên GitHub Repo.'
     );
   }
 
+  const cleanEmail = email.toLowerCase().trim();
   const redirectTo = window.location.origin;
 
   const { error } = await client.auth.signInWithOtp({
-    email,
+    email: cleanEmail,
     options: {
       emailRedirectTo: redirectTo,
+      shouldCreateUser: true,
     },
   });
 
   if (error) {
-    throw new Error(error.message || 'Không thể gửi Magic Link tới email này');
+    console.error('Supabase signInWithOtp error:', error);
+    throw new Error(error.message || 'Không thể gửi email xác thực qua Supabase');
   }
 
   return {
     success: true,
-    message: `Đã gửi liên kết Magic Link tới ${email}! Vui lòng kiểm tra hộp thư (inbox/spam) và click vào nút để đăng nhập tự động.`,
+    message: `Đã gửi liên kết xác thực an toàn tới ${cleanEmail}!`,
   };
+};
+
+/**
+ * Xác thực mã OTP 6 số hoặc token từ email qua Supabase
+ */
+export const verifySupabaseOtp = async (email: string, token: string): Promise<string> => {
+  const client = getSupabaseClient();
+  if (!client) throw new Error('Chưa kết nối Supabase Client');
+
+  const cleanEmail = email.toLowerCase().trim();
+  const cleanToken = token.trim();
+
+  const { data, error } = await client.auth.verifyOtp({
+    email: cleanEmail,
+    token: cleanToken,
+    type: 'email',
+  });
+
+  if (error) {
+    console.error('Supabase verifyOtp error:', error);
+    throw new Error(error.message || 'Mã xác thực không hợp lệ hoặc đã hết hạn.');
+  }
+
+  return data.user?.email || cleanEmail;
 };
 
 /**

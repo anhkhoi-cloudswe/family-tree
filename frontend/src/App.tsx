@@ -41,6 +41,7 @@ import {
   getEmailFromUrlOrStorage,
   completeFirebaseSignIn,
 } from './services/firebase';
+import { getSupabaseClient } from './services/supabase';
 
 const AppContent: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -129,6 +130,52 @@ const AppContent: React.FC = () => {
   // Initialize Auth
   useEffect(() => {
     const initAuth = async () => {
+      // 0. Kiểm tra nếu URL hiện tại là Supabase Magic Link hoặc OAuth redirect
+      const supabaseClient = getSupabaseClient();
+      if (supabaseClient) {
+        const hasSupabaseAuth =
+          window.location.hash.includes('access_token=') ||
+          window.location.search.includes('code=');
+
+        if (hasSupabaseAuth) {
+          setIsLoading(true);
+          removeStoredToken();
+          setUser(null);
+          try {
+            const { data: { session }, error: sessionErr } = await supabaseClient.auth.getSession();
+            if (session?.user?.email) {
+              const verifiedEmail = session.user.email.toLowerCase().trim();
+              const res = await apiMagicLogin(verifiedEmail);
+              setStoredToken(res.token);
+              setUser(res.user);
+              window.history.replaceState(null, '', window.location.pathname);
+              toast.success(`Xác thực email thành công! Chào mừng ${res.user.fullName || res.user.email}`);
+              await loadTreeData(res.defaultTreeId || undefined, res.user);
+              setIsLoading(false);
+              return;
+            }
+          } catch (sbErr) {
+            console.error('Lỗi nhận session Supabase:', sbErr);
+          }
+        }
+
+        // Lắng nghe sự kiện đăng nhập tự động từ Supabase
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+          if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user?.email) {
+            try {
+              const verifiedEmail = session.user.email.toLowerCase().trim();
+              const res = await apiMagicLogin(verifiedEmail);
+              setStoredToken(res.token);
+              setUser(res.user);
+              window.history.replaceState(null, '', window.location.pathname);
+              await loadTreeData(res.defaultTreeId || undefined, res.user);
+            } catch (err) {
+              console.error('Lỗi onAuthStateChange Supabase:', err);
+            }
+          }
+        });
+      }
+
       // 1. Kiểm tra nếu URL hiện tại là Firebase Magic Link
       if (isFirebaseEmailLink()) {
         setIsLoading(true);
