@@ -14,7 +14,7 @@ import {
   RotateCcw,
   User as UserIcon,
 } from 'lucide-react';
-import { apiLogin, apiRegister, apiCheckEmail, apiForgotPassword, setStoredToken } from '../services/api';
+import { apiLogin, apiRegister, apiCheckEmail, apiForgotPassword, setStoredToken, apiGetMe, getStoredToken } from '../services/api';
 import { User } from '../types';
 import { useToast } from './Toast';
 import { FamilyTreeLogo } from './FamilyTreeLogo';
@@ -46,6 +46,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
+  // Lắng nghe sự kiện xác thực email hoàn tất từ tab khác trong cùng trình duyệt
+  useEffect(() => {
+    const handleStorageChange = async (event: StorageEvent) => {
+      if (event.key === 'fam3_auth_token' && event.newValue) {
+        try {
+          const verifiedUser = await apiGetMe();
+          toast.success(`Xác thực email thành công! Chào mừng ${verifiedUser.fullName}`);
+          onSuccess(verifiedUser);
+        } catch (err) {
+          console.error('Lỗi tự động đăng nhập sau xác thực:', err);
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [onSuccess, toast]);
+
   // Xử lý Đăng Nhập
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +89,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
     }
   };
 
-  // Xử lý Đăng Ký Tài Khoản Mới
+  // Xử lý Đăng Ký Tài Khoản Mới: gửi Firebase Email Link và đợi người dùng nhấp link
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -97,18 +114,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
       }
 
       // 2. Tạo tài khoản trong cơ sở dữ liệu kèm họ và tên
-      const regRes = await apiRegister({ email: cleanEmail, password, fullName: cleanFullName });
+      await apiRegister({ email: cleanEmail, password, fullName: cleanFullName });
 
-      if (regRes && regRes.token) {
-        setStoredToken(regRes.token);
-        if (regRes.defaultTreeId) {
-          localStorage.setItem('fam3_current_tree_id', regRes.defaultTreeId);
-        }
-        onSuccess(regRes.user, regRes.defaultTreeId);
-        return;
+      // 3. Gửi Firebase Magic Link xác thực an toàn qua email (Best Practices)
+      try {
+        await sendFirebaseMagicLink(cleanEmail);
+        toast.success('Đã gửi email xác thực an toàn tới hộp thư của bạn!');
+      } catch (fbErr: any) {
+        console.error('Lỗi gửi email xác thực Firebase:', fbErr);
+        toast.info('Đã tạo tài khoản. Bạn có thể bấm gửi lại email xác thực nếu chưa nhận được thư.');
       }
 
-      // 3. Fallback nếu không có token ngay lập tức
+      // 4. Chuyển sang trạng thái đợi người dùng nhấp liên kết trong email (KHÔNG cho vào trực tiếp)
       setResendCooldown(60);
       setAuthMode('AWAITING_VERIFICATION');
     } catch (err: any) {
@@ -715,6 +732,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
               </span>
             </p>
 
+            {/* Live Verification Waiting Indicator */}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.42rem 0.95rem',
+                borderRadius: '999px',
+                background: 'rgba(52, 211, 153, 0.12)',
+                border: '1px solid rgba(52, 211, 153, 0.32)',
+                color: '#34d399',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                marginBottom: '1.25rem',
+              }}
+            >
+              <span className="pulsing-dot" style={{ background: '#34d399', boxShadow: '0 0 8px #34d399' }} />
+              <span>Hệ thống đang đợi bạn nhấp liên kết trong thư...</span>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.25rem' }}>
               {isGmail && (
                 <a
@@ -740,6 +777,41 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onSuccess }) => {
                   <span>Mở Hộp Thư Gmail</span>
                 </a>
               )}
+
+              {/* Check button */}
+              <button
+                type="button"
+                onClick={async () => {
+                  const token = getStoredToken();
+                  if (token) {
+                    try {
+                      const verifiedUser = await apiGetMe();
+                      toast.success(`Chào mừng ${verifiedUser.fullName}!`);
+                      onSuccess(verifiedUser);
+                      return;
+                    } catch {}
+                  }
+                  toast.info('Vui lòng kiểm tra hộp thư đến (hoặc hòm thư Spam) và nhấp vào liên kết để tiếp tục.');
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem',
+                  padding: '0.68rem 1rem',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  color: '#ffffff',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.16)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <CheckCircle2 size={16} color="#34d399" />
+                <span>Tôi đã nhấp liên kết xác thực</span>
+              </button>
 
               <button
                 type="button"

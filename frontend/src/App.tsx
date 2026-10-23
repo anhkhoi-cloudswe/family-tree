@@ -11,6 +11,7 @@ import { AuthModal } from './components/AuthModal';
 import { PersonPickerModal } from './components/PersonPickerModal';
 import { HelpModal } from './components/HelpModal';
 import { AdminModal } from './components/AdminModal';
+import { AdminDashboard, AdminTab } from './components/AdminDashboard';
 import { OnboardingTour } from './components/OnboardingTour';
 import { QuickOnboardingModal } from './components/QuickOnboardingModal';
 import { FamilyFlashcardModal } from './components/FamilyFlashcardModal';
@@ -70,6 +71,10 @@ const AppContent: React.FC = () => {
   const [showTour, setShowTour] = useState<boolean>(false);
   const [showQuickOnboarding, setShowQuickOnboarding] = useState<boolean>(false);
   const [showFlashcardModal, setShowFlashcardModal] = useState<boolean>(false);
+
+  // Dedicated Admin Dashboard states
+  const [adminActiveTab, setAdminActiveTab] = useState<AdminTab>('USERS');
+  const [adminPreviewTreeId, setAdminPreviewTreeId] = useState<string | null>(null);
 
   // Filters & View Mode
   const [branchFilter, setBranchFilter] = useState<'ALL' | 'PATERNAL' | 'MATERNAL'>('ALL');
@@ -344,8 +349,27 @@ const AppContent: React.FC = () => {
     setUser(null);
     setTree(null);
     setMePerson(null);
+    setAdminPreviewTreeId(null);
+    setAdminActiveTab('USERS');
     setShowAuthModal(true);
     toast.info('Đã đăng xuất tài khoản an toàn.');
+  };
+
+  const handleAdminPreviewTree = async (previewTreeId: string) => {
+    try {
+      setIsLoading(true);
+      setAdminPreviewTreeId(previewTreeId);
+      await loadTreeData(previewTreeId);
+      toast.info('Đang xem trước cây phả hệ với tư cách Quản Trị Viên.');
+    } catch (err: any) {
+      toast.error('Không thể nạp dữ liệu cây phả hệ này');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAdminExitPreview = () => {
+    setAdminPreviewTreeId(null);
   };
 
   const handleExportImageClick = () => {
@@ -447,11 +471,21 @@ const AppContent: React.FC = () => {
         }}
         onOpenHelp={() => setShowTour(true)}
         onOpenAdmin={() => setShowAdminModal(true)}
+        adminActiveTab={adminActiveTab}
+        onAdminTabChange={setAdminActiveTab}
+        adminPreviewTreeId={adminPreviewTreeId}
+        onAdminExitPreview={handleAdminExitPreview}
       />
 
-      {/* Main Canvas Viewport or Mobile List Directory */}
+      {/* Main Canvas Viewport or Embedded Admin Dashboard */}
       <main style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', width: '100%', display: 'flex', flexDirection: 'column' }}>
-        {tree ? (
+        {user?.role === 'ADMIN' && !adminPreviewTreeId ? (
+          <AdminDashboard
+            activeTab={adminActiveTab}
+            onTabChange={setAdminActiveTab}
+            onPreviewTree={handleAdminPreviewTree}
+          />
+        ) : tree ? (
           mainView === 'TREE' ? (
             <TreeCanvas
               tree={tree}
