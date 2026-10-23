@@ -176,19 +176,21 @@ const AppContent: React.FC = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const oobCode = urlParams.get('oobCode');
 
-        // Khóa phiên ở cấp độ SessionStorage để chống double-trigger tuyệt đối
+        // Kiểm tra xem oobCode đã được xử lý trong phiên tab này chưa
         if (oobCode) {
           const sessionKey = `famlykin_consumed_${oobCode}`;
           if (sessionStorage.getItem(sessionKey)) {
             console.warn('[Auth] oobCode already processed in this tab session:', oobCode);
             return;
           }
-          sessionStorage.setItem(sessionKey, 'true');
         }
 
         setIsLoading(true);
         const email = getEmailFromUrlOrStorage();
         if (email) {
+          if (oobCode) {
+            sessionStorage.setItem(`famlykin_consumed_${oobCode}`, 'true');
+          }
           try {
             await completeFirebaseSignIn(email);
 
@@ -400,6 +402,11 @@ const AppContent: React.FC = () => {
     setIsSubmittingMagicLink(true);
     setMagicLinkError(null);
     const cleanEmail = magicLinkEmail.toLowerCase().trim();
+    const urlParams = new URLSearchParams(window.location.search);
+    const oobCode = urlParams.get('oobCode');
+    if (oobCode) {
+      sessionStorage.setItem(`famlykin_consumed_${oobCode}`, 'true');
+    }
 
     try {
       await completeFirebaseSignIn(cleanEmail);
