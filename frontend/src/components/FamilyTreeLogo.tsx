@@ -22,7 +22,7 @@ export const FamilyTreeLogo: React.FC<FamilyTreeLogoProps> = ({
         display: 'inline-block',
         verticalAlign: 'middle',
         flexShrink: 0,
-        borderRadius: '8px',
+        borderRadius: style.borderRadius || `${Math.round(size * 0.22)}px`,
         objectFit: 'contain',
         ...style,
       }}

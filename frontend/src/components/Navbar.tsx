@@ -142,7 +142,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* 1. Left: Brand & Logo */}
           <div className="framer-brand-group">
             <div className="brand-icon-box" aria-hidden="true">
-              <FamilyTreeLogo size={24} />
+              <FamilyTreeLogo size={38} />
             </div>
             <div className="brand-text-box">
               <div className="brand-title-row">
@@ -522,8 +522,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Drawer Header */}
             <div className="mobile-drawer-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                <div className="brand-icon-box" style={{ width: 40, height: 40 }}>
-                  <FamilyTreeLogo size={28} />
+                <div className="brand-icon-box">
+                  <FamilyTreeLogo size={38} />
                 </div>
                 <div>
                   <h3 id="drawer-menu-title" className="drawer-header-title">

@@ -440,22 +440,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }}
       >
         {/* Brand header */}
-        <div style={{ textAlign: 'center', marginBottom: '0.9rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 78, 59, 0.4) 100%)',
-              border: '1px solid rgba(52, 211, 153, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              margin: '0 auto 0.4rem auto',
-              boxShadow: '0 8px 20px -4px rgba(16, 185, 129, 0.3)',
+              margin: '0 auto 0.6rem auto',
             }}
           >
-            <FamilyTreeLogo size={26} />
+            <FamilyTreeLogo
+              size={64}
+              style={{
+                filter: 'drop-shadow(0 10px 24px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 16px rgba(16, 185, 129, 0.3))',
+              }}
+            />
           </div>
           <h2
             style={{

@@ -590,7 +590,12 @@ const AppContent: React.FC = () => {
         <div className="loading-card">
           <div className="loading-logo-box">
             <div className="loading-ring-spinner" />
-            <FamilyTreeLogo size={34} />
+            <FamilyTreeLogo
+              size={56}
+              style={{
+                filter: 'drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5))',
+              }}
+            />
           </div>
           <h2 className="loading-title">Famlykin</h2>
           <p className="loading-desc">Đang tải gia phả...</p>
