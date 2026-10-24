@@ -263,7 +263,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
     }
   }, [selectedTargetId, hasBothParents, targetSpouse, hasBothNoi, hasBothNgoai, targetFather, targetMother]);
 
-  // Cập nhật generation & nickname & gender phù hợp
+  // Cập nhật generation & gender phù hợp (KHÔNG tự động điền biệt danh)
   useEffect(() => {
     if (relationType === 'INDEPENDENT' || !currentTarget) {
       return;
@@ -273,7 +273,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
       setFormData((prev) => ({
         ...prev,
         generation: currentTarget.generation + 1,
-        nickname: prev.nickname || 'Con',
       }));
     } else if (relationType === 'SPOUSE') {
       const opp = currentTarget.gender === 'MALE' ? 'FEMALE' : 'MALE';
@@ -281,61 +280,47 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
         ...prev,
         generation: currentTarget.generation,
         gender: opp,
-        nickname: prev.nickname || (opp === 'FEMALE' ? 'Vợ' : 'Chồng'),
       }));
     } else if (relationType === 'PARENT') {
       let g: 'MALE' | 'FEMALE' = formData.gender === 'FEMALE' ? 'FEMALE' : 'MALE';
-      let nick = 'Bố';
       if (targetFather && !targetMother) {
         g = 'FEMALE';
-        nick = 'Mẹ';
       } else if (targetMother && !targetFather) {
         g = 'MALE';
-        nick = 'Bố';
       }
       setFormData((prev) => ({
         ...prev,
         generation: Math.max(1, currentTarget.generation - 1),
         gender: g,
-        nickname: nick,
       }));
     } else if (relationType === 'GRANDPARENT_PATERNAL') {
       let g: 'MALE' | 'FEMALE' = 'MALE';
-      let nick = 'Ông nội';
       if (targetOngNoi && !targetBaNoi) {
         g = 'FEMALE';
-        nick = 'Bà nội';
       } else if (targetBaNoi && !targetOngNoi) {
         g = 'MALE';
-        nick = 'Ông nội';
       }
       setFormData((prev) => ({
         ...prev,
         generation: Math.max(1, targetFather ? targetFather.generation - 1 : currentTarget.generation - 2),
         gender: g,
-        nickname: nick,
       }));
     } else if (relationType === 'GRANDPARENT_MATERNAL') {
       let g: 'MALE' | 'FEMALE' = 'MALE';
-      let nick = 'Ông ngoại';
       if (targetOngNgoai && !targetBaNgoai) {
         g = 'FEMALE';
-        nick = 'Bà ngoại';
       } else if (targetBaNgoai && !targetOngNgoai) {
         g = 'MALE';
-        nick = 'Ông ngoại';
       }
       setFormData((prev) => ({
         ...prev,
         generation: Math.max(1, targetMother ? targetMother.generation - 1 : currentTarget.generation - 2),
         gender: g,
-        nickname: nick,
       }));
     } else if (relationType === 'SIBLING') {
       setFormData((prev) => ({
         ...prev,
         generation: currentTarget.generation,
-        nickname: '',
       }));
     }
   }, [relationType, currentTarget, targetFather, targetMother, targetOngNoi, targetBaNoi, targetOngNgoai, targetBaNgoai]);

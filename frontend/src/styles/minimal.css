@@ -522,17 +522,88 @@ button, input, select, textarea {
   backdrop-filter: blur(8px);
 }
 
-/* Tier 2: Smart Person Picker, Branch Filter & View Mode (Framer Glassmorphism) */
+/* Desktop Search Trigger Button */
+.navbar-search-btn-desktop {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+  border-radius: 999px;
+  padding: 0.42rem 0.85rem 0.42rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 175px;
+}
+
+.navbar-search-btn-desktop:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(52, 211, 153, 0.55);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.25);
+  color: #ffffff;
+}
+
+.navbar-search-btn-desktop .search-icon {
+  color: #34d399;
+  flex-shrink: 0;
+}
+
+.navbar-search-btn-desktop .search-label {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  flex: 1;
+  text-align: left;
+}
+
+.navbar-search-btn-desktop:hover .search-label {
+  color: #e2e8f0;
+}
+
+.navbar-search-btn-desktop .search-kbd {
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 6px;
+  padding: 0.12rem 0.4rem;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 1024px) {
+  .navbar-search-btn-desktop {
+    min-width: 135px;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar-search-btn-desktop {
+    display: none !important;
+  }
+}
+
+/* Tier 2: Sub-bar Controls (Framer Glassmorphism) */
+.navbar-tier-2-outer {
+  width: 100%;
+  background: rgba(4, 25, 15, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .navbar-tier-2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.45rem 1.4rem;
-  background: rgba(4, 25, 15, 0.32);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  gap: 0.75rem;
+  padding: 0.48rem 1.4rem;
+  gap: 1rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
   position: relative;
   z-index: 80;
 }
@@ -1569,45 +1640,52 @@ button, input, select, textarea {
   position: relative;
   width: max-content;
   margin: 0 auto;
+  padding-top: 1.25rem; /* Dành khoảng trống phía trên cho thẻ badge vai vế bay nhẹ */
 }
 
 .couple-unit-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.45rem;
+  position: relative;
 }
 
 .branch-family-pill {
-  font-size: 0.88rem;
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  padding: 0.3rem 1.05rem;
+  padding: 0.26rem 1rem;
   border-radius: 999px;
   border: 1.5px solid;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .branch-family-pill.paternal {
-  background: rgba(30, 64, 175, 0.75);
+  background: rgba(30, 64, 175, 0.85);
   color: #dbeafe;
   border-color: rgba(147, 197, 253, 0.75);
-  box-shadow: 0 0 16px rgba(59, 130, 246, 0.35);
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.4);
 }
 .branch-family-pill.maternal {
-  background: rgba(157, 23, 77, 0.75);
+  background: rgba(157, 23, 77, 0.85);
   color: #fce7f3;
   border-color: rgba(244, 114, 182, 0.75);
-  box-shadow: 0 0 16px rgba(244, 63, 94, 0.35);
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.4);
 }
 .branch-family-pill.parents {
-  background: rgba(5, 150, 105, 0.75);
+  background: rgba(5, 150, 105, 0.88);
   color: #ecfdf5;
-  border-color: rgba(110, 231, 183, 0.75);
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);
+  border-color: rgba(110, 231, 183, 0.8);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.45);
 }
 
 .couple-card-frame {
@@ -1628,6 +1706,17 @@ button, input, select, textarea {
 .couple-card-frame.frame-maternal {
   border-color: rgba(244, 114, 182, 0.5);
   background: rgba(244, 114, 182, 0.14);
+}
+
+/* Đảm bảo thẻ độc thân (Single) và thẻ đôi (Couple) luôn chuẩn mực ngang hàng 100%, không lệch lên lệch xuống */
+.single-unit-container {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: calc(0.65rem + 1.5px);
+  padding-bottom: calc(0.65rem + 1.5px);
+  box-sizing: border-box;
 }
 
 .marriage-link-badge {

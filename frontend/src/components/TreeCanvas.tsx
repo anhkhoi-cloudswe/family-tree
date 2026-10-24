@@ -511,8 +511,14 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
 
       if (visibleChildren.length === 1) {
         const c = visibleChildren[0];
-        // Đường nối thẳng trực tiếp từ cha/mẹ xuống con duy nhất, không tạo nếp gấp gãy (straight direct connector)
-        const d = `M ${startX} ${startY} L ${c.endX} ${c.endY}`;
+        // Nếu tâm của cha/mẹ và con gần như thẳng hàng (lệch <= 28px): vẽ đường thẳng đứng 100% không xiên méo (perfect vertical)
+        // Nếu có độ lệch ngang: đi thẳng đứng xuống busY, rẽ ngang, rồi hạ thẳng đứng xuống con (chuẩn sơ đồ cây, tuyệt đối không méo xẹo)
+        let d: string;
+        if (Math.abs(startX - c.endX) <= 28) {
+          d = `M ${startX} ${startY} V ${c.endY}`;
+        } else {
+          d = `M ${startX} ${startY} V ${busY} H ${c.endX} V ${c.endY}`;
+        }
         newConnectors.push({
           id: `conn-single-${c.id}`,
           parentId: union.parent1Id,
@@ -1020,6 +1026,19 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
             const units = generationUnitsMap.get(genNumber) || [];
             const membersCount = tree.members.filter((m) => m.generation === genNumber).length;
 
+            // Kiểm tra xem hàng thế hệ này có chứa thẻ badge vai vế (ví dụ: "Ba Mẹ", "Ông Bà Ngoại") hay không
+            const hasAnyBadgeInRow = units.some((unit) => {
+              if (unit.type === 'COUPLE' && unit.person2) {
+                if (genNumber === 1) return true;
+                const p1 = unit.person1;
+                const p2 = unit.person2;
+                const kin1 = getKinshipToMe(mePerson, p1, tree.members, tree.relationships);
+                const kin2 = getKinshipToMe(mePerson, p2, tree.members, tree.relationships);
+                return (kin1.includes('Bố') || kin1.includes('Mẹ')) && (kin2.includes('Bố') || kin2.includes('Mẹ'));
+              }
+              return false;
+            });
+
             return (
               <div
                 key={genNumber}
@@ -1036,7 +1055,10 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
                 </div>
 
                 {/* Units List in this Generation */}
-                <div className="generation-units-row" key={`gen-units-${genNumber}-${branchFilter}`}>
+                <div
+                  className={`generation-units-row ${hasAnyBadgeInRow ? 'has-branch-badge' : ''}`}
+                  key={`gen-units-${genNumber}-${branchFilter}`}
+                >
                   {units.map((unit) => {
                     if (unit.type === 'COUPLE' && unit.person2) {
                       const p1 = unit.person1;

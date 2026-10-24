@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Person } from '../types';
 import { Calendar, MapPin, Sparkles, User, Heart } from 'lucide-react';
 import { formatDateVN } from '../utils/dateHelper';
@@ -133,6 +133,30 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   const isNameVeryLong = nameWords >= 5 || nameLength >= 23;
   const nameClass = isNameVeryLong ? 'name-very-long' : isNameLong ? 'name-long' : '';
 
+  // Lọc bỏ các từ vai vế chung nếu lỡ bị điền vào nickname (tránh "Dì ruột / Con", "Anh họ / Con")
+  const displayNickname = useMemo(() => {
+    if (!person.nickname || !person.nickname.trim()) return null;
+    const nick = person.nickname.trim();
+    const nickLower = nick.toLowerCase();
+    const kinLower = kinshipTitle.trim().toLowerCase();
+
+    if (nickLower === kinLower || kinLower.includes(nickLower) || nickLower.includes(kinLower)) {
+      return null;
+    }
+
+    const genericKinship = new Set([
+      'bố', 'ba', 'cha', 'mẹ', 'má', 'con', 'vợ', 'chồng',
+      'ông', 'ông nội', 'bà nội', 'ông ngoại', 'bà ngoại',
+      'bác', 'chú', 'cô', 'dì', 'cậu', 'cháu', 'anh', 'chị', 'em'
+    ]);
+
+    if (genericKinship.has(nickLower)) {
+      return null;
+    }
+
+    return nick;
+  }, [person.nickname, kinshipTitle]);
+
   return (
     <div
       data-person-id={person.id}
@@ -194,9 +218,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
       {/* 3. Vai vế & Biệt danh (Ví dụ: "Tôi / Quắn", "Bố / Ba") */}
       <div className={`kinship-pill ${getPillClass()}`}>
         {kinshipTitle}
-        {person.nickname && person.nickname.trim().toLowerCase() !== kinshipTitle.trim().toLowerCase()
-          ? ` / ${person.nickname.trim()}`
-          : ''}
+        {displayNickname ? ` / ${displayNickname}` : ''}
       </div>
 
       {/* 4. Detailed Mode Information (When isCompact is false) */}

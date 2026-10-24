@@ -83,7 +83,6 @@ export const QuickOnboardingModal: React.FC<QuickOnboardingModalProps> = ({
           fullName: fatherName.trim(),
           gender: 'MALE',
           childId: mePerson.id,
-          nickname: 'Bố',
         });
         createdFatherId = f.id;
       }
@@ -96,7 +95,6 @@ export const QuickOnboardingModal: React.FC<QuickOnboardingModalProps> = ({
           gender: 'FEMALE',
           childId: mePerson.id,
           spouseId: createdFatherId || undefined,
-          nickname: 'Mẹ',
         });
       }
 
@@ -108,7 +106,6 @@ export const QuickOnboardingModal: React.FC<QuickOnboardingModalProps> = ({
           fullName: spouseName.trim(),
           gender: myGender === 'MALE' ? 'FEMALE' : 'MALE',
           spouseId: mePerson.id,
-          nickname: myGender === 'MALE' ? 'Vợ' : 'Chồng',
         });
         createdSpouseId = sp.id;
       }
@@ -120,7 +117,6 @@ export const QuickOnboardingModal: React.FC<QuickOnboardingModalProps> = ({
           fullName: childName.trim(),
           gender: 'MALE',
           parentId: mePerson.id,
-          nickname: 'Con',
         });
       }
 

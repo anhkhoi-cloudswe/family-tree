@@ -106,6 +106,18 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMobileMenuOpen]);
 
+  // Global shortcut: Ctrl + K (or Cmd + K) opens person search
+  useEffect(() => {
+    const handleShortcut = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        onOpenPersonPicker();
+      }
+    };
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
+  }, [onOpenPersonPicker]);
+
   // Animated close: play slide-out for 220ms then unmount
   const closeDrawer = () => {
     setIsDrawerClosing(true);
@@ -279,17 +291,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* 3. Right: Action CTA & User */}
           {/* 3. Right: Action CTA & User */}
           <div className="framer-action-group">
-            {/* Primary Action Button (Only for regular users, NOT admin) */}
+            {/* Desktop Search Trigger Button (Replaces + Thêm, matching mobile search) */}
             {user?.role !== 'ADMIN' && (
               <button
                 type="button"
-                className="framer-cta-pill"
-                onClick={onOpenAddMember}
-                aria-label="Thêm người thân vào cây gia phả"
-                title="Thêm thành viên mới vào gia phả"
+                className="navbar-search-btn-desktop"
+                onClick={onOpenPersonPicker}
+                aria-label="Tìm kiếm người thân trong dòng họ (Ctrl + K)"
+                title="Tìm kiếm người thân trong dòng họ (Ctrl + K)"
               >
-                <UserPlus size={15} />
-                <span>+ Thêm</span>
+                <Search size={15} className="search-icon" />
+                <span className="search-label">Tìm thành viên...</span>
+                <kbd className="search-kbd">Ctrl K</kbd>
               </button>
             )}
 
@@ -352,7 +365,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             TIER 2: Sub-bar Controls (Only shown for non-admin)
             ========================================================= */}
         {user?.role === 'ADMIN' ? null : (
-          <div className="navbar-tier-2 framer-subbar">
+          <div className="navbar-tier-2-outer">
+            <div className="navbar-tier-2 framer-subbar">
             {/* Main View Mode Segmented Tabs: [Sơ đồ Cây] / [Danh Sách] */}
             <div className="tier2-mainview-tabs" role="tablist" aria-label="Chế độ sơ đồ hoặc danh sách">
               <button
@@ -503,7 +517,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
       </header>
 
       {/* =========================================================
