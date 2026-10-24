@@ -105,57 +105,50 @@ export const DateInputVN: React.FC<DateInputVNProps> = ({
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
+    <div style={{ position: 'relative', width: '100%', height: '42px', display: 'flex', alignItems: 'center' }}>
       <input
         type="text"
         className={className}
-        style={{ paddingRight: '2.4rem' }}
+        style={{ paddingRight: '2.4rem', height: '100%', width: '100%', boxSizing: 'border-box' }}
         placeholder={placeholder}
         value={displayVal}
         onChange={handleTextChange}
         disabled={disabled}
       />
 
-      {/* Button with Calendar icon to open datepicker */}
-      <button
-        type="button"
-        onClick={handleOpenPicker}
-        disabled={disabled}
-        title="Chọn ngày từ lịch"
+      {/* Interactive Calendar Icon Trigger: Direct transparent native date input overlay for 100% mobile iOS/Android support */}
+      <div
         style={{
           position: 'absolute',
           right: '8px',
-          background: 'transparent',
-          border: 'none',
-          cursor: disabled ? 'not-allowed' : 'pointer',
-          padding: '4px',
+          width: '32px',
+          height: '32px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#94a3b8',
-          transition: 'color 0.15s ease',
+          cursor: disabled ? 'not-allowed' : 'pointer',
         }}
+        title="Chọn ngày từ lịch hoặc tự gõ ngày"
       >
-        <Calendar size={18} />
-      </button>
-
-      {/* Hidden native date input to trigger browser date picker */}
-      <input
-        ref={hiddenDateInputRef}
-        type="date"
-        value={isoVal}
-        onChange={handleNativePickerChange}
-        tabIndex={-1}
-        style={{
-          position: 'absolute',
-          opacity: 0,
-          pointerEvents: 'none',
-          bottom: 0,
-          right: 0,
-          width: '1px',
-          height: '1px',
-        }}
-      />
+        <Calendar size={18} color="#34d399" style={{ pointerEvents: 'none' }} />
+        <input
+          ref={hiddenDateInputRef}
+          type="date"
+          value={isoVal}
+          onChange={handleNativePickerChange}
+          disabled={disabled}
+          tabIndex={-1}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0,
+            width: '100%',
+            height: '100%',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            zIndex: 3,
+          }}
+        />
+      </div>
     </div>
   );
 };

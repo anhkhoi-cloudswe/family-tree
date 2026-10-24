@@ -1094,30 +1094,26 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
           {/* 4. Nickname & Giới tính */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
             <div className="form-field">
-              <label className="form-label-clean">Tên gọi / Biệt danh</label>
+              <label className="form-label-clean">Biệt danh</label>
               <input
                 type="text"
                 className="form-input-clean"
+                style={{ height: '42px', boxSizing: 'border-box' }}
                 placeholder="Ví dụ: Chú Bình, Bé Thảo..."
                 value={formData.nickname}
                 onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
               />
             </div>
             <div className="form-field">
-              <label className="form-label-clean" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>Giới tính</span>
-                {genderLockInfo.locked && (
-                  <span style={{ fontSize: '0.7rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <Lock size={10} /> Khóa theo vai trò
-                  </span>
-                )}
-              </label>
+              <label className="form-label-clean">Giới tính</label>
               <select
                 className="form-select-clean"
                 value={formData.gender}
                 disabled={genderLockInfo.locked}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
                 style={{
+                  height: '42px',
+                  boxSizing: 'border-box',
                   opacity: genderLockInfo.locked ? 0.8 : 1,
                   cursor: genderLockInfo.locked ? 'not-allowed' : 'default',
                   background: genderLockInfo.locked ? 'rgba(255, 255, 255, 0.05)' : undefined,
@@ -1128,8 +1124,9 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 <option value="OTHER">Khác</option>
               </select>
               {genderLockInfo.locked && (
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.2rem' }}>
-                  {genderLockInfo.reason}
+                <div style={{ fontSize: '0.72rem', color: '#10b981', marginTop: '0.3rem', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                  <Lock size={11} />
+                  <span>Bạn đời được tự động chọn giới tính khác</span>
                 </div>
               )}
             </div>
@@ -1139,22 +1136,24 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
             {relationType === 'INDEPENDENT' ? (
               <div className="form-field">
-                <label className="form-label-clean">Thế Hệ (Đời thứ)</label>
+                <label className="form-label-clean">Thế Hệ</label>
                 <input
                   type="number"
                   min="1"
                   max="30"
                   className="form-input-clean"
+                  style={{ height: '42px', boxSizing: 'border-box' }}
                   value={formData.generation}
                   onChange={(e) => setFormData({ ...formData, generation: Number(e.target.value) })}
                 />
               </div>
             ) : (
               <div className="form-field">
-                <label className="form-label-clean">Thế Hệ (Tự động xác định)</label>
+                <label className="form-label-clean">Thế Hệ</label>
                 <div
                   style={{
-                    padding: '0.65rem 0.85rem',
+                    height: '42px',
+                    padding: '0 0.85rem',
                     background: 'rgba(255, 255, 255, 0.04)',
                     border: '1px solid rgba(255, 255, 255, 0.12)',
                     borderRadius: '8px',
@@ -1163,13 +1162,10 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                     fontSize: '0.9rem',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.4rem',
+                    boxSizing: 'border-box',
                   }}
                 >
                   <span>Thế hệ {formData.generation}</span>
-                  <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 400 }}>
-                    (Tự động theo quan hệ)
-                  </span>
                 </div>
               </div>
             )}
@@ -1177,6 +1173,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               <label className="form-label-clean">Tình trạng hiện tại</label>
               <select
                 className="form-select-clean"
+                style={{ height: '42px', boxSizing: 'border-box' }}
                 value={formData.isDeceased ? 'DECEASED' : 'LIVING'}
                 onChange={(e) =>
                   setFormData({ ...formData, isDeceased: e.target.value === 'DECEASED' })

@@ -55,14 +55,21 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body, #root, .familytree-app-root {
+html, body {
   font-family: var(--font-base);
   background-color: #061e12;
   color: #ffffff;
   font-size: 16px;
   line-height: 1.5;
-  min-height: 100vh;
-  overflow-x: hidden;
+  height: 100%;
+  height: 100dvh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  -webkit-overflow-scrolling: touch;
   /* High-Resolution Green Wave Gradient from Framer / PayPath (Fallback) */
   background-image: 
     url('/images/bg-green-gradient.png'),
@@ -71,6 +78,18 @@ html, body, #root, .familytree-app-root {
   background-position: center center, 0 0;
   background-attachment: fixed;
   background-repeat: no-repeat, repeat;
+}
+
+#root, .familytree-app-root {
+  height: 100%;
+  height: 100dvh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Dynamic Ambient Video Background Layer (from kling_AI.mp4 - Delogo & Infinite Seamless Loop) */
@@ -95,7 +114,8 @@ html, body, #root, .familytree-app-root {
   min-height: 100%;
   transform: translate(-50%, -50%) translateZ(0);
   object-fit: cover;
-  opacity: 0.88;
+  opacity: 0.96;
+  filter: contrast(1.05) saturate(1.08);
   will-change: transform;
 }
 
@@ -103,8 +123,8 @@ html, body, #root, .familytree-app-root {
   position: absolute;
   inset: 0;
   background: 
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08) 1.2px, transparent 1.2px),
-    linear-gradient(180deg, rgba(3, 19, 11, 0.35) 0%, rgba(6, 30, 18, 0.15) 50%, rgba(3, 15, 9, 0.45) 100%);
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 1.2px, transparent 1.2px),
+    linear-gradient(180deg, rgba(3, 19, 11, 0.22) 0%, rgba(6, 30, 18, 0.08) 50%, rgba(3, 15, 9, 0.3) 100%);
   background-size: 28px 28px, 100% 100%;
   pointer-events: none;
 }
@@ -212,14 +232,18 @@ button, input, select, textarea {
    1. TWO-TIER STICKY HEADER (Fintech SaaS Glassmorphism)
    ========================================================= */
 .two-tier-navbar {
-  position: sticky;
+  position: relative;
+  flex-shrink: 0;
   top: 0;
   z-index: 120;
-  background: rgba(4, 25, 15, 0.42);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(4, 25, 15, 0.52);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 /* Tier 1: Framer-Style Capsule Topbar */
@@ -1596,62 +1620,105 @@ button, input, select, textarea {
   transform: scale(0.96);
 }
 
+.ctrl-primary-capsule {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.95) 0%, rgba(16, 185, 129, 0.95) 100%);
+  border: 1.5px solid rgba(167, 243, 208, 0.45);
+  border-radius: 999px;
+  height: 44px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(16, 185, 129, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.ctrl-primary-capsule:hover {
+  border-color: rgba(167, 243, 208, 0.7);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 22px rgba(16, 185, 129, 0.5);
+  transform: translateY(-2px);
+}
+
 .ctrl-btn-vertical.primary-fit {
   width: auto;
-  min-width: 106px;
-  height: 44px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  border: 1px solid rgba(167, 243, 208, 0.35);
+  min-width: 0;
+  height: 100%;
+  border-radius: 0;
+  background: transparent;
+  border: none;
   color: #ffffff;
-  padding: 0 1.15rem;
+  padding: 0 0.95rem 0 1.15rem;
   gap: 0.45rem;
   font-weight: 700;
   font-size: 0.88rem;
-  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  box-shadow: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
 }
 
 .ctrl-btn-vertical.primary-fit:hover {
-  background: linear-gradient(135deg, #047857 0%, #059669 100%);
-  border-color: rgba(167, 243, 208, 0.6);
-  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.65), 0 0 20px rgba(52, 211, 153, 0.45);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.12);
+  transform: none;
+  box-shadow: none;
+}
+
+.toggle-arrow-btn {
+  width: 40px;
+  height: 100%;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 0.2s ease;
+}
+
+.toggle-arrow-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: none;
+  box-shadow: none;
+}
+
+.chevron-indicator {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chevron-indicator.rotated {
+  transform: rotate(180deg);
 }
 
 .controls-sub-group {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.45rem;
+  opacity: 0;
+  transform: translateY(14px) scale(0.92);
+  pointer-events: none;
+  visibility: hidden;
+  max-height: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.ctrl-mobile-toggle {
-  display: none;
+.controls-sub-group.expanded {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  visibility: visible;
+  max-height: 380px;
 }
 
 @media (max-width: 640px) {
   .minimal-controls-vertical {
-    bottom: 1.25rem;
-    right: 1.25rem;
-  }
-  .ctrl-mobile-toggle {
-    display: flex;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #f1f5f9;
-    border: 1.5px solid #cbd5e1;
-    color: #475569;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-  .controls-sub-group {
-    display: none;
-  }
-  .controls-sub-group.expanded {
-    display: flex;
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    right: calc(1.25rem + env(safe-area-inset-right, 0px));
   }
 }
 
@@ -2264,6 +2331,8 @@ button, input, select, textarea {
 }
 .form-field {
   margin-bottom: 0.95rem;
+  display: flex;
+  flex-direction: column;
 }
 .form-label-clean {
   display: block;
@@ -2271,9 +2340,30 @@ button, input, select, textarea {
   font-weight: 700;
   color: #cbd5e1;
   margin-bottom: 0.35rem;
+  height: 20px;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.form-input-clean, .form-select-clean, .form-textarea-clean {
+.form-input-clean, .form-select-clean {
   width: 100%;
+  height: 42px;
+  min-height: 42px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 0 0.8rem;
+  font-size: 0.9rem;
+  color: #ffffff;
+  outline: none;
+  transition: all 0.15s ease;
+}
+.form-textarea-clean {
+  width: 100%;
+  min-height: 72px;
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;

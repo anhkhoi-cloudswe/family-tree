@@ -679,7 +679,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
 
                   <div className="form-grid-2">
                     <div className="form-field">
-                      <label className="form-label-clean">Biệt danh / Tên thường gọi</label>
+                      <label className="form-label-clean">Biệt danh</label>
                       <input
                         type="text"
                         className="form-input-clean"
@@ -704,7 +704,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
 
                   <div className="form-grid-2">
                     <div className="form-field">
-                      <label className="form-label-clean">Thế Hệ (Đời thứ)</label>
+                      <label className="form-label-clean">Thế Hệ</label>
                       <input
                         type="number"
                         min="1"

@@ -136,14 +136,6 @@ export const MemberCard: React.FC<MemberCardProps> = ({
         }
       }}
     >
-      {/* Badge if Me */}
-      {isMe && (
-        <div className="me-badge" title="Đây là vị trí của bạn (Tôi) trên cây gia phả">
-          <Sparkles size={11} />
-          <span>Tôi</span>
-        </div>
-      )}
-
       {/* 1. Avatar */}
       <div className="avatar-container">
         {person.avatarUrl ? (
@@ -174,9 +166,12 @@ export const MemberCard: React.FC<MemberCardProps> = ({
         {person.fullName}
       </div>
 
-      {/* 3. Vai vế với mình */}
+      {/* 3. Vai vế & Biệt danh (Ví dụ: "Tôi / Quắn", "Bố / Ba") */}
       <div className={`kinship-pill ${getPillClass()}`}>
         {kinshipTitle}
+        {person.nickname && person.nickname.trim().toLowerCase() !== kinshipTitle.trim().toLowerCase()
+          ? ` / ${person.nickname.trim()}`
+          : ''}
       </div>
 
       {/* 4. Detailed Mode Information (When isCompact is false) */}
@@ -186,11 +181,6 @@ export const MemberCard: React.FC<MemberCardProps> = ({
             <div className="card-meta-row">
               <Calendar size={12} className="meta-icon" />
               <span>{birthDeathText}</span>
-            </div>
-          )}
-          {person.nickname && (
-            <div className="card-meta-nickname" title={`Biệt danh: ${person.nickname}`}>
-              &ldquo;{person.nickname}&rdquo;
             </div>
           )}
         </div>

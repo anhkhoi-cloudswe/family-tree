@@ -322,13 +322,33 @@ const AppContent: React.FC = () => {
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Khởi động video motion nền (chống policy chặn autoplay trên mobile/low power mode)
+  // Khởi động video motion nền (bảo đảm autoplay hoạt động mượt mà trên iOS Safari và Android)
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.play().catch(() => {
-        // Trình duyệt có thể yêu cầu cử chỉ chạm đầu tiên của người dùng
-      });
-    }
+    const v = videoRef.current;
+    if (!v) return;
+    v.defaultMuted = true;
+    v.muted = true;
+    const tryPlay = () => {
+      v.play().catch(() => {});
+    };
+    tryPlay();
+
+    const handleFirstGesture = () => {
+      tryPlay();
+      window.removeEventListener('touchstart', handleFirstGesture);
+      window.removeEventListener('click', handleFirstGesture);
+      window.removeEventListener('pointerdown', handleFirstGesture);
+    };
+
+    window.addEventListener('touchstart', handleFirstGesture, { passive: true });
+    window.addEventListener('click', handleFirstGesture, { passive: true });
+    window.addEventListener('pointerdown', handleFirstGesture, { passive: true });
+
+    return () => {
+      window.removeEventListener('touchstart', handleFirstGesture);
+      window.removeEventListener('click', handleFirstGesture);
+      window.removeEventListener('pointerdown', handleFirstGesture);
+    };
   }, []);
 
   const loadTreeData = async (preferredTreeId?: string, currentUser?: User | null) => {
@@ -580,7 +600,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="familytree-app-root" style={{ height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+    <div className="familytree-app-root" style={{ height: '100dvh', width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
       {/* Dynamic Animated Motion Video Background (Looping Seamlessly, No Watermark) */}
       <div className="app-video-bg-layer" aria-hidden="true">
         <video
