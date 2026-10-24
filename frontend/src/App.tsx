@@ -320,35 +320,36 @@ const AppContent: React.FC = () => {
     initAuth();
   }, []);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  // Khởi động video motion nền (bảo đảm autoplay hoạt động mượt mà trên iOS Safari và Android)
-  useEffect(() => {
-    const v = videoRef.current;
+  // Khởi động video motion nền bằng callback ref để bảo đảm autoplay hoạt động ngay lập tức
+  const videoCallbackRef = useCallback((v: HTMLVideoElement | null) => {
     if (!v) return;
     v.defaultMuted = true;
     v.muted = true;
+    v.playsInline = true;
+
     const tryPlay = () => {
-      v.play().catch(() => {});
+      const p = v.play();
+      if (p !== undefined) {
+        p.catch(() => {});
+      }
     };
+
     tryPlay();
 
-    const handleFirstGesture = () => {
+    const onUserAction = () => {
       tryPlay();
-      window.removeEventListener('touchstart', handleFirstGesture);
-      window.removeEventListener('click', handleFirstGesture);
-      window.removeEventListener('pointerdown', handleFirstGesture);
+      window.removeEventListener('click', onUserAction);
+      window.removeEventListener('touchstart', onUserAction);
+      window.removeEventListener('pointerdown', onUserAction);
+      window.removeEventListener('keydown', onUserAction);
+      window.removeEventListener('mousemove', onUserAction);
     };
 
-    window.addEventListener('touchstart', handleFirstGesture, { passive: true });
-    window.addEventListener('click', handleFirstGesture, { passive: true });
-    window.addEventListener('pointerdown', handleFirstGesture, { passive: true });
-
-    return () => {
-      window.removeEventListener('touchstart', handleFirstGesture);
-      window.removeEventListener('click', handleFirstGesture);
-      window.removeEventListener('pointerdown', handleFirstGesture);
-    };
+    window.addEventListener('click', onUserAction, { passive: true });
+    window.addEventListener('touchstart', onUserAction, { passive: true });
+    window.addEventListener('pointerdown', onUserAction, { passive: true });
+    window.addEventListener('keydown', onUserAction, { passive: true });
+    window.addEventListener('mousemove', onUserAction, { passive: true });
   }, []);
 
   const loadTreeData = async (preferredTreeId?: string, currentUser?: User | null) => {
@@ -573,14 +574,16 @@ const AppContent: React.FC = () => {
       <div className="app-loading-screen">
         <div className="app-loading-bg-layer" aria-hidden="true">
           <video
+            ref={videoCallbackRef}
             className="app-video-bg-media"
+            src="/videos/bg-green-motion.mp4?v=20261024_02"
             autoPlay
             loop
             muted
             playsInline
             poster="/images/bg-green-gradient.png"
           >
-            <source src="/videos/bg-green-motion.mp4" type="video/mp4" />
+            <source src="/videos/bg-green-motion.mp4?v=20261024_02" type="video/mp4" />
           </video>
           <div className="app-video-bg-overlay" />
         </div>
@@ -604,15 +607,16 @@ const AppContent: React.FC = () => {
       {/* Dynamic Animated Motion Video Background (Looping Seamlessly, No Watermark) */}
       <div className="app-video-bg-layer" aria-hidden="true">
         <video
-          ref={videoRef}
+          ref={videoCallbackRef}
           className="app-video-bg-media"
+          src="/videos/bg-green-motion.mp4?v=20261024_02"
           autoPlay
           loop
           muted
           playsInline
           poster="/images/bg-green-gradient.png"
         >
-          <source src="/videos/bg-green-motion.mp4" type="video/mp4" />
+          <source src="/videos/bg-green-motion.mp4?v=20261024_02" type="video/mp4" />
         </video>
         <div className="app-video-bg-overlay" />
       </div>
