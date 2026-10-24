@@ -2,16 +2,13 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   ZoomIn,
   ZoomOut,
-  RotateCcw,
   Scan,
   Sparkles,
   Users,
-  Compass,
   ArrowUpCircle,
   Eye,
   Layers,
-  ChevronUp,
-  ChevronDown,
+  Compass,
   UserPlus,
   Crown,
 } from 'lucide-react';
@@ -82,8 +79,6 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [touchPinchStart, setTouchPinchStart] = useState<{ dist: number; scale: number } | null>(null);
 
-  // Floating controls mobile expansion toggle
-  const [isControlsExpanded, setIsControlsExpanded] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   // Lineage Connectors state
@@ -1167,93 +1162,52 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
       </div>
 
       {/* 3. Floating Quick Controls (Expandable Speed Dial with Smooth Animation) */}
+      {/* 3. Floating Quick Controls (Streamlined Best Practice: 3 Icons + Căn Vừa Pill) */}
       <div className="minimal-controls-vertical" role="toolbar" aria-label="Điều khiển bản đồ gia phả">
-        {/* Expandable Controls Stack (Animated) */}
-        <div className={`controls-sub-group ${isControlsExpanded ? 'expanded' : ''}`}>
-          {/* Toggle View Mode: Chi tiết vs Rút gọn */}
-          <button
-            type="button"
-            className="ctrl-btn-vertical"
-            onClick={() => onViewModeChange?.(viewMode === 'DETAILED' ? 'COMPACT' : 'DETAILED')}
-            title={viewMode === 'DETAILED' ? 'Chuyển sang chế độ xem Rút Gọn' : 'Chuyển sang chế độ xem Chi Tiết'}
-            aria-label="Tắt/Mở chi tiết thẻ thành viên"
-          >
-            {viewMode === 'DETAILED' ? <Layers size={18} color="#34d399" /> : <Eye size={18} color="#38bdf8" />}
-          </button>
+        {/* Toggle View Mode: Chi tiết vs Rút gọn */}
+        <button
+          type="button"
+          className="ctrl-btn-vertical"
+          onClick={() => onViewModeChange?.(viewMode === 'DETAILED' ? 'COMPACT' : 'DETAILED')}
+          title={viewMode === 'DETAILED' ? 'Chuyển sang chế độ xem Rút Gọn' : 'Chuyển sang chế độ xem Chi Tiết'}
+          aria-label="Tắt/Mở chi tiết thẻ thành viên"
+        >
+          {viewMode === 'DETAILED' ? <Layers size={18} color="#34d399" /> : <Eye size={18} color="#38bdf8" />}
+        </button>
 
-          {/* Về vị trí của Tôi */}
-          {mePerson && (
-            <button
-              type="button"
-              className="ctrl-btn-vertical"
-              onClick={() => panToPerson(mePerson.id)}
-              title="Di chuyển nhanh đến vị trí của Tôi"
-              aria-label="Về vị trí Tôi"
-            >
-              <Compass size={18} color="#fbbf24" />
-            </button>
-          )}
+        {/* Phóng to (+) */}
+        <button
+          type="button"
+          className="ctrl-btn-vertical"
+          onClick={zoomIn}
+          title="Phóng to bản đồ (+)"
+          aria-label="Phóng to"
+        >
+          <ZoomIn size={18} />
+        </button>
 
-          {/* Phóng to (+) */}
-          <button
-            type="button"
-            className="ctrl-btn-vertical"
-            onClick={zoomIn}
-            title="Phóng to bản đồ (+)"
-            aria-label="Phóng to"
-          >
-            <ZoomIn size={18} />
-          </button>
+        {/* Thu nhỏ (-) */}
+        <button
+          type="button"
+          className="ctrl-btn-vertical"
+          onClick={zoomOut}
+          title="Thu nhỏ bản đồ (-)"
+          aria-label="Thu nhỏ"
+        >
+          <ZoomOut size={18} />
+        </button>
 
-          {/* Thu nhỏ (-) */}
-          <button
-            type="button"
-            className="ctrl-btn-vertical"
-            onClick={zoomOut}
-            title="Thu nhỏ bản đồ (-)"
-            aria-label="Thu nhỏ"
-          >
-            <ZoomOut size={18} />
-          </button>
-
-          {/* Đặt lại 100% */}
-          <button
-            type="button"
-            className="ctrl-btn-vertical"
-            onClick={() => {
-              setScale(1.0);
-              fitToScreen();
-            }}
-            title="Đặt lại tỉ lệ 100%"
-            aria-label="Tỉ lệ 100%"
-          >
-            <RotateCcw size={16} />
-          </button>
-        </div>
-
-        {/* Primary Action Capsule: [Căn vừa] + [Mũi tên Đóng/Mở] */}
-        <div className="ctrl-primary-capsule">
-          <button
-            type="button"
-            className="ctrl-btn-vertical primary-fit"
-            onClick={fitToScreen}
-            aria-label="Căn vừa toàn bộ cây gia phả vào màn hình"
-            title="Căn vừa toàn bộ cây gia phả vào màn hình"
-          >
-            <Scan size={18} />
-            <span className="ctrl-btn-label">Căn vừa</span>
-          </button>
-
-          <button
-            type="button"
-            className={`ctrl-btn-vertical toggle-arrow-btn ${isControlsExpanded ? 'expanded' : ''}`}
-            onClick={() => setIsControlsExpanded(!isControlsExpanded)}
-            title={isControlsExpanded ? 'Thu gọn công cụ' : 'Mở rộng các công cụ (Thu/Phóng, Chi tiết...)'}
-            aria-label={isControlsExpanded ? 'Đóng công cụ' : 'Mở công cụ'}
-          >
-            <ChevronUp size={18} className={`chevron-indicator ${isControlsExpanded ? 'rotated' : ''}`} />
-          </button>
-        </div>
+        {/* Nút Căn Vừa Toàn Cảnh */}
+        <button
+          type="button"
+          className="ctrl-primary-fit-btn"
+          onClick={fitToScreen}
+          aria-label="Căn vừa toàn bộ cây gia phả vào màn hình"
+          title="Căn vừa toàn bộ cây gia phả vào màn hình"
+        >
+          <Scan size={18} />
+          <span className="ctrl-btn-label">Căn vừa</span>
+        </button>
       </div>
 
       {/* 5. HD Export Progress Overlay */}

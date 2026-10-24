@@ -305,17 +305,22 @@ export const MemberListView: React.FC<MemberListViewProps> = ({
                             <div className="list-meta-item">
                               <Calendar size={13} className="meta-icon" />
                               <span>
-                                {member.birthDate
-                                  ? `Sinh: ${formatDateVN(member.birthDate)}`
-                                  : ''}
-                                {member.birthDate && member.deathDate ? ' • ' : ''}
-                                {member.deathDate
-                                  ? `Mất: ${formatDateVN(member.deathDate)}`
-                                  : ''}
-                                {member.isDeceased && member.lunarDeathDay && (
-                                  <strong className="lunar-death-highlight">
-                                    {' '}• Giỗ Âm: {member.lunarDeathDay}
-                                  </strong>
+                                {member.birthDate && (
+                                  <span>Sinh: {formatDateVN(member.birthDate)}</span>
+                                )}
+                                {member.isDeceased && (
+                                  <>
+                                    {member.birthDate && (member.deathDate || member.lunarDeathDay) && ' • '}
+                                    {member.deathDate && (
+                                      <span>Giỗ Dương: {formatDateVN(member.deathDate)}</span>
+                                    )}
+                                    {member.deathDate && member.lunarDeathDay && ' • '}
+                                    {member.lunarDeathDay && (
+                                      <strong className="lunar-death-highlight">
+                                        Giỗ Âm: {member.lunarDeathDay.replace(/\s*Âm\s*lịch/i, '').trim()} Âm lịch
+                                      </strong>
+                                    )}
+                                  </>
                                 )}
                               </span>
                             </div>
