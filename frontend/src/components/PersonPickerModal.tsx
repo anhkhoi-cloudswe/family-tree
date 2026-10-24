@@ -170,7 +170,7 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
 
   return (
     <div
-      className="minimal-modal-overlay"
+      className="minimal-modal-overlay picker-overlay"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -178,160 +178,120 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
       style={{ zIndex: 10500 }}
     >
       <div
-        className="minimal-modal-box"
-        style={{
-          maxWidth: '580px',
-          maxHeight: '88vh',
-          display: 'flex',
-          flexDirection: 'column',
-          padding: 0,
-          overflow: 'hidden',
-        }}
+        className="minimal-modal-box person-picker-box"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header with Search Input */}
-        <div
-          style={{
-            padding: '1.2rem 1.4rem 0.9rem 1.4rem',
-            borderBottom: '1px solid #e2e8f0',
-            background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Users size={20} color="#166534" />
-              <h3 id="picker-title" style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                Chọn Người Để Đổi Góc Nhìn Vai Vế
-              </h3>
+        {/* Mobile Pull/Drag Indicator */}
+        <div className="picker-drag-handle" aria-hidden="true" />
+
+        {/* 1. Header with Title & Search Input */}
+        <div className="picker-header-wrap">
+          <div className="picker-title-row">
+            <div className="picker-title-content">
+              <div className="picker-icon-badge">
+                <Users size={19} />
+              </div>
+              <div className="picker-heading-text">
+                <h3 id="picker-title">Tìm Kiếm & Đổi Góc Nhìn</h3>
+                <p>Tra cứu thành viên hoặc chọn vai vế trung tâm</p>
+              </div>
             </div>
             <button className="btn-ghost-sm" onClick={onClose} aria-label="Đóng bảng chọn">
-              <X size={18} />
+              <X size={19} />
             </button>
           </div>
 
           {/* Search Box */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.65rem',
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1.5px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '10px',
-              padding: '0.6rem 0.9rem',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-            }}
-          >
-            <Search size={18} color="#34d399" />
+          <div className="picker-search-container">
+            <Search size={18} color="#34d399" style={{ flexShrink: 0 }} />
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Gõ tên thành viên hoặc biệt danh..."
+              placeholder="Tìm theo tên, biệt danh, thế hệ..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setSelectedIndex(0);
               }}
-              style={{
-                border: 'none',
-                outline: 'none',
-                width: '100%',
-                fontSize: '0.95rem',
-                color: '#ffffff',
-                background: 'transparent',
-              }}
-              aria-label="Tìm kiếm người để đổi vai vế"
+              className="picker-search-input"
+              aria-label="Tìm kiếm người thân trong dòng họ"
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => setSearchTerm('')}
-                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#94a3b8' }}
+                className="picker-clear-btn"
+                aria-label="Xóa nội dung tìm kiếm"
               >
                 <X size={16} />
               </button>
             )}
           </div>
 
-          {/* Quick Filter Tabs */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '0.4rem',
-              overflowX: 'auto',
-              paddingTop: '0.8rem',
-              paddingBottom: '0.2rem',
-              scrollbarWidth: 'none',
-            }}
-          >
+          {/* Quick Filter Tabs (Smooth Horizontal Scroll) */}
+          <div className="picker-tabs-scroll" role="tablist" aria-label="Bộ lọc nhánh và thế hệ">
             <button
               type="button"
-              className={filterType === 'ALL' ? 'btn-primary' : 'btn-secondary'}
-              style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+              role="tab"
+              aria-selected={filterType === 'ALL'}
+              className={`picker-tab-chip ${filterType === 'ALL' ? 'active' : 'inactive'}`}
               onClick={() => {
                 setFilterType('ALL');
                 setSelectedIndex(0);
               }}
             >
-              Tất cả ({tree.members.length})
+              <span>Tất cả ({tree.members.length})</span>
             </button>
 
             <button
               type="button"
-              className={filterType === 'PATERNAL' ? 'btn-primary' : 'btn-secondary'}
-              style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+              role="tab"
+              aria-selected={filterType === 'PATERNAL'}
+              className={`picker-tab-chip ${filterType === 'PATERNAL' ? 'active' : 'inactive'}`}
               onClick={() => {
                 setFilterType('PATERNAL');
                 setSelectedIndex(0);
               }}
             >
-              🏛️ Bên Nội
+              <span>🏛️ Bên Nội</span>
             </button>
 
             <button
               type="button"
-              className={filterType === 'MATERNAL' ? 'btn-primary' : 'btn-secondary'}
-              style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+              role="tab"
+              aria-selected={filterType === 'MATERNAL'}
+              className={`picker-tab-chip ${filterType === 'MATERNAL' ? 'active' : 'inactive'}`}
               onClick={() => {
                 setFilterType('MATERNAL');
                 setSelectedIndex(0);
               }}
             >
-              🌸 Bên Ngoại
+              <span>🌸 Bên Ngoại</span>
             </button>
 
             {generations.map((gen) => (
               <button
                 key={gen}
                 type="button"
-                className={filterType === gen ? 'btn-primary' : 'btn-secondary'}
-                style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                role="tab"
+                aria-selected={filterType === gen}
+                className={`picker-tab-chip ${filterType === gen ? 'active' : 'inactive'}`}
                 onClick={() => {
                   setFilterType(gen);
                   setSelectedIndex(0);
                 }}
               >
-                Đời {gen}
+                <span>Đời {gen}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Recent Picks (if no search term) */}
+        {/* 2. Recent Picks Strip (Clean horizontal tags) */}
         {!searchTerm && recentMembers.length > 0 && filterType === 'ALL' && (
-          <div
-            style={{
-              padding: '0.75rem 1.4rem',
-              background: '#f8fafc',
-              borderBottom: '1px solid #e2e8f0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.6rem',
-              flexWrap: 'wrap',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: '#64748b' }}>
-              <History size={14} />
+          <div className="picker-recents-strip">
+            <div className="picker-recents-label">
+              <History size={13} color="#94a3b8" />
               <span>Gần đây:</span>
             </div>
             {recentMembers.map((m) => (
@@ -339,44 +299,30 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
                 key={`recent-${m.id}`}
                 type="button"
                 onClick={() => handleSelect(m)}
-                style={{
-                  border: '1px solid #cbd5e1',
-                  background: '#ffffff',
-                  borderRadius: '999px',
-                  padding: '0.2rem 0.65rem',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  color: '#334155',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                }}
+                className="picker-recent-pill"
+                title={`Chọn ${m.fullName}`}
               >
                 <span>{m.fullName}</span>
-                {mePerson?.id === m.id && <Check size={12} color="#166534" />}
+                {mePerson?.id === m.id && <Check size={12} color="#34d399" />}
               </button>
             ))}
           </div>
         )}
 
-        {/* Results List */}
+        {/* 3. Results List */}
         <div
           ref={listContainerRef}
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '0.85rem 1.4rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem',
-          }}
+          className="picker-results-list"
           role="listbox"
+          aria-label="Danh sách thành viên"
         >
           {filteredMembers.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#64748b' }}>
-              <p style={{ margin: 0, fontWeight: 500, fontSize: '0.95rem' }}>
-                Không tìm thấy thành viên nào phù hợp.
+            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8' }}>
+              <p style={{ margin: 0, fontWeight: 600, fontSize: '0.95rem', color: '#cbd5e1' }}>
+                Không tìm thấy người thân phù hợp.
+              </p>
+              <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                Thử tìm theo tên không dấu hoặc chuyển sang bộ lọc "Tất cả".
               </p>
             </div>
           ) : (
@@ -393,83 +339,64 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
                   onMouseEnter={() => setSelectedIndex(idx)}
                   role="option"
                   aria-selected={isSelected}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.75rem 1rem',
-                    borderRadius: '12px',
-                    cursor: 'pointer',
-                    background: isSelected ? 'rgba(16, 185, 129, 0.22)' : isCurrentMe ? 'rgba(59, 130, 246, 0.15)' : 'rgba(16, 36, 26, 0.75)',
-                    border: `1.5px solid ${isSelected ? '#34d399' : isCurrentMe ? '#60a5fa' : 'rgba(255, 255, 255, 0.1)'}`,
-                    transition: 'all 0.15s ease',
-                  }}
+                  className={`picker-item-card ${isCurrentMe ? 'is-current' : ''}`}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                    {/* Initials Avatar */}
-                    <div
-                      style={{
-                        width: '42px',
-                        height: '42px',
-                        borderRadius: '50%',
-                        background: isCurrentMe ? '#166534' : '#f1f5f9',
-                        color: isCurrentMe ? '#ffffff' : '#334155',
-                        border: '1.5px solid #cbd5e1',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 700,
-                        fontSize: '0.95rem',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {getInitials(person.fullName)}
+                  <div className="picker-item-left">
+                    {/* Avatar (Image or Initials) */}
+                    <div className={`picker-avatar ${isCurrentMe ? 'is-current' : ''}`}>
+                      {person.avatarUrl ? (
+                        <img
+                          src={person.avatarUrl}
+                          alt={person.fullName}
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <span>{getInitials(person.fullName)}</span>
+                      )}
                     </div>
 
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.98rem', fontWeight: 700, color: '#0f172a' }}>
+                    <div className="picker-info-col">
+                      <div className="picker-name-row">
+                        <span className="picker-person-name">
                           {person.fullName}
                         </span>
                         {person.nickname && (
-                          <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                          <span className="picker-person-nickname">
                             ({person.nickname})
                           </span>
                         )}
                         {isCurrentMe && (
-                          <span
-                            style={{
-                              fontSize: '0.72rem',
-                              fontWeight: 700,
-                              background: '#dcfce7',
-                              color: '#15803d',
-                              padding: '0.1rem 0.45rem',
-                              borderRadius: '999px',
-                            }}
-                          >
+                          <span className="picker-viewing-badge">
                             Đang xem
                           </span>
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem', fontSize: '0.8rem' }}>
-                        <span style={{ fontWeight: 600, color: '#2563eb' }}>
-                          Vai vế: {kinshipTitle}
+                      {/* Clean Badges Row - Never breaks across words */}
+                      <div className="picker-badges-row">
+                        <span className="picker-badge-kinship">
+                          {kinshipTitle}
                         </span>
-                        <span style={{ color: '#cbd5e1' }}>•</span>
-                        <span style={{ color: '#64748b' }}>
-                          Thế hệ {person.generation}
+                        <span className="picker-badge-gen">
+                          Đời {person.generation}
                         </span>
-                        <span style={{ color: '#cbd5e1' }}>•</span>
-                        <span style={{ color: person.isDeceased ? '#64748b' : '#059669', fontWeight: 500 }}>
-                          {person.isDeceased ? 'Đã khuất' : 'Còn sống'}
+                        <span className={`picker-badge-status ${person.isDeceased ? 'deceased' : 'living'}`}>
+                          {person.isDeceased ? '✟ Đã khuất' : '✦ Còn sống'}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    {isCurrentMe && <Check size={18} color="#166534" />}
+                  {/* Active Selection Indicator */}
+                  <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, paddingLeft: '0.4rem' }}>
+                    {isCurrentMe ? (
+                      <Check size={18} color="#34d399" />
+                    ) : isSelected ? (
+                      <Sparkles size={16} color="#fbbf24" />
+                    ) : null}
                   </div>
                 </div>
               );
@@ -477,21 +404,11 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
           )}
         </div>
 
-        {/* Footer with keyboard guidance and "Về vị trí của tôi" */}
-        <div
-          style={{
-            padding: '0.9rem 1.4rem',
-            borderTop: '1px solid #e2e8f0',
-            background: '#f8fafc',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-          }}
-        >
-          <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-            <span>Dùng phím <strong>↑</strong> <strong>↓</strong> để chọn, <strong>Enter</strong> để đổi, <strong>Esc</strong> để thoát</span>
+        {/* 4. Footer with responsive behavior */}
+        <div className="picker-footer-bar">
+          {/* Desktop Keyboard Hints (Hidden on Mobile) */}
+          <div className="picker-desktop-hints">
+            <span>Dùng phím <kbd>↑</kbd> <kbd>↓</kbd> để duyệt, <kbd>Enter</kbd> để chọn, <kbd>Esc</kbd> để đóng</span>
           </div>
 
           {onResetToMe && (
@@ -502,9 +419,16 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
                 onResetToMe();
                 onClose();
               }}
-              style={{ fontSize: '0.82rem', padding: '0.35rem 0.75rem', gap: '0.4rem' }}
+              style={{
+                fontSize: '0.84rem',
+                padding: '0.45rem 0.95rem',
+                gap: '0.45rem',
+                borderRadius: '999px',
+                borderColor: 'rgba(52, 211, 153, 0.4)',
+                color: '#34d399',
+              }}
             >
-              <Navigation size={13} color="#166534" />
+              <Navigation size={14} color="#34d399" />
               <span>Về vị trí của tôi</span>
             </button>
           )}
