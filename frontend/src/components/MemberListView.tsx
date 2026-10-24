@@ -9,7 +9,6 @@ import {
   Sparkles,
   ChevronRight,
   X,
-  Filter,
 } from 'lucide-react';
 import { FamilyTree, Person } from '../types';
 import { getKinshipToMe, getPaternalMaternalMemberIds } from '../utils/kinshipHelper';
@@ -110,19 +109,6 @@ export const MemberListView: React.FC<MemberListViewProps> = ({
     }));
   }, [filteredMembers]);
 
-  // Available generations for jump chips
-  const allGenerations = useMemo(() => {
-    const gens = Array.from(new Set(tree.members.map((m) => m.generation || 1))).sort((a, b) => a - b);
-    return gens;
-  }, [tree.members]);
-
-  // Scroll smoothly to a generation
-  const scrollToGeneration = (gen: number) => {
-    const el = document.getElementById(`list-generation-${gen}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
 
 
   const getPillClass = (kinshipTitle: string, isMe: boolean) => {
@@ -172,53 +158,7 @@ export const MemberListView: React.FC<MemberListViewProps> = ({
           )}
         </div>
 
-        {/* Branch Filter Segmented Tabs */}
-        <div className="list-filter-row">
-          <div className="list-branch-tabs" role="tablist" aria-label="Lọc theo nhánh phả hệ">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={branchFilter === 'ALL'}
-              className={`list-branch-pill ${branchFilter === 'ALL' ? 'active' : ''}`}
-              onClick={() => onBranchFilterChange('ALL')}
-            >
-              Tất cả ({tree.members.length})
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={branchFilter === 'PATERNAL'}
-              className={`list-branch-pill ${branchFilter === 'PATERNAL' ? 'active' : ''}`}
-              onClick={() => onBranchFilterChange('PATERNAL')}
-            >
-              Bên Nội ({paternalMemberIds.size})
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={branchFilter === 'MATERNAL'}
-              className={`list-branch-pill ${branchFilter === 'MATERNAL' ? 'active' : ''}`}
-              onClick={() => onBranchFilterChange('MATERNAL')}
-            >
-              Bên Ngoại ({maternalMemberIds.size})
-            </button>
-          </div>
-        </div>
 
-        {/* Quick Generation Jump Navigation (Horizontal Scrollable) */}
-        <div className="list-gen-jump-bar" aria-label="Chuyển nhanh đến đời">
-          <span className="gen-jump-label">Đến đời:</span>
-          {allGenerations.map((g) => (
-            <button
-              key={g}
-              type="button"
-              className="gen-jump-chip"
-              onClick={() => scrollToGeneration(g)}
-            >
-              Đời {toRoman(g)}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* 2. Main Scrollable Directory List */}

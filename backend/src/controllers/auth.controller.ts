@@ -192,7 +192,7 @@ export const verifyRegistration = async (req: Request, res: Response) => {
  */
 export const completeRegistration = async (req: Request, res: Response) => {
   try {
-    const { email, password, fullName } = req.body;
+    const { email, password, fullName, avatarUrl } = req.body;
     if (!email) {
       return res.status(400).json({ error: 'Email là bắt buộc.' });
     }
@@ -205,16 +205,44 @@ export const completeRegistration = async (req: Request, res: Response) => {
 
     let defaultTreeId = user?.trees[0]?.id || null;
 
-    if (!user) {
+    if (user) {
+      // Nếu user đã tồn tại nhưng chưa có avatar và Google cung cấp avatarUrl -> Tự động cập nhật
+      if ((!user.avatarUrl || user.avatarUrl.trim() === '') && avatarUrl && typeof avatarUrl === 'string' && avatarUrl.trim()) {
+        const cleanAvatar = avatarUrl.trim();
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { avatarUrl: cleanAvatar },
+          include: { trees: { take: 1 } },
+        });
+
+        // Đồng bộ luôn cho thành viên 'Tôi' trong cây gia phả nếu thành viên này chưa có avatar
+        if (defaultTreeId) {
+          const rootPerson = await prisma.person.findFirst({
+            where: {
+              treeId: defaultTreeId,
+              OR: [{ nickname: 'Tôi' }, { fullName: user.fullName }],
+            },
+          });
+          if (rootPerson && (!rootPerson.avatarUrl || rootPerson.avatarUrl.trim() === '')) {
+            await prisma.person.update({
+              where: { id: rootPerson.id },
+              data: { avatarUrl: cleanAvatar },
+            });
+          }
+        }
+      }
+    } else {
       const userDisplayName = (fullName && fullName.trim()) ? fullName.trim() : cleanEmail.split('@')[0];
       const passwordHash = password ? bcrypt.hashSync(password, 10) : bcrypt.hashSync(Math.random().toString(36), 10);
+      const cleanAvatar = (avatarUrl && typeof avatarUrl === 'string' && avatarUrl.trim()) ? avatarUrl.trim() : null;
 
-      // CHÍNH THỨC TẠO TÀI KHOẢN SAU KHI CLICK EMAIL XÁC THỰC
+      // CHÍNH THỨC TẠO TÀI KHOẢN SAU KHI CLICK EMAIL XÁC THỰC HOẶC SIGN IN GOOGLE
       user = await prisma.user.create({
         data: {
           email: cleanEmail,
           passwordHash,
           fullName: userDisplayName,
+          avatarUrl: cleanAvatar,
           role: 'MEMBER',
           isVerified: true,
         },
@@ -238,6 +266,7 @@ export const completeRegistration = async (req: Request, res: Response) => {
           nickname: 'Tôi',
           gender: 'MALE',
           generation: 1,
+          avatarUrl: cleanAvatar,
           biography: 'Thành viên đầu tiên (Tôi) khởi tạo cây gia phả số.',
         },
       });

@@ -260,10 +260,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
 
       // Tài khoản Google luôn tự động xác thực email (emailVerified = true)
-      // Tự động khởi tạo hoặc đồng bộ vào PostgreSQL Database
+      // Tự động khởi tạo hoặc đồng bộ vào PostgreSQL Database (kèm avatar Google nếu có)
       const res = await apiCompleteRegistration({
         email: googleUser.email.toLowerCase().trim(),
         fullName: googleUser.displayName || undefined,
+        avatarUrl: googleUser.photoURL || undefined,
       });
 
       setStoredToken(res.token);

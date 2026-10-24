@@ -59,7 +59,7 @@ export const apiVerifyRegistration = (token: string) =>
     body: JSON.stringify({ token }),
   });
 
-export const apiCompleteRegistration = (data: { email: string; password?: string; fullName?: string }) =>
+export const apiCompleteRegistration = (data: { email: string; password?: string; fullName?: string; avatarUrl?: string }) =>
   request<{ token: string; user: User; defaultTreeId?: string; message?: string }>('/auth/complete-registration', {
     method: 'POST',
     body: JSON.stringify(data),
