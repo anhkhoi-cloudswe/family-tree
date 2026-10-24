@@ -511,12 +511,8 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
 
       if (visibleChildren.length === 1) {
         const c = visibleChildren[0];
-        let d: string;
-        if (Math.abs(startX - c.endX) < 8) {
-          d = `M ${startX} ${startY} V ${c.endY}`;
-        } else {
-          d = `M ${startX} ${startY} V ${busY} H ${c.endX} V ${c.endY}`;
-        }
+        // Đường nối thẳng trực tiếp từ cha/mẹ xuống con duy nhất, không tạo nếp gấp gãy (straight direct connector)
+        const d = `M ${startX} ${startY} L ${c.endX} ${c.endY}`;
         newConnectors.push({
           id: `conn-single-${c.id}`,
           parentId: union.parent1Id,

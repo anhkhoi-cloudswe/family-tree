@@ -104,7 +104,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
       }
       const solarDeath = anniversaryStr || dDate;
       if (solarDeath) {
-        return `Giỗ: ${solarDeath} dương lịch`;
+        return `Giỗ: ${solarDeath} (dương lịch)`;
       }
       if (person.lunarDeathDay) {
         return `Giỗ: ${person.lunarDeathDay.replace(/\s*Âm\s*lịch/i, '').trim()} Âm`;
@@ -118,13 +118,20 @@ export const MemberCard: React.FC<MemberCardProps> = ({
       return `Sinh: ${bDate}`;
     }
     if (dDate) {
-      return `Giỗ: ${dDate} dương lịch`;
+      return `Giỗ: ${dDate} (dương lịch)`;
     }
     return null;
   };
 
   const birthDeathText = getBirthDeathSummary();
 
+  // Tính toán độ dài họ tên để tự động co font và ngắt dòng tối ưu không phá vỡ layout
+  const fullNameTrim = person.fullName?.trim() || '';
+  const nameWords = fullNameTrim ? fullNameTrim.split(/\s+/).length : 0;
+  const nameLength = fullNameTrim.length;
+  const isNameLong = nameWords >= 4 || nameLength >= 17;
+  const isNameVeryLong = nameWords >= 5 || nameLength >= 23;
+  const nameClass = isNameVeryLong ? 'name-very-long' : isNameLong ? 'name-long' : '';
 
   return (
     <div
@@ -177,9 +184,11 @@ export const MemberCard: React.FC<MemberCardProps> = ({
         )}
       </div>
 
-      {/* 2. Họ và tên */}
-      <div className="card-name" title={person.fullName}>
-        {person.fullName}
+      {/* 2. Họ và tên - Ô cố định chiều cao giúp thẻ đồng nhất, cho phép hiển thị 2 dòng không cắt cụt tên */}
+      <div className="card-name-slot">
+        <div className={`card-name ${nameClass}`} title={person.fullName}>
+          {person.fullName}
+        </div>
       </div>
 
       {/* 3. Vai vế & Biệt danh (Ví dụ: "Tôi / Quắn", "Bố / Ba") */}

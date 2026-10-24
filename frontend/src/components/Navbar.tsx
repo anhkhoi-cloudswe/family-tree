@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Check,
   Sparkles,
+  Search,
 } from 'lucide-react';
 import { User, FamilyTree, Person } from '../types';
 import { downloadTreeExcel } from '../services/api';
@@ -320,17 +321,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* Mobile Right Controls: Quick Add (User only) + Hamburger Button */}
+          {/* Mobile Right Controls: Quick Search (User only) + Hamburger Button */}
           <div className="mobile-header-actions">
             {user?.role !== 'ADMIN' && (
               <button
                 type="button"
-                className="mobile-quick-add-btn"
-                onClick={onOpenAddMember}
-                aria-label="Thêm thành viên mới"
+                className="mobile-quick-search-btn"
+                onClick={onOpenPersonPicker}
+                aria-label="Tìm kiếm người thân trong dòng họ"
+                title="Tìm kiếm người thân"
               >
-                <UserPlus size={18} />
-                <span>Thêm</span>
+                <Search size={17} />
+                <span>Tìm kiếm</span>
               </button>
             )}
 
