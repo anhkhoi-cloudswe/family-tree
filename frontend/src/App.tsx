@@ -66,6 +66,8 @@ const AppContent: React.FC = () => {
 
   // Modals & Drawer states
   const [drawerPerson, setDrawerPerson] = useState<Person | null>(null);
+  const [drawerHistory, setDrawerHistory] = useState<Person[]>([]);
+  const [drawerSource, setDrawerSource] = useState<'LUNAR' | 'REMINDER' | null>(null);
   const [addMemberTarget, setAddMemberTarget] = useState<Person | null>(null);
   const [showAddMemberModal, setShowAddMemberModal] = useState<boolean>(false);
   const [showLunarModal, setShowLunarModal] = useState<boolean>(false);
@@ -541,6 +543,30 @@ const AppContent: React.FC = () => {
     setShowAddMemberModal(true);
   };
 
+  const handleDrawerBack = () => {
+    if (drawerHistory.length > 0) {
+      const prevPerson = drawerHistory[drawerHistory.length - 1];
+      setDrawerHistory((prev) => prev.slice(0, prev.length - 1));
+      setDrawerPerson(prevPerson);
+      return;
+    }
+    const src = drawerSource;
+    setDrawerPerson(null);
+    setDrawerSource(null);
+    setDrawerHistory([]);
+    if (src === 'LUNAR') {
+      setShowLunarModal(true);
+    } else if (src === 'REMINDER') {
+      setShowReminderModal(true);
+    }
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerPerson(null);
+    setDrawerSource(null);
+    setDrawerHistory([]);
+  };
+
   const handleSelectPerspective = (person: Person) => {
     setMePerson(person);
     setFocusPersonId(person.id);
@@ -678,7 +704,11 @@ const AppContent: React.FC = () => {
               viewMode={viewMode}
               onViewModeChange={setViewMode}
               onOpenPersonPicker={() => setShowPersonPicker(true)}
-              onSelectPerson={(p) => setDrawerPerson(p)}
+              onSelectPerson={(p) => {
+                setDrawerSource(null);
+                setDrawerHistory([]);
+                setDrawerPerson(p);
+              }}
               exportTrigger={exportTrigger}
               onExportDone={() => {
                 setIsExportingImage(false);
@@ -699,7 +729,11 @@ const AppContent: React.FC = () => {
               mePerson={mePerson}
               branchFilter={branchFilter}
               onBranchFilterChange={setBranchFilter}
-              onSelectPerson={(p) => setDrawerPerson(p)}
+              onSelectPerson={(p) => {
+                setDrawerSource(null);
+                setDrawerHistory([]);
+                setDrawerPerson(p);
+              }}
             />
           )
         ) : (
@@ -722,13 +756,19 @@ const AppContent: React.FC = () => {
           person={drawerPerson}
           tree={tree}
           mePerson={mePerson}
-          onClose={() => setDrawerPerson(null)}
+          onClose={handleCloseDrawer}
+          onBack={drawerSource || drawerHistory.length > 0 ? handleDrawerBack : undefined}
           onUpdated={() => {
             if (tree) loadTreeData(tree.id);
-            setDrawerPerson(null);
+            handleCloseDrawer();
           }}
           onAddRelativeFor={handleOpenAddRelative}
-          onSelectPerson={(p) => setDrawerPerson(p)}
+          onSelectPerson={(p) => {
+            if (drawerPerson) {
+              setDrawerHistory((prev) => [...prev, drawerPerson]);
+            }
+            setDrawerPerson(p);
+          }}
         />
       )}
 
@@ -753,7 +793,12 @@ const AppContent: React.FC = () => {
         <LunarAnniversaryModal
           tree={tree}
           onClose={() => setShowLunarModal(false)}
-          onSelectPerson={(p) => setDrawerPerson(p)}
+          onSelectPerson={(p) => {
+            setDrawerSource('LUNAR');
+            setDrawerHistory([]);
+            setShowLunarModal(false);
+            setDrawerPerson(p);
+          }}
           onOpenReminderSettings={() => setShowReminderModal(true)}
         />
       )}
@@ -768,7 +813,12 @@ const AppContent: React.FC = () => {
           if (tree) checkUpcomingReminders(tree, newSettings);
         }}
         tree={tree}
-        onSelectPerson={(p) => setDrawerPerson(p)}
+        onSelectPerson={(p) => {
+          setDrawerSource('REMINDER');
+          setDrawerHistory([]);
+          setShowReminderModal(false);
+          setDrawerPerson(p);
+        }}
       />
 
       {/* Smart Person Picker Modal */}

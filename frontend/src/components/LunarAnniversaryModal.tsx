@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Flame, MapPin, ExternalLink, Search, Calendar, Bell, Navigation, Copy, Settings } from 'lucide-react';
+import { X, Flame, MapPin, ExternalLink, Search, Calendar, Bell, Navigation, Copy, Settings, ChevronRight } from 'lucide-react';
 import { Person, FamilyTree } from '../types';
 import { calculateAnniversaryStatus, AnniversaryStatus } from '../utils/lunarHelper';
 import { getInitials } from '../utils/formatHelper';
@@ -79,21 +79,30 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
   }, [items]);
 
   const handleCopySchedule = () => {
-    if (sortedItems.length === 0) return;
-    const header = `🏮 LỊCH GIỖ & MỘ PHẦN TỔ TIÊN - ${tree.name.toUpperCase()}\n---------------------------------------------`;
-    const body = sortedItems
+    // Chỉ lấy những người đã có thông tin ngày giỗ
+    const validItems = sortedItems.filter(
+      (item) => item.person.lunarDeathDay && item.person.lunarDeathDay.trim()
+    );
+
+    if (validItems.length === 0) {
+      toast.info('Chưa có thông tin ngày giỗ nào được cập nhật để sao chép.');
+      return;
+    }
+
+    const currentYear = new Date().getFullYear();
+    const header = `🏮 LỊCH GIỖ trong năm ${currentYear}\n---------------------------------------------`;
+    const body = validItems
       .map((item, idx) => {
         const p = item.person;
         const s = item.anniversary;
         const solar = s.solarDateStr ? ` [Dương lịch: ${s.solarDateStr}]` : '';
-        const countdown = s.daysLeft >= 0 && s.daysLeft <= 45 ? ` ⚠️ (Còn ${s.daysLeft} ngày)` : '';
-        const burial = p.burialPlace ? `\n   📍 An táng: ${p.burialPlace}` : '';
-        return `${idx + 1}. ${p.fullName} (Đời ${p.generation})${countdown}\n   🕯️ Ngày giỗ: ${p.lunarDeathDay || 'Chưa rõ'}${solar}${burial}`;
+        return `${idx + 1}. ${p.fullName}\nNgày giỗ: ${p.lunarDeathDay} Âm lịch${solar}`;
       })
       .join('\n\n');
-    const footer = `\n---------------------------------------------\n📌 Trích xuất từ Cây Gia Phả Số dòng họ`;
-    navigator.clipboard.writeText(`${header}\n\n${body}\n${footer}`);
-    toast.success('Đã sao chép lịch giỗ vào bộ nhớ tạm! Có thể dán gửi Zalo/tin nhắn ngay.');
+    const footer = `\n---------------------------------------------`;
+
+    navigator.clipboard.writeText(`${header}\n\n${body}${footer}`);
+    toast.success('Đã sao chép lịch giỗ vào bộ nhớ tạm!');
   };
 
   return (
@@ -131,12 +140,9 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
               <Flame size={20} />
             </div>
             <div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>
-                Lịch Giỗ Âm Lịch & Mộ Phần Tổ Tiên
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#f1f5f9', margin: 0, whiteSpace: 'nowrap' }}>
+                Lịch Giỗ Âm Lịch và Dương Lịch
               </h3>
-              <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0.15rem 0 0 0' }}>
-                Tự động tính ngày Dương lịch năm {new Date().getFullYear()} và nhắc ngày giỗ sắp đến
-              </p>
             </div>
           </div>
           <button className="btn-ghost-sm" onClick={onClose} title="Đóng">
@@ -236,11 +242,12 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                   border: '1px solid rgba(45, 212, 191, 0.3)',
                   background: 'rgba(45, 212, 191, 0.1)',
                   transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
                 }}
-                title="Sao chép toàn bộ danh sách ngày giỗ để gửi Zalo / tin nhắn cho gia đình"
+                title="Sao chép danh sách ngày giỗ"
               >
                 <Copy size={13} />
-                <span>Sao Chép Gửi Zalo</span>
+                <span>Sao chép</span>
               </button>
 
               {onOpenReminderSettings && (
@@ -260,11 +267,12 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                     border: '1px solid rgba(52, 211, 153, 0.3)',
                     background: 'rgba(52, 211, 153, 0.1)',
                     transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap',
                   }}
-                  title="Cài đặt thời gian nhắc trước ngày sinh nhật & ngày giỗ (Mặc định: trước 1 ngày)"
+                  title="Cài đặt nhắc nhở ngày sinh & ngày giỗ"
                 >
                   <Settings size={13} />
-                  <span>Cài Đặt Nhắc Nhở</span>
+                  <span>Nhắc nhở</span>
                 </button>
               )}
             </div>
@@ -327,24 +335,58 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
               return (
                 <div
                   key={person.id}
+                  onClick={() => onSelectPerson(person)}
                   style={{
-                    background: isToday ? 'rgba(225, 29, 72, 0.22)' : isUpcoming && anniversary.daysLeft <= 15 ? 'rgba(245, 158, 11, 0.18)' : 'rgba(16, 36, 26, 0.8)',
-                    border: `1.5px solid ${isToday ? '#f43f5e' : isUpcoming && anniversary.daysLeft <= 15 ? '#f59e0b' : 'rgba(52, 211, 153, 0.25)'}`,
+                    background: isToday
+                      ? 'rgba(225, 29, 72, 0.22)'
+                      : isUpcoming && anniversary.daysLeft <= 15
+                      ? 'rgba(245, 158, 11, 0.18)'
+                      : 'rgba(16, 36, 26, 0.8)',
+                    border: `1.5px solid ${
+                      isToday
+                        ? '#f43f5e'
+                        : isUpcoming && anniversary.daysLeft <= 15
+                        ? '#f59e0b'
+                        : 'rgba(52, 211, 153, 0.25)'
+                    }`,
                     borderRadius: '12px',
-                    padding: '1rem 1.2rem',
+                    padding: '0.9rem 1.1rem',
                     boxShadow: isToday ? '0 4px 16px rgba(225, 29, 72, 0.3)' : '0 4px 16px rgba(0,0,0,0.3)',
                     display: 'flex',
-                    alignItems: 'flex-start',
+                    alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '1rem',
+                    gap: '0.85rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.18s ease',
                   }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = isToday ? '#f43f5e' : 'rgba(52, 211, 153, 0.6)';
+                    e.currentTarget.style.background = isToday
+                      ? 'rgba(225, 29, 72, 0.28)'
+                      : 'rgba(16, 36, 26, 0.95)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = isToday
+                      ? '#f43f5e'
+                      : isUpcoming && anniversary.daysLeft <= 15
+                      ? '#f59e0b'
+                      : 'rgba(52, 211, 153, 0.25)';
+                    e.currentTarget.style.background = isToday
+                      ? 'rgba(225, 29, 72, 0.22)'
+                      : isUpcoming && anniversary.daysLeft <= 15
+                      ? 'rgba(245, 158, 11, 0.18)'
+                      : 'rgba(16, 36, 26, 0.8)';
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Xem hồ sơ của ${person.fullName}`}
                 >
-                  <div style={{ display: 'flex', gap: '0.9rem', flex: 1 }}>
+                  <div style={{ display: 'flex', gap: '0.85rem', flex: 1, minWidth: 0, alignItems: 'center' }}>
                     {/* Avatar Initials */}
                     <div
                       style={{
-                        width: '46px',
-                        height: '46px',
+                        width: '44px',
+                        height: '44px',
                         borderRadius: '50%',
                         background: isToday ? '#e11d48' : 'rgba(255, 255, 255, 0.08)',
                         color: isToday ? '#ffffff' : '#6ee7b7',
@@ -360,7 +402,7 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                       {getInitials(person.fullName)}
                     </div>
 
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       {/* Name & Generation */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <h4
@@ -369,24 +411,26 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                             fontWeight: 700,
                             color: '#ffffff',
                             margin: 0,
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           {person.fullName}
                         </h4>
                         {person.nickname && (
-                          <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                          <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontStyle: 'italic', whiteSpace: 'nowrap' }}>
                             ({person.nickname})
                           </span>
                         )}
                         <span
                           style={{
                             fontSize: '0.72rem',
-                            padding: '0.15rem 0.55rem',
+                            padding: '0.15rem 0.5rem',
                             background: 'rgba(255, 255, 255, 0.08)',
                             color: '#cbd5e1',
                             border: '1px solid rgba(255, 255, 255, 0.12)',
                             borderRadius: '999px',
                             fontWeight: 600,
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           Thế hệ {person.generation}
@@ -398,9 +442,9 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.6rem',
+                          gap: '0.5rem',
                           flexWrap: 'wrap',
-                          marginTop: '0.45rem',
+                          marginTop: '0.35rem',
                         }}
                       >
                         {/* Lunar Date */}
@@ -408,13 +452,14 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '0.35rem',
+                            gap: '0.3rem',
                             color: person.lunarDeathDay ? '#fda4af' : '#64748b',
-                            fontSize: '0.85rem',
+                            fontSize: '0.84rem',
                             fontWeight: 600,
+                            whiteSpace: 'nowrap',
                           }}
                         >
-                          <Flame size={14} color={person.lunarDeathDay ? '#f43f5e' : '#64748b'} />
+                          <Flame size={13} color={person.lunarDeathDay ? '#f43f5e' : '#64748b'} />
                           <span>{person.lunarDeathDay ? `${person.lunarDeathDay} Âm lịch` : 'Chưa có ngày giỗ'}</span>
                         </div>
 
@@ -426,15 +471,16 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                               alignItems: 'center',
                               gap: '0.3rem',
                               color: '#38bdf8',
-                              fontSize: '0.82rem',
+                              fontSize: '0.8rem',
                               background: 'rgba(56, 189, 248, 0.12)',
                               border: '1px solid rgba(56, 189, 248, 0.25)',
-                              padding: '0.15rem 0.55rem',
+                              padding: '0.15rem 0.5rem',
                               borderRadius: '6px',
                               fontWeight: 500,
+                              whiteSpace: 'nowrap',
                             }}
                           >
-                            <Calendar size={13} color="#38bdf8" />
+                            <Calendar size={12} color="#38bdf8" />
                             <span>Dương lịch {new Date().getFullYear()}: <strong style={{ color: '#ffffff' }}>{anniversary.solarDateStr}</strong></span>
                           </div>
                         )}
@@ -443,9 +489,9 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                         {anniversary.hasValidDate && (
                           <span
                             style={{
-                              fontSize: '0.75rem',
+                              fontSize: '0.74rem',
                               fontWeight: 700,
-                              padding: '0.2rem 0.65rem',
+                              padding: '0.18rem 0.55rem',
                               borderRadius: '999px',
                               background: isToday
                                 ? 'rgba(239, 68, 68, 0.25)'
@@ -473,6 +519,7 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '0.25rem',
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             {isToday && '🔥 '}
@@ -488,7 +535,7 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.4rem',
-                            marginTop: '0.45rem',
+                            marginTop: '0.35rem',
                             fontSize: '0.8rem',
                             color: '#94a3b8',
                             flexWrap: 'wrap',
@@ -504,6 +551,7 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                               )}`}
                               target="_blank"
                               rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -511,12 +559,13 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                                 color: '#34d399',
                                 background: 'rgba(16, 185, 129, 0.12)',
                                 border: '1px solid rgba(16, 185, 129, 0.3)',
-                                padding: '0.15rem 0.5rem',
+                                padding: '0.12rem 0.45rem',
                                 borderRadius: '6px',
                                 textDecoration: 'none',
                                 fontWeight: 600,
-                                fontSize: '0.75rem',
+                                fontSize: '0.74rem',
                                 marginLeft: '0.3rem',
+                                whiteSpace: 'nowrap',
                               }}
                               title={`Xem vị trí tọa độ ${person.burialCoordinates} trên Google Maps`}
                             >
@@ -530,38 +579,10 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Action button */}
-                  <button
-                    type="button"
-                    style={{
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      padding: '0.45rem 0.9rem',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      border: '1px solid rgba(255, 255, 255, 0.18)',
-                      color: '#ffffff',
-                      flexShrink: 0,
-                      transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(52, 211, 153, 0.2)';
-                      e.currentTarget.style.borderColor = 'rgba(52, 211, 153, 0.5)';
-                      e.currentTarget.style.color = '#6ee7b7';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.18)';
-                      e.currentTarget.style.color = '#ffffff';
-                    }}
-                    onClick={() => {
-                      onClose();
-                      onSelectPerson(person);
-                    }}
-                  >
-                    Xem Hồ Sơ
-                  </button>
+                  {/* Sleek Chevron Arrow indicator */}
+                  <div style={{ flexShrink: 0, color: '#64748b', display: 'flex', alignItems: 'center', paddingLeft: '0.35rem' }}>
+                    <ChevronRight size={18} />
+                  </div>
                 </div>
               );
             })
@@ -571,7 +592,7 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
         {/* Modal Footer */}
         <div
           style={{
-            padding: '1rem 1.6rem',
+            padding: '0.85rem 1.6rem',
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
             display: 'flex',
             justifyContent: 'space-between',
@@ -579,14 +600,14 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
             background: 'rgba(6, 20, 13, 0.95)',
           }}
         >
-          <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>
-            Tổng số: <strong style={{ color: '#ffffff' }}>{deceasedMembers.length}</strong> đấng sinh thành & tổ tiên tiền bối
+          <span style={{ fontSize: '0.82rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>
+            Tổng số: <strong style={{ color: '#ffffff' }}>{deceasedMembers.length}</strong> tiền bối
           </span>
           <button
             type="button"
             style={{
-              padding: '0.5rem 1.4rem',
-              fontSize: '0.88rem',
+              padding: '0.45rem 1.1rem',
+              fontSize: '0.85rem',
               fontWeight: 600,
               borderRadius: '8px',
               cursor: 'pointer',

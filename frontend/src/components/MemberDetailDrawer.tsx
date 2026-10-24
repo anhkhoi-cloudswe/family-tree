@@ -18,6 +18,7 @@ import {
   Info,
   Navigation,
   Sparkles,
+  ArrowLeft,
 } from 'lucide-react';
 import { Person, FamilyTree } from '../types';
 import { apiUpdatePerson, apiDeletePerson, apiUploadAvatar } from '../services/api';
@@ -37,6 +38,7 @@ interface MemberDetailDrawerProps {
   onUpdated: () => void;
   onAddRelativeFor: (person: Person) => void;
   onSelectPerson?: (person: Person) => void;
+  onBack?: () => void;
 }
 
 export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
@@ -47,6 +49,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
   onUpdated,
   onAddRelativeFor,
   onSelectPerson,
+  onBack,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Person>>({});
@@ -262,7 +265,18 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
         >
           {/* Header */}
           <div className="drawer-header-row">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {onBack && (
+                <button
+                  type="button"
+                  className="drawer-back-btn"
+                  onClick={onBack}
+                  title="Quay lại tác vụ trước"
+                  aria-label="Quay lại tác vụ trước"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+              )}
               <span className="drawer-gen-tag">
                 Thế hệ {person.generation || 1}
               </span>

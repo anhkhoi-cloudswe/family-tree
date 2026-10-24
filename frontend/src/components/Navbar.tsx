@@ -757,9 +757,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <Calendar size={20} color="#ea580c" />
                     </div>
                     <div className="mobile-action-content">
-                      <div className="mobile-action-title">Lịch Giỗ & Mộ Phần</div>
+                      <div className="mobile-action-title">Lịch Giỗ Âm Lịch & Dương Lịch</div>
                       <div className="mobile-action-desc">
-                        Tra cứu ngày giỗ âm lịch & phần mộ
+                        Tra cứu ngày giỗ âm dương & phần mộ
                       </div>
                     </div>
                   </button>
