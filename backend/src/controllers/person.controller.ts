@@ -171,6 +171,28 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
         },
       });
 
+      // Tự động gắn người mới làm Cha/Mẹ của tất cả anh chị em ruột của childId
+      const childSiblings = await prisma.relationship.findMany({
+        where: {
+          treeId,
+          type: 'SIBLING',
+          OR: [{ spouse1Id: childId }, { spouse2Id: childId }],
+        },
+      });
+      for (const sib of childSiblings) {
+        const sibId = sib.spouse1Id === childId ? sib.spouse2Id : sib.spouse1Id;
+        if (sibId) {
+          const exists = await prisma.relationship.findFirst({
+            where: { treeId, type: 'PARENT_CHILD', parentId: person.id, childId: sibId },
+          });
+          if (!exists) {
+            await prisma.relationship.create({
+              data: { treeId, type: 'PARENT_CHILD', parentId: person.id, childId: sibId },
+            });
+          }
+        }
+      }
+
       // Nếu con đã có cha/mẹ khác trong cây, tự động liên kết thành vợ chồng
       const otherParents = await prisma.relationship.findMany({
         where: {

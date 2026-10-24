@@ -394,6 +394,41 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
       }
     });
 
+    // Lan truyền quan hệ cha mẹ cho anh chị em ruột (qua liên kết SIBLING)
+    // Giúp các thành viên (như Bác Hoàng) dù chỉ có liên kết SIBLING với anh/em (Hoàng Việt)
+    // vẫn tự động nhận cha mẹ (Ông Tính, Bà Vẹn) để sơ đồ cây vẽ đầy đủ đường nối huyết thống
+    const siblingRels = tree.relationships.filter((r) => r.type === 'SIBLING');
+    let changed = true;
+    let maxPasses = 5;
+    while (changed && maxPasses > 0) {
+      changed = false;
+      maxPasses--;
+      siblingRels.forEach((rel) => {
+        const s1 = rel.spouse1Id;
+        const s2 = rel.spouse2Id;
+        if (!s1 || !s2) return;
+        const p1 = childParentMap.get(s1) || [];
+        const p2 = childParentMap.get(s2) || [];
+        if (p1.length > 0 && p2.length === 0) {
+          childParentMap.set(s2, [...p1]);
+          changed = true;
+        } else if (p2.length > 0 && p1.length === 0) {
+          childParentMap.set(s1, [...p2]);
+          changed = true;
+        } else if (p1.length > 0 && p2.length > 0) {
+          const combined = Array.from(new Set([...p1, ...p2]));
+          if (combined.length > p1.length) {
+            childParentMap.set(s1, combined);
+            changed = true;
+          }
+          if (combined.length > p2.length) {
+            childParentMap.set(s2, combined);
+            changed = true;
+          }
+        }
+      });
+    }
+
     childParentMap.forEach((parentIds, childId) => {
       const p1 = parentIds[0];
       let p2 = parentIds.length > 1 ? parentIds[1] : null;

@@ -43,6 +43,53 @@ export const getTreeById = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Không tìm thấy cây gia phả.' });
     }
 
+    // Tự động kiểm tra và đồng bộ liên kết PARENT_CHILD còn thiếu giữa các anh chị em ruột
+    if (tree.relationships && tree.relationships.length > 0) {
+      const siblingRels = tree.relationships.filter((r) => r.type === 'SIBLING');
+      const parentChildRels = tree.relationships.filter((r) => r.type === 'PARENT_CHILD');
+
+      for (const sib of siblingRels) {
+        const id1 = sib.spouse1Id;
+        const id2 = sib.spouse2Id;
+        if (!id1 || !id2) continue;
+
+        const parents1 = parentChildRels
+          .filter((r) => r.childId === id1 && r.parentId)
+          .map((r) => r.parentId as string);
+        const parents2 = parentChildRels
+          .filter((r) => r.childId === id2 && r.parentId)
+          .map((r) => r.parentId as string);
+
+        for (const p of parents1) {
+          if (!parents2.includes(p)) {
+            try {
+              const created = await prisma.relationship.create({
+                data: { treeId: tree.id, type: 'PARENT_CHILD', parentId: p, childId: id2 },
+              });
+              tree.relationships.push(created);
+              parentChildRels.push(created);
+            } catch (e) {
+              // Ignore if already created concurrently
+            }
+          }
+        }
+
+        for (const p of parents2) {
+          if (!parents1.includes(p)) {
+            try {
+              const created = await prisma.relationship.create({
+                data: { treeId: tree.id, type: 'PARENT_CHILD', parentId: p, childId: id1 },
+              });
+              tree.relationships.push(created);
+              parentChildRels.push(created);
+            } catch (e) {
+              // Ignore
+            }
+          }
+        }
+      }
+    }
+
     // Sắp xếp các thành viên theo thế hệ và ngày sinh trực tiếp trong bộ nhớ
     if (tree.members && tree.members.length > 0) {
       tree.members.sort((a, b) => {
