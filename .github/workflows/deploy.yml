@@ -118,4 +118,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: '4.152.0'
           preCommands: npx wrangler pages project create famlykin --production-branch=main || true
-          command: pages deploy frontend/dist --project-name=famlykin
+          command: pages deploy frontend/dist --project-name=famlykin --branch=main

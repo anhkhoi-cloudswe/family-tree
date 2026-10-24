@@ -11,6 +11,12 @@
     <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
     
     <title>Famlykin</title>
+    <!-- Tự động chuyển hướng từ *.pages.dev sang tên miền chính thức famlykin.io.vn -->
+    <script>
+      if (window.location.hostname === 'famlykin.pages.dev') {
+        window.location.replace('https://famlykin.io.vn' + window.location.pathname + window.location.search + window.location.hash);
+      }
+    </script>
     <!-- Google Fonts: Inter & Playfair Display / Cinzel -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
