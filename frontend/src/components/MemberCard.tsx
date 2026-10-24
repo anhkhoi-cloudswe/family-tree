@@ -3,6 +3,7 @@ import { Person } from '../types';
 import { Calendar, MapPin, Sparkles, User, Heart } from 'lucide-react';
 import { formatDateVN } from '../utils/dateHelper';
 import { getInitials } from '../utils/formatHelper';
+import { getSolarAnniversaryForYear } from '../utils/lunarHelper';
 
 interface MemberCardProps {
   person: Person;
@@ -92,17 +93,32 @@ export const MemberCard: React.FC<MemberCardProps> = ({
     const bDate = person.birthDate ? formatDateVN(person.birthDate) : null;
     const dDate = person.deathDate ? formatDateVN(person.deathDate) : null;
 
+    if (person.isDeceased) {
+      // Người đã khuất: tự động quy đổi ngày giỗ âm sang ngày giỗ dương của năm hiện tại
+      let anniversaryStr: string | null = null;
+      if (person.lunarDeathDay) {
+        const anniversary = getSolarAnniversaryForYear(person.lunarDeathDay);
+        if (anniversary) {
+          anniversaryStr = anniversary.dateStr;
+        }
+      }
+      const solarDeath = anniversaryStr || dDate;
+      if (solarDeath) {
+        return `Giỗ: ${solarDeath} dương lịch`;
+      }
+      if (person.lunarDeathDay) {
+        return `Giỗ: ${person.lunarDeathDay.replace(/\s*Âm\s*lịch/i, '').trim()} Âm`;
+      }
+    }
+
     if (bDate && dDate) {
       return `${bDate} - ${dDate}`;
     }
     if (bDate) {
       return `Sinh: ${bDate}`;
     }
-    if (person.isDeceased && person.lunarDeathDay) {
-      return `Giỗ: ${person.lunarDeathDay}`;
-    }
     if (dDate) {
-      return `Mất: ${dDate}`;
+      return `Giỗ: ${dDate} dương lịch`;
     }
     return null;
   };
@@ -178,9 +194,9 @@ export const MemberCard: React.FC<MemberCardProps> = ({
       {!isCompact && (
         <div className="card-extra-info">
           {birthDeathText && (
-            <div className="card-meta-row">
-              <Calendar size={12} className="meta-icon" />
-              <span>{birthDeathText}</span>
+            <div className="card-meta-row" title={birthDeathText}>
+              <Calendar size={12} className="meta-icon" style={{ flexShrink: 0 }} />
+              <span style={{ whiteSpace: 'nowrap' }}>{birthDeathText}</span>
             </div>
           )}
         </div>
