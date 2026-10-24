@@ -13,7 +13,7 @@ export const FamilyTreeLogo: React.FC<FamilyTreeLogoProps> = ({
 }) => {
   return (
     <img
-      src="/favicon-64x64.png?v=20261024"
+      src="/favicon-192x192.png?v=20261024_03"
       alt="Famlykin Logo"
       width={size}
       height={size}
