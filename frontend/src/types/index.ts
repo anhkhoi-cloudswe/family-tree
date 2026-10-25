@@ -3,6 +3,7 @@ export interface User {
   email: string;
   fullName: string;
   phone?: string | null;
+  phoneVerified?: boolean;
   avatarUrl?: string | null;
   role: string;
   status?: 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'PENDING_DELETE';
@@ -12,11 +13,18 @@ export interface User {
 
 export type TreeRole = 'OWNER' | 'EDITOR' | 'VIEWER';
 
+export interface PhoneOtpStatus {
+  attemptsToday: number;
+  maxDaily: number;
+  remaining: number;
+  isLocked: boolean;
+}
+
 export interface TreeCollaborator {
   id: string;
   treeId: string;
   userId: string;
-  role: 'EDITOR' | 'VIEWER';
+  role: 'OWNER' | 'EDITOR' | 'VIEWER';
   personId?: string | null;
   createdAt: string;
   user: {
@@ -39,7 +47,7 @@ export interface TreeInvitation {
   treeId: string;
   inviterId: string;
   receiverId: string;
-  role: 'EDITOR' | 'VIEWER';
+  role: 'OWNER' | 'EDITOR' | 'VIEWER';
   status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
   message?: string | null;
   createdAt: string;
@@ -49,6 +57,13 @@ export interface TreeInvitation {
     branchName?: string | null;
   };
   inviter: {
+    id: string;
+    email: string;
+    fullName: string;
+    phone?: string | null;
+    avatarUrl?: string | null;
+  };
+  receiver?: {
     id: string;
     email: string;
     fullName: string;

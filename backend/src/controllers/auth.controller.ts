@@ -791,3 +791,164 @@ export const cleanupPendingDeleteAccounts = async () => {
   }
 };
 
+// Daily OTP attempt tracker: map userId -> { dateStr: string (YYYY-MM-DD), count: number }
+const phoneOtpAttemptsMap = new Map<string, { dateStr: string; count: number }>();
+
+const getVietnamDateStr = (): string => {
+  const now = new Date();
+  // Vietnam is UTC+7
+  const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  return vnTime.toISOString().slice(0, 10);
+};
+
+/**
+ * Kiểm tra hạn mức gửi SMS OTP trong ngày của user (Tối đa 2 lần / ngày)
+ */
+export const getPhoneOtpStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Chưa đăng nhập.' });
+
+    const todayStr = getVietnamDateStr();
+    const entry = phoneOtpAttemptsMap.get(userId);
+    const count = entry && entry.dateStr === todayStr ? entry.count : 0;
+    const maxDaily = 2;
+
+    return res.json({
+      attemptsToday: count,
+      maxDaily,
+      remaining: Math.max(0, maxDaily - count),
+      isLocked: count >= maxDaily,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || 'Lỗi máy chủ.' });
+  }
+};
+
+/**
+ * Yêu cầu gửi mã OTP qua SMS tới số điện thoại (Áp dụng rate limit 2 lần/ngày)
+ */
+export const requestPhoneOtp = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { phone } = req.body;
+    if (!userId) return res.status(401).json({ error: 'Chưa đăng nhập.' });
+    if (!phone) return res.status(400).json({ error: 'Vui lòng cung cấp số điện thoại.' });
+
+    const cleanPhone = phone.trim().replace(/[\s\-\.]/g, '');
+    const normalized = cleanPhone.startsWith('+84')
+      ? '0' + cleanPhone.slice(3)
+      : cleanPhone.startsWith('84') && cleanPhone.length === 11
+      ? '0' + cleanPhone.slice(2)
+      : cleanPhone;
+
+    // Validate standard Vietnamese carrier prefix (10 digits)
+    const vnPhoneRegex = /^(03[2-9]|05[25689]|07[06-9]|08[1-9]|09[0-9])[0-9]{7}$/;
+    if (!vnPhoneRegex.test(normalized)) {
+      return res.status(400).json({
+        error: 'Số điện thoại không đúng chuẩn đầu số nhà mạng Việt Nam (10 chữ số: Viettel, Mobifone, Vinaphone, Vietnamobile, Wintel, Itelecom).',
+      });
+    }
+
+    // Kiểm tra xem số điện thoại đã được dùng bởi tài khoản khác chưa
+    const existing = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: normalized },
+          { phone: '+84' + normalized.slice(1) },
+        ],
+        NOT: { id: userId },
+      },
+    });
+    if (existing) {
+      return res.status(400).json({ error: 'Số điện thoại này đã được gắn với một tài khoản khác.' });
+    }
+
+    // Rate Limit: Tối đa 2 lần / ngày
+    const todayStr = getVietnamDateStr();
+    const entry = phoneOtpAttemptsMap.get(userId);
+    const count = entry && entry.dateStr === todayStr ? entry.count : 0;
+
+    if (count >= 2) {
+      return res.status(429).json({
+        error: 'Bạn đã vượt quá số lần yêu cầu mã OTP (tối đa 2 lần/ngày). Vui lòng thử lại vào ngày mai.',
+        remainingAttempts: 0,
+        isLocked: true,
+      });
+    }
+
+    // Ghi nhận lượt yêu cầu OTP
+    const newCount = count + 1;
+    phoneOtpAttemptsMap.set(userId, { dateStr: todayStr, count: newCount });
+
+    return res.json({
+      success: true,
+      message: `Đã xác nhận yêu cầu gửi mã OTP tới ${normalized}. (Lượt ${newCount}/2 hôm nay)`,
+      attemptsToday: newCount,
+      remainingAttempts: 2 - newCount,
+      normalizedPhone: normalized,
+      formattedE164: '+84' + normalized.slice(1),
+    });
+  } catch (err: any) {
+    console.error('Lỗi requestPhoneOtp:', err);
+    return res.status(500).json({ error: err?.message || 'Lỗi máy chủ.' });
+  }
+};
+
+/**
+ * Xác thực số điện thoại sau khi mã OTP từ Firebase SMS đã được xác nhận
+ */
+export const verifyPhoneOtp = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { phone } = req.body;
+    if (!userId) return res.status(401).json({ error: 'Chưa đăng nhập.' });
+    if (!phone) return res.status(400).json({ error: 'Thiếu thông tin số điện thoại.' });
+
+    const cleanPhone = phone.trim().replace(/[\s\-\.]/g, '');
+    const normalized = cleanPhone.startsWith('+84')
+      ? '0' + cleanPhone.slice(3)
+      : cleanPhone;
+
+    // Check conflict
+    const existing = await prisma.user.findFirst({
+      where: {
+        phone: normalized,
+        NOT: { id: userId },
+      },
+    });
+    if (existing) {
+      return res.status(400).json({ error: 'Số điện thoại này đã được sử dụng bởi tài khoản khác.' });
+    }
+
+    // Cập nhật số điện thoại đã xác thực
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        phone: normalized,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        avatarUrl: true,
+        role: true,
+        status: true,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: 'Số điện thoại chính chủ đã được xác thực thành công!',
+      user: {
+        ...updatedUser,
+        phoneVerified: true,
+      },
+    });
+  } catch (err: any) {
+    console.error('Lỗi verifyPhoneOtp:', err);
+    return res.status(500).json({ error: err?.message || 'Lỗi máy chủ.' });
+  }
+};
+

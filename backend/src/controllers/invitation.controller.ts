@@ -3,7 +3,30 @@ import { prisma } from '../prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
 /**
+ * Kiểm tra xem user có phải là Chủ nhánh (Owner) của cây không
+ * Bao gồm:
+ * 1. Chủ gốc (tree.ownerId === userId)
+ * 2. Đồng chủ nhánh (TreeCollaborator có role === 'OWNER')
+ * 3. Quản trị viên hệ thống (role === 'ADMIN')
+ */
+export const checkIsBranchOwner = async (treeId: string, userId: string, userRole?: string): Promise<boolean> => {
+  if (userRole === 'ADMIN') return true;
+  const tree = await prisma.familyTree.findUnique({
+    where: { id: treeId },
+    select: { ownerId: true },
+  });
+  if (!tree) return false;
+  if (tree.ownerId === userId) return true;
+
+  const collab = await prisma.treeCollaborator.findFirst({
+    where: { treeId, userId, role: 'OWNER' },
+  });
+  return Boolean(collab);
+};
+
+/**
  * Gửi lời mời chia sẻ cây gia phả qua Số Điện Thoại
+ * Hỗ trợ các vai trò: VIEWER (Chỉ xem), EDITOR (Chỉnh sửa), OWNER (Đồng chủ nhánh - Tối đa 2 người)
  */
 export const sendInvitation = async (req: AuthRequest, res: Response) => {
   try {
@@ -18,35 +41,58 @@ export const sendInvitation = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Vui lòng cung cấp mã cây gia phả và số điện thoại người nhận.' });
     }
 
-    const cleanPhone = phone.trim();
+    const cleanPhone = phone.trim().replace(/[\s\-\.]/g, '');
 
-    // 1. Kiểm tra quyền sở hữu cây của người gửi (chỉ OWNER mới được mời)
-    const tree = await prisma.familyTree.findFirst({
-      where: { id: treeId, ownerId: userId },
-    });
-
-    if (!tree && req.user?.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Chỉ chủ sở hữu cây gia phả mới có quyền mời người khác.' });
+    // 1. Kiểm tra quyền chủ nhánh của người gửi (Chủ gốc hoặc Đồng chủ nhánh)
+    const isOwner = await checkIsBranchOwner(treeId, userId, req.user?.role);
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Chỉ Chủ nhánh mới có quyền mời người thân và phân quyền.' });
     }
 
-    // 2. Tìm người dùng nhận theo Số Điện Thoại
+    // 2. Nếu mời với quyền OWNER: kiểm tra tối đa 2 chủ nhánh
+    if (role === 'OWNER') {
+      const coOwnersCount = await prisma.treeCollaborator.count({
+        where: { treeId, role: 'OWNER' },
+      });
+      // 1 chủ gốc + coOwnersCount
+      if (1 + coOwnersCount >= 2) {
+        return res.status(400).json({
+          error: 'Cây gia phả này đã có tối đa 2 người làm Chủ nhánh (1 chủ gốc và 1 đồng chủ nhánh). Bạn cần hạ quyền chủ nhánh hiện tại trước khi phân quyền mới.',
+        });
+      }
+    }
+
+    // 3. Tìm người dùng nhận theo Số Điện Thoại (hỗ trợ cả chuẩn 0xxx và +84xxx)
+    const normalizedPhone = cleanPhone.startsWith('+84')
+      ? '0' + cleanPhone.slice(3)
+      : cleanPhone.startsWith('84') && cleanPhone.length === 11
+      ? '0' + cleanPhone.slice(2)
+      : cleanPhone;
+    const e164Phone = '+84' + normalizedPhone.slice(1);
+
     const receiver = await prisma.user.findFirst({
-      where: { phone: cleanPhone },
+      where: {
+        OR: [
+          { phone: cleanPhone },
+          { phone: normalizedPhone },
+          { phone: e164Phone },
+        ],
+      },
       select: { id: true, fullName: true, phone: true, email: true },
     });
 
     if (!receiver) {
       return res.status(404).json({
-        error: `Không tìm thấy tài khoản nào với số điện thoại ${cleanPhone}. Hãy nhắc người thân đăng ký tài khoản Famlykin trước nhé.`,
+        error: `Không tìm thấy tài khoản nào với số điện thoại "${cleanPhone}". Người nhận cần tạo tài khoản và cập nhật số điện thoại này trong hồ sơ cá nhân trước.`,
       });
     }
 
-    // 3. Không thể tự mời chính mình
+    // 4. Không thể tự mời chính mình
     if (receiver.id === userId) {
       return res.status(400).json({ error: 'Bạn không thể tự gửi lời mời cho chính mình.' });
     }
 
-    // 4. Kiểm tra xem người này đã là cộng tác viên chưa
+    // 5. Kiểm tra xem người này đã là cộng tác viên chưa
     const existingCollab = await prisma.treeCollaborator.findUnique({
       where: {
         treeId_userId: { treeId, userId: receiver.id },
@@ -59,7 +105,9 @@ export const sendInvitation = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // 5. Kiểm tra lời mời PENDING hiện có
+    const targetRole = role === 'OWNER' ? 'OWNER' : role === 'EDITOR' ? 'EDITOR' : 'VIEWER';
+
+    // 6. Kiểm tra lời mời PENDING hiện có
     const existingPending = await prisma.treeInvitation.findFirst({
       where: {
         treeId,
@@ -73,7 +121,7 @@ export const sendInvitation = async (req: AuthRequest, res: Response) => {
       const updated = await prisma.treeInvitation.update({
         where: { id: existingPending.id },
         data: {
-          role: role === 'EDITOR' ? 'EDITOR' : 'VIEWER',
+          role: targetRole,
           message: message ? message.trim() : existingPending.message,
         },
       });
@@ -83,13 +131,13 @@ export const sendInvitation = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // 6. Tạo mới lời mời
+    // 7. Tạo mới lời mời
     const invitation = await prisma.treeInvitation.create({
       data: {
         treeId,
         inviterId: userId,
         receiverId: receiver.id,
-        role: role === 'EDITOR' ? 'EDITOR' : 'VIEWER',
+        role: targetRole,
         status: 'PENDING',
         message: message ? message.trim() : null,
       },
@@ -100,8 +148,9 @@ export const sendInvitation = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    const roleName = targetRole === 'OWNER' ? 'Đồng chủ nhánh' : targetRole === 'EDITOR' ? 'Chỉnh sửa' : 'Chỉ xem';
     return res.status(201).json({
-      message: `Đã gửi lời mời tham gia cây gia phả đến ${receiver.fullName} thành công!`,
+      message: `Đã gửi lời mời (${roleName}) tới ${receiver.fullName} thành công!`,
       invitation,
     });
   } catch (error: any) {
@@ -286,6 +335,25 @@ export const getTreeCollaborators = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Chưa đăng nhập.' });
     }
 
+    const tree = await prisma.familyTree.findUnique({
+      where: { id: treeId },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            fullName: true,
+            phone: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    if (!tree) {
+      return res.status(404).json({ error: 'Không tìm thấy cây gia phả.' });
+    }
+
     const collaborators = await prisma.treeCollaborator.findMany({
       where: { treeId },
       include: {
@@ -302,7 +370,27 @@ export const getTreeCollaborators = async (req: AuthRequest, res: Response) => {
       orderBy: { createdAt: 'asc' },
     });
 
-    return res.json(collaborators);
+    const pendingInvitations = await prisma.treeInvitation.findMany({
+      where: { treeId, status: 'PENDING' },
+      include: {
+        receiver: {
+          select: { id: true, fullName: true, phone: true, email: true, avatarUrl: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Tính tổng số chủ nhánh hiện tại (1 chủ gốc + các đồng chủ nhánh)
+    const coOwnersCount = collaborators.filter((c) => c.role === 'OWNER').length;
+    const totalOwnersCount = 1 + coOwnersCount;
+
+    return res.json({
+      treeOwner: tree.owner,
+      collaborators,
+      pendingInvitations,
+      totalOwnersCount,
+      maxOwners: 2,
+    });
   } catch (error: any) {
     console.error('Lỗi lấy danh sách thành viên chia sẻ:', error);
     return res.status(500).json({ error: error?.message || 'Lỗi máy chủ.' });
@@ -310,7 +398,78 @@ export const getTreeCollaborators = async (req: AuthRequest, res: Response) => {
 };
 
 /**
- * Thu hồi quyền chia sẻ của một thành viên (Chỉ chủ cây mới có quyền)
+ * Cập nhật vai trò thành viên đã chia sẻ (Chỉ xem, Chỉnh sửa, Chủ nhánh)
+ * Tối đa 2 người làm Chủ nhánh (1 chủ gốc + 1 đồng chủ nhánh)
+ */
+export const updateCollaboratorRole = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { treeId, collaboratorUserId } = req.params;
+    const { role } = req.body; // 'VIEWER' | 'EDITOR' | 'OWNER'
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Chưa đăng nhập.' });
+    }
+
+    const isOwner = await checkIsBranchOwner(treeId, userId, req.user?.role);
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Chỉ Chủ nhánh mới có quyền thay đổi vai trò của thành viên.' });
+    }
+
+    const tree = await prisma.familyTree.findUnique({ where: { id: treeId } });
+    if (!tree) {
+      return res.status(404).json({ error: 'Không tìm thấy cây gia phả.' });
+    }
+
+    if (collaboratorUserId === tree.ownerId) {
+      return res.status(400).json({ error: 'Không thể thay đổi vai trò của Chủ nhánh sáng lập.' });
+    }
+
+    if (role === 'OWNER') {
+      const coOwnersCount = await prisma.treeCollaborator.count({
+        where: {
+          treeId,
+          role: 'OWNER',
+          NOT: { userId: collaboratorUserId },
+        },
+      });
+      // 1 chủ gốc + coOwnersCount
+      if (1 + coOwnersCount >= 2) {
+        return res.status(400).json({
+          error: 'Cây gia phả này đã có tối đa 2 người làm Chủ nhánh. Vui lòng hạ quyền chủ nhánh hiện tại trước khi phân quyền.',
+        });
+      }
+    }
+
+    const targetRole = role === 'OWNER' ? 'OWNER' : role === 'EDITOR' ? 'EDITOR' : 'VIEWER';
+
+    const updated = await prisma.treeCollaborator.update({
+      where: {
+        treeId_userId: { treeId, userId: collaboratorUserId },
+      },
+      data: {
+        role: targetRole,
+      },
+      include: {
+        user: {
+          select: { id: true, fullName: true, phone: true, email: true, avatarUrl: true },
+        },
+      },
+    });
+
+    const roleLabel = targetRole === 'OWNER' ? 'Chủ nhánh' : targetRole === 'EDITOR' ? 'Chỉnh sửa' : 'Chỉ xem';
+    return res.json({
+      message: `Đã cập nhật quyền của ${updated.user.fullName} thành "${roleLabel}".`,
+      collaborator: updated,
+    });
+  } catch (error: any) {
+    console.error('Lỗi updateCollaboratorRole:', error);
+    return res.status(500).json({ error: error?.message || 'Lỗi máy chủ.' });
+  }
+};
+
+/**
+ * Thu hồi quyền chia sẻ của một thành viên (Đuổi khỏi cây)
  */
 export const removeCollaborator = async (req: AuthRequest, res: Response) => {
   try {
@@ -321,12 +480,21 @@ export const removeCollaborator = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Chưa đăng nhập.' });
     }
 
-    const tree = await prisma.familyTree.findFirst({
-      where: { id: treeId, ownerId: userId },
+    const tree = await prisma.familyTree.findUnique({
+      where: { id: treeId },
     });
 
-    if (!tree && req.user?.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Chỉ chủ sở hữu cây mới có quyền hủy quyền truy cập.' });
+    if (!tree) {
+      return res.status(404).json({ error: 'Không tìm thấy cây gia phả.' });
+    }
+
+    if (collaboratorUserId === tree.ownerId) {
+      return res.status(400).json({ error: 'Không thể xóa Chủ nhánh sáng lập khỏi cây gia phả.' });
+    }
+
+    const isOwner = await checkIsBranchOwner(treeId, userId, req.user?.role);
+    if (!isOwner && userId !== collaboratorUserId) {
+      return res.status(403).json({ error: 'Chỉ Chủ nhánh mới có quyền xóa thành viên khỏi cây.' });
     }
 
     await prisma.treeCollaborator.deleteMany({
@@ -336,9 +504,45 @@ export const removeCollaborator = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    return res.json({ message: 'Đã thu hồi quyền chia sẻ thành công.' });
+    return res.json({ message: 'Đã xóa thành viên khỏi cây gia phả thành công.' });
   } catch (error: any) {
     console.error('Lỗi thu hồi quyền chia sẻ:', error);
+    return res.status(500).json({ error: error?.message || 'Lỗi máy chủ.' });
+  }
+};
+
+/**
+ * Hủy lời mời đang chờ phản hồi
+ */
+export const cancelInvitation = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Chưa đăng nhập.' });
+    }
+
+    const invitation = await prisma.treeInvitation.findUnique({
+      where: { id },
+    });
+
+    if (!invitation) {
+      return res.status(404).json({ error: 'Không tìm thấy lời mời.' });
+    }
+
+    const isOwner = await checkIsBranchOwner(invitation.treeId, userId, req.user?.role);
+    if (!isOwner && invitation.inviterId !== userId) {
+      return res.status(403).json({ error: 'Bạn không có quyền hủy lời mời này.' });
+    }
+
+    await prisma.treeInvitation.delete({
+      where: { id },
+    });
+
+    return res.json({ message: 'Đã hủy lời mời thành công.' });
+  } catch (error: any) {
+    console.error('Lỗi cancelInvitation:', error);
     return res.status(500).json({ error: error?.message || 'Lỗi máy chủ.' });
   }
 };

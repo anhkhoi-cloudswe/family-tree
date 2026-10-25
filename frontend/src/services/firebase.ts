@@ -14,6 +14,9 @@ import {
   ActionCodeSettings,
   GoogleAuthProvider,
   signInWithPopup,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  ConfirmationResult,
 } from 'firebase/auth';
 
 const env = (import.meta as any).env || {};
@@ -230,3 +233,61 @@ export const completeFirebaseSignIn = async (email: string): Promise<string> => 
   localStorage.removeItem(EMAIL_FOR_SIGN_IN_KEY);
   return result.user?.email || email;
 };
+
+export type { ConfirmationResult };
+
+/**
+ * Kiểm tra và chuẩn hóa số điện thoại đầu số nhà mạng Việt Nam (10 chữ số)
+ */
+export const validateVietnamesePhone = (phone: string): {
+  isValid: boolean;
+  normalized: string;
+  formattedE164: string;
+  error?: string;
+} => {
+  const clean = phone.trim().replace(/[\s\-\.]/g, '');
+  const normalized = clean.startsWith('+84')
+    ? '0' + clean.slice(3)
+    : clean.startsWith('84') && clean.length === 11
+    ? '0' + clean.slice(2)
+    : clean;
+
+  const vnPhoneRegex = /^(03[2-9]|05[25689]|07[06-9]|08[1-9]|09[0-9])[0-9]{7}$/;
+  if (!vnPhoneRegex.test(normalized)) {
+    return {
+      isValid: false,
+      normalized,
+      formattedE164: '',
+      error: 'Số điện thoại không đúng chuẩn đầu số nhà mạng Việt Nam (10 chữ số: Viettel, Mobifone, Vinaphone, Vietnamobile, Wintel, Itelecom).',
+    };
+  }
+
+  return {
+    isValid: true,
+    normalized,
+    formattedE164: '+84' + normalized.slice(1),
+  };
+};
+
+/**
+ * Khởi tạo Invisible reCAPTCHA container cho Firebase Phone Authentication
+ */
+export const setupPhoneRecaptcha = (containerId: string): RecaptchaVerifier => {
+  return new RecaptchaVerifier(firebaseAuth, containerId, {
+    size: 'invisible',
+    callback: () => {
+      // reCAPTCHA verified
+    },
+  });
+};
+
+/**
+ * Gửi mã OTP qua SMS tới số điện thoại di động Việt Nam (chuẩn quốc tế E.164)
+ */
+export const sendPhoneOtpSms = async (
+  phoneNumberE164: string,
+  verifier: RecaptchaVerifier
+): Promise<ConfirmationResult> => {
+  return await signInWithPhoneNumber(firebaseAuth, phoneNumberE164, verifier);
+};
+

@@ -223,9 +223,37 @@ export const apiUpdatePhone = (phone: string) =>
     body: JSON.stringify({ phone }),
   });
 
+// Phone SMS OTP & Daily Rate Limit API
+export const apiGetPhoneOtpStatus = () =>
+  request<{
+    attemptsToday: number;
+    maxDaily: number;
+    remaining: number;
+    isLocked: boolean;
+  }>('/auth/phone-otp/status');
+
+export const apiRequestPhoneOtp = (phone: string) =>
+  request<{
+    success: boolean;
+    message: string;
+    attemptsToday: number;
+    remainingAttempts: number;
+    normalizedPhone: string;
+    formattedE164: string;
+  }>('/auth/phone-otp/request', {
+    method: 'POST',
+    body: JSON.stringify({ phone }),
+  });
+
+export const apiVerifyPhoneOtp = (phone: string) =>
+  request<{ success: boolean; message: string; user: User }>('/auth/phone-otp/verify', {
+    method: 'POST',
+    body: JSON.stringify({ phone }),
+  });
+
 // Tree Collaboration & Invitations
-export const apiSendInvitation = (data: { treeId: string; phone: string; role: 'VIEWER' | 'EDITOR'; message?: string }) =>
-  request<{ message: string; invitation: TreeInvitation }>('/invitations', {
+export const apiSendInvitation = (data: { treeId: string; phone: string; role: 'VIEWER' | 'EDITOR' | 'OWNER'; message?: string }) =>
+  request<{ message: string; invitation: TreeInvitation }>('/invitations/send', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -244,8 +272,25 @@ export const apiDeclineInvitation = (id: string) =>
     method: 'POST',
   });
 
+export const apiCancelInvitation = (id: string) =>
+  request<{ message: string }>(`/invitations/${id}`, {
+    method: 'DELETE',
+  });
+
 export const apiGetTreeCollaborators = (treeId: string) =>
-  request<{ collaborators: TreeCollaborator[]; pendingInvitations: TreeInvitation[] }>(`/invitations/tree/${treeId}`);
+  request<{
+    treeOwner?: User;
+    collaborators: TreeCollaborator[];
+    pendingInvitations: TreeInvitation[];
+    totalOwnersCount?: number;
+    maxOwners?: number;
+  }>(`/invitations/tree/${treeId}`);
+
+export const apiUpdateCollaboratorRole = (treeId: string, collaboratorUserId: string, role: 'VIEWER' | 'EDITOR' | 'OWNER') =>
+  request<{ message: string; collaborator: TreeCollaborator }>(`/invitations/tree/${treeId}/collaborator/${collaboratorUserId}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  });
 
 export const apiRemoveCollaborator = (treeId: string, collaboratorUserId: string) =>
   request<{ message: string }>(`/invitations/tree/${treeId}/collaborator/${collaboratorUserId}`, {

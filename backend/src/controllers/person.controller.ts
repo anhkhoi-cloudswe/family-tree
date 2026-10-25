@@ -48,7 +48,10 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
     }
 
     const isOwner = tree.ownerId === userId;
-    const isEditor = tree.collaborators && tree.collaborators.length > 0 && tree.collaborators[0].role === 'EDITOR';
+    const isEditor =
+      tree.collaborators &&
+      tree.collaborators.length > 0 &&
+      (tree.collaborators[0].role === 'EDITOR' || tree.collaborators[0].role === 'OWNER');
 
     if (!isOwner && !isEditor && !isSuperAdmin) {
       return res.status(403).json({ error: 'Bạn chỉ có quyền xem, không được thêm thành viên vào cây gia phả này.' });
@@ -338,7 +341,10 @@ export const updatePerson = async (req: AuthRequest, res: Response) => {
     });
 
     const isOwner = tree?.ownerId === userId;
-    const isEditor = tree?.collaborators && tree.collaborators.length > 0 && tree.collaborators[0].role === 'EDITOR';
+    const isEditor =
+      tree?.collaborators &&
+      tree.collaborators.length > 0 &&
+      (tree.collaborators[0].role === 'EDITOR' || tree.collaborators[0].role === 'OWNER');
 
     if (!isOwner && !isEditor && !isSuperAdmin) {
       return res.status(403).json({ error: 'Bạn chỉ có quyền xem, không được chỉnh sửa hồ sơ thành viên này.' });
@@ -409,7 +415,10 @@ export const deletePerson = async (req: AuthRequest, res: Response) => {
     });
 
     const isOwner = tree?.ownerId === userId;
-    const isEditor = tree?.collaborators && tree.collaborators.length > 0 && tree.collaborators[0].role === 'EDITOR';
+    const isEditor =
+      tree?.collaborators &&
+      tree.collaborators.length > 0 &&
+      (tree.collaborators[0].role === 'EDITOR' || tree.collaborators[0].role === 'OWNER');
 
     if (!isOwner && !isEditor && !isSuperAdmin) {
       return res.status(403).json({ error: 'Bạn chỉ có quyền xem, không được xóa thành viên này.' });

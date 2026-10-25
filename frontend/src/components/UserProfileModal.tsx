@@ -11,11 +11,26 @@ import {
   Trash2,
   AlertTriangle,
   KeyRound,
+  CheckCircle2,
+  AlertCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { User } from '../types';
-import { apiUpdateProfile, apiCloseAccount } from '../services/api';
+import {
+  apiUpdateProfile,
+  apiCloseAccount,
+  apiGetPhoneOtpStatus,
+  apiRequestPhoneOtp,
+  apiVerifyPhoneOtp,
+  apiUploadAvatar,
+} from '../services/api';
 import { uploadAvatarToSupabase, isSupabaseConfigured } from '../services/supabase';
-import { apiUploadAvatar } from '../services/api';
+import {
+  setupPhoneRecaptcha,
+  sendPhoneOtpSms,
+  validateVietnamesePhone,
+  ConfirmationResult,
+} from '../services/firebase';
 import { useToast } from './Toast';
 
 interface UserProfileModalProps {
@@ -42,6 +57,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
+  // Phone OTP States & Rate Limit (Max 2 times/day)
+  const [otpRemaining, setOtpRemaining] = useState<number>(2);
+  const [isOtpLocked, setIsOtpLocked] = useState(false);
+  const [isRequestingOtp, setIsRequestingOtp] = useState(false);
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
   // Password Form States
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -63,8 +88,32 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       setNewPassword('');
       setConfirmPassword('');
       setShowCloseConfirm(false);
+      setShowOtpInput(false);
+      setOtpCode('');
     }
   }, [currentUser, isOpen]);
+
+  // Load daily OTP rate limit status
+  useEffect(() => {
+    if (isOpen) {
+      apiGetPhoneOtpStatus()
+        .then((res) => {
+          setOtpRemaining(res.remaining);
+          setIsOtpLocked(res.isLocked);
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
+
+  // Countdown timer for OTP
+  useEffect(() => {
+    let timer: any;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
 
   if (!isOpen || !currentUser) return null;
 
@@ -92,6 +141,84 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     }
   };
 
+  const handleSendPhoneOtp = async () => {
+    const cleanPhone = phone.trim().replace(/[\s\-\.]/g, '');
+    if (!cleanPhone) {
+      toast.error('Vui lòng nhập số điện thoại trước khi gửi mã OTP.');
+      return;
+    }
+
+    const check = validateVietnamesePhone(cleanPhone);
+    if (!check.isValid) {
+      toast.error(check.error || 'Số điện thoại không đúng chuẩn đầu số nhà mạng Việt Nam.');
+      return;
+    }
+
+    if (otpRemaining <= 0 || isOtpLocked) {
+      toast.error('Bạn đã dùng hết 2 lượt nhận OTP hôm nay. Vui lòng quay lại vào ngày mai!');
+      return;
+    }
+
+    try {
+      setIsRequestingOtp(true);
+      // 1. Kiểm tra rate limit và validate trên backend
+      const res = await apiRequestPhoneOtp(cleanPhone);
+      setOtpRemaining(res.remainingAttempts);
+      if (res.remainingAttempts <= 0) {
+        setIsOtpLocked(true);
+      }
+
+      // 2. Setup invisible reCAPTCHA và gửi SMS qua Firebase Auth
+      let recaptchaVerifier = (window as any).phoneRecaptchaVerifier;
+      if (!recaptchaVerifier) {
+        recaptchaVerifier = setupPhoneRecaptcha('recaptcha-phone-container');
+        (window as any).phoneRecaptchaVerifier = recaptchaVerifier;
+      }
+
+      const confResult = await sendPhoneOtpSms(res.formattedE164, recaptchaVerifier);
+      setConfirmationResult(confResult);
+      setShowOtpInput(true);
+      setCountdown(60);
+      toast.success(`Đã gửi mã xác thực OTP qua SMS tới ${res.normalizedPhone}!`);
+    } catch (err: any) {
+      console.error('Lỗi gửi SMS OTP:', err);
+      toast.error(err.message || 'Không thể gửi SMS OTP qua Firebase. Vui lòng kiểm tra lại cấu hình.');
+    } finally {
+      setIsRequestingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    const cleanCode = otpCode.trim();
+    if (cleanCode.length !== 6) {
+      toast.error('Mã OTP gồm 6 chữ số từ tin nhắn SMS.');
+      return;
+    }
+
+    if (!confirmationResult) {
+      toast.error('Phiên gửi mã OTP đã hết hiệu lực. Vui lòng gửi lại.');
+      return;
+    }
+
+    try {
+      setIsVerifyingOtp(true);
+      // 1. Xác thực với Firebase Auth
+      await confirmationResult.confirm(cleanCode);
+
+      // 2. Cập nhật số điện thoại đã xác thực trên backend
+      const res = await apiVerifyPhoneOtp(phone.trim());
+      toast.success('Xác thực số điện thoại chính chủ thành công!');
+      setShowOtpInput(false);
+      setOtpCode('');
+      onUserUpdated(res.user);
+    } catch (err: any) {
+      console.error('Lỗi xác thực mã OTP:', err);
+      toast.error(err.message || 'Mã OTP không chính xác hoặc đã hết hiệu lực.');
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = fullName.trim();
@@ -102,9 +229,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
     const cleanPhone = phone.trim().replace(/\s+/g, '');
     if (cleanPhone) {
-      const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
-      if (!phoneRegex.test(cleanPhone)) {
-        toast.error('Số điện thoại không hợp lệ (10 chữ số chuẩn VN).');
+      const check = validateVietnamesePhone(cleanPhone);
+      if (!check.isValid) {
+        toast.error(check.error || 'Số điện thoại không đúng chuẩn đầu số nhà mạng Việt Nam.');
         return;
       }
     }
@@ -125,6 +252,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       setIsSavingProfile(false);
     }
   };
+
 
   const handleSavePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,8 +303,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      {/* Fixed consistent size container: 450px width & 490px height on all tabs */}
-      <div className="relative w-full max-w-[450px] h-[490px] max-h-[92vh] bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      {/* Fixed consistent size container: 460px width & min-h 490px on all tabs */}
+      <div className="relative w-full max-w-[460px] min-h-[490px] max-h-[92vh] bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         {/* Modal Header */}
         <div className="h-[56px] px-4 sm:px-5 border-b border-emerald-500/20 bg-slate-950/70 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3">
@@ -316,11 +444,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   </div>
                 </div>
 
-                {/* Phone */}
+                {/* Phone Section with SMS OTP verification */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                    Số điện thoại nhận lời mời gia phả
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-semibold text-slate-300">
+                      Số điện thoại chính chủ
+                    </label>
+                    {phone && currentUser.phone === phone ? (
+                      <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded-full flex items-center gap-1 font-medium">
+                        <CheckCircle2 size={10} /> Đã xác thực
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded-full flex items-center gap-1 font-medium">
+                        <ShieldAlert size={10} /> Chưa xác thực SMS
+                      </span>
+                    )}
+                  </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
                       <Phone size={13} />
@@ -329,10 +468,78 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       type="tel"
                       placeholder="Ví dụ: 0912345678"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        if (showOtpInput) setShowOtpInput(false);
+                      }}
                       className="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
                     />
                   </div>
+
+                  {/* OTP Button & Rate Limit Status */}
+                  <div className="flex items-center justify-between mt-1 text-[10px]">
+                    <span className="text-slate-400">
+                      Hạn mức: <strong className={otpRemaining > 0 ? "text-emerald-400" : "text-rose-400"}>{otpRemaining}/2 lượt</strong> hôm nay
+                    </span>
+
+                    {phone && phone !== currentUser.phone && (
+                      <button
+                        type="button"
+                        disabled={isRequestingOtp || isOtpLocked || otpRemaining <= 0 || !validateVietnamesePhone(phone).isValid}
+                        onClick={handleSendPhoneOtp}
+                        className="font-semibold text-emerald-400 hover:text-emerald-300 disabled:opacity-40 transition underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>{isRequestingOtp ? 'Đang gửi SMS...' : 'Gửi mã OTP (SMS)'}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Rate Limit Exceeded Notice */}
+                  {isOtpLocked && (
+                    <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[10px] mt-1.5 flex items-center gap-1.5">
+                      <AlertCircle size={12} className="flex-shrink-0" />
+                      <span>Bạn đã dùng hết 2/2 lượt gửi SMS OTP hôm nay. Vui lòng thử lại vào ngày mai.</span>
+                    </div>
+                  )}
+
+                  {/* OTP Input Form when SMS is sent */}
+                  {showOtpInput && (
+                    <div className="p-2.5 rounded-xl bg-slate-950 border border-emerald-500/40 space-y-2 mt-2 animate-in fade-in duration-150">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-300">
+                        <span>Nhập 6 số mã OTP từ tin nhắn SMS:</span>
+                        <span className="text-slate-400 text-[10px]">
+                          {countdown > 0 ? `Còn ${countdown}s` : 'Hết hạn'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          maxLength={6}
+                          placeholder="123456"
+                          value={otpCode}
+                          onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                          className="flex-1 py-1.5 px-3 bg-slate-900 border border-slate-700 focus:border-emerald-500 rounded-lg text-xs text-white tracking-widest text-center font-bold"
+                        />
+                        <button
+                          type="button"
+                          disabled={isVerifyingOtp || otpCode.length !== 6}
+                          onClick={handleVerifyOtp}
+                          className="py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition disabled:opacity-50 cursor-pointer"
+                        >
+                          {isVerifyingOtp ? 'Đang duyệt...' : 'Xác Thực'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowOtpInput(false)}
+                          className="py-1.5 px-2.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs cursor-pointer"
+                        >
+                          Đóng
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {/* Invisible Recaptcha container for Firebase Phone Auth */}
+                  <div id="recaptcha-phone-container"></div>
                 </div>
               </div>
 

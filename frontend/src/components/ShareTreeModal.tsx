@@ -3,7 +3,6 @@ import {
   X,
   Share2,
   Phone,
-  Shield,
   Eye,
   Edit3,
   Crown,
@@ -13,14 +12,17 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  MessageSquare,
+  UserCheck,
 } from 'lucide-react';
-import { FamilyTree, TreeRole, TreeCollaborator, TreeInvitation } from '../types';
+import { FamilyTree, TreeRole, TreeCollaborator, TreeInvitation, User } from '../types';
 import {
   apiSendInvitation,
   apiGetTreeCollaborators,
   apiRemoveCollaborator,
+  apiUpdateCollaboratorRole,
+  apiCancelInvitation,
 } from '../services/api';
+import { validateVietnamesePhone } from '../services/firebase';
 import { useToast } from './Toast';
 
 interface ShareTreeModalProps {
@@ -36,16 +38,19 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
   tree,
   currentUserRole = 'OWNER',
   onClose,
-  onNeedUpdatePhone,
 }) => {
   const [activeTab, setActiveTab] = useState<'INVITE' | 'COLLABORATORS'>('INVITE');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState<'VIEWER' | 'EDITOR'>('VIEWER');
+  const [role, setRole] = useState<'VIEWER' | 'EDITOR' | 'OWNER'>('VIEWER');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingList, setIsLoadingList] = useState(false);
+  const [treeOwner, setTreeOwner] = useState<User | null>(null);
   const [collaborators, setCollaborators] = useState<TreeCollaborator[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<TreeInvitation[]>([]);
+  const [totalOwnersCount, setTotalOwnersCount] = useState<number>(1);
+  const [isUpdatingRole, setIsUpdatingRole] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const toast = useToast();
 
@@ -55,6 +60,8 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
       const res = await apiGetTreeCollaborators(tree.id);
       setCollaborators(res.collaborators || []);
       setPendingInvitations(res.pendingInvitations || []);
+      if (res.treeOwner) setTreeOwner(res.treeOwner);
+      if (res.totalOwnersCount !== undefined) setTotalOwnersCount(res.totalOwnersCount);
     } catch (err: any) {
       console.error('Lỗi tải danh sách người cộng tác:', err);
     } finally {
@@ -65,25 +72,34 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       loadCollaborators();
+      setPhone('');
+      setMessage('');
+      setRole('VIEWER');
     }
   }, [isOpen, tree.id]);
 
   if (!isOpen) return null;
 
   const isOwner = currentUserRole === 'OWNER';
+  const phoneValidation = phone ? validateVietnamesePhone(phone) : null;
+  const isMaxOwnersReached = totalOwnersCount >= 2;
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanPhone = phone.trim().replace(/\s+/g, '');
+    const cleanPhone = phone.trim().replace(/[\s\-\.]/g, '');
     if (!cleanPhone) {
       toast.error('Vui lòng nhập số điện thoại người nhận');
       return;
     }
 
-    // Phone format check
-    const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
-    if (!phoneRegex.test(cleanPhone)) {
-      toast.error('Số điện thoại không hợp lệ (cần 10 chữ số theo chuẩn Việt Nam)');
+    const check = validateVietnamesePhone(cleanPhone);
+    if (!check.isValid) {
+      toast.error(check.error || 'Số điện thoại không hợp lệ chuẩn Việt Nam');
+      return;
+    }
+
+    if (role === 'OWNER' && isMaxOwnersReached) {
+      toast.error('Cây gia phả này đã có tối đa 2 Chủ nhánh. Vui lòng chọn vai trò khác hoặc hạ quyền trước.');
       return;
     }
 
@@ -99,44 +115,69 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
       toast.success(res.message || 'Đã gửi lời mời tham gia cây gia phả!');
       setPhone('');
       setMessage('');
-      // Reload collaborators & pending
       await loadCollaborators();
       setActiveTab('COLLABORATORS');
     } catch (err: any) {
-      toast.error(err.message || 'Không thể gửi lời mời. Vui lòng thử lại!');
+      toast.error(err.message || 'Không thể gửi lời mời. Vui lòng kiểm tra lại!');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleRoleChange = async (collaboratorUserId: string, newRole: TreeRole) => {
+    try {
+      setIsUpdatingRole(collaboratorUserId);
+      const res = await apiUpdateCollaboratorRole(tree.id, collaboratorUserId, newRole);
+      toast.success(res.message || 'Đã cập nhật vai trò thành công!');
+      await loadCollaborators();
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi khi cập nhật vai trò');
+    } finally {
+      setIsUpdatingRole(null);
+    }
+  };
+
   const handleRemoveCollaborator = async (collaboratorUserId: string, name: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn thu hồi quyền truy cập của "${name}"?`)) {
+    if (!window.confirm(`Xác nhận xóa thành viên "${name}" khỏi cây gia phả này?`)) {
       return;
     }
 
     try {
+      setIsDeleting(collaboratorUserId);
       await apiRemoveCollaborator(tree.id, collaboratorUserId);
-      toast.success('Đã thu hồi quyền thành công');
-      setCollaborators((prev) => prev.filter((c) => c.userId !== collaboratorUserId));
+      toast.success(`Đã xóa "${name}" khỏi cây`);
+      await loadCollaborators();
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi khi thu hồi quyền');
+      toast.error(err.message || 'Lỗi khi xóa thành viên');
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  const handleCancelInvitation = async (invitationId: string) => {
+    try {
+      await apiCancelInvitation(invitationId);
+      toast.success('Đã hủy lời mời!');
+      setPendingInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi khi hủy lời mời');
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-[520px] bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-emerald-500/20 bg-slate-950/60 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-              <Share2 size={22} />
+        <div className="h-14 px-4 sm:px-5 border-b border-emerald-500/20 bg-slate-950/70 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+              <Share2 size={16} />
             </div>
             <div>
-              <h3 className="font-bold text-base sm:text-lg text-white">
+              <h3 className="font-bold text-sm sm:text-base text-white leading-tight">
                 Chia Sẻ Cây Gia Phả
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-[11px] text-slate-400 truncate max-w-[280px]">
                 {tree.name} {tree.branchName ? `(${tree.branchName})` : ''}
               </p>
             </div>
@@ -146,218 +187,303 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
             onClick={onClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Modal Tabs */}
-        <div className="flex border-b border-slate-800 bg-slate-950/30 px-4">
+        {/* Modal Navigation Tabs */}
+        <div className="h-11 flex border-b border-slate-800 bg-slate-950/40 px-3 text-xs font-semibold flex-shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab('INVITE')}
-            className={`py-3 px-4 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 ${
+            className={`flex-1 border-b-2 transition flex items-center justify-center gap-1.5 ${
               activeTab === 'INVITE'
                 ? 'border-emerald-400 text-emerald-300'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Send size={15} />
-            Mời Người Thân Mới
+            <Send size={13} />
+            <span>Mời Người Thân</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('COLLABORATORS')}
-            className={`py-3 px-4 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 ${
+            className={`flex-1 border-b-2 transition flex items-center justify-center gap-1.5 ${
               activeTab === 'COLLABORATORS'
                 ? 'border-emerald-400 text-emerald-300'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Users size={15} />
-            Thành Viên Đã Chia Sẻ ({collaborators.length + pendingInvitations.length})
+            <Users size={13} />
+            <span>Thành Viên ({collaborators.length + pendingInvitations.length})</span>
           </button>
         </div>
 
-        {/* Tab Content */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+        {/* Modal Tab Content */}
+        <div className="p-4 sm:p-5 overflow-y-auto flex-1 text-xs">
           {activeTab === 'INVITE' ? (
-            <form onSubmit={handleSendInvite} className="space-y-4">
+            <form onSubmit={handleSendInvite} className="space-y-3.5">
               {!isOwner && (
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2.5">
-                  <AlertCircle size={16} className="flex-shrink-0" />
-                  <span>
-                    Chỉ Chủ cây (Owner) mới có quyền mời thành viên mới hoặc điều chỉnh quyền truy cập.
-                  </span>
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center gap-2">
+                  <AlertCircle size={14} className="flex-shrink-0" />
+                  <span>Chỉ Chủ nhánh mới có quyền gửi lời mời và phân quyền.</span>
                 </div>
               )}
 
-              {/* Phone Input */}
+              {/* Phone Input with validation badge */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Số điện thoại người thân <span className="text-rose-400">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-semibold text-slate-300">
+                    Số điện thoại người thân <span className="text-rose-400">*</span>
+                  </label>
+                  {phone && phoneValidation?.isValid && (
+                    <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+                      <CheckCircle size={10} /> Chuẩn số VN
+                    </span>
+                  )}
+                </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <Phone size={17} />
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                    <Phone size={14} />
                   </div>
                   <input
                     type="tel"
                     required
                     disabled={!isOwner}
-                    placeholder="Ví dụ: 0987654321"
+                    placeholder="Ví dụ: 0912345678"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2.5 bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition disabled:opacity-50"
+                    className="w-full pl-8 pr-3 py-2 bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition disabled:opacity-50"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Người nhận cần có tài khoản đã cập nhật số điện thoại này trong hệ thống Gia Phả Số.
-                </p>
+                {phone && !phoneValidation?.isValid && phone.length >= 10 && (
+                  <p className="text-[10px] text-rose-400 mt-1">
+                    * Cần 10 số đúng chuẩn đầu mạng VN (03, 05, 07, 08, 09)
+                  </p>
+                )}
               </div>
 
-              {/* Role Picker */}
+              {/* Minimalist Role Picker (3 cards) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-2">
-                  Phân quyền truy cập <span className="text-rose-400">*</span>
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Option: VIEWER */}
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-semibold text-slate-300">
+                    Vai trò & Phân quyền <span className="text-rose-400">*</span>
+                  </label>
+                  <span className="text-[10px] text-slate-400">
+                    Chủ nhánh: {totalOwnersCount}/2
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {/* VIEWER */}
                   <div
                     onClick={() => isOwner && setRole('VIEWER')}
-                    className={`cursor-pointer p-3 rounded-xl border transition flex flex-col gap-1 ${
+                    className={`cursor-pointer p-2.5 rounded-xl border transition flex flex-col gap-1 ${
                       role === 'VIEWER'
-                        ? 'bg-emerald-500/15 border-emerald-400 shadow-md ring-1 ring-emerald-500/30'
-                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                        ? 'bg-emerald-500/15 border-emerald-400 ring-1 ring-emerald-500/40 text-emerald-300'
+                        : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
                     } ${!isOwner ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-semibold text-sm text-slate-100">
-                        <Eye size={16} className="text-teal-400" />
-                        Chỉ Xem (Viewer)
+                      <div className="flex items-center gap-1.5 font-bold text-xs">
+                        <Eye size={13} className="text-teal-400" />
+                        <span>Chỉ Xem</span>
                       </div>
-                      {role === 'VIEWER' && <CheckCircle size={16} className="text-emerald-400" />}
+                      {role === 'VIEWER' && <CheckCircle size={13} className="text-emerald-400" />}
                     </div>
-                    <p className="text-[11px] text-slate-400">
-                      Xem toàn bộ cây phả hệ, tra cứu quan hệ họ hàng & ngày giỗ. Không được sửa đổi dữ liệu.
-                    </p>
+                    <span className="text-[10px] text-slate-400 leading-tight">
+                      Xem cây & tra cứu
+                    </span>
                   </div>
 
-                  {/* Option: EDITOR */}
+                  {/* EDITOR */}
                   <div
                     onClick={() => isOwner && setRole('EDITOR')}
-                    className={`cursor-pointer p-3 rounded-xl border transition flex flex-col gap-1 ${
+                    className={`cursor-pointer p-2.5 rounded-xl border transition flex flex-col gap-1 ${
                       role === 'EDITOR'
-                        ? 'bg-emerald-500/15 border-emerald-400 shadow-md ring-1 ring-emerald-500/30'
-                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                        ? 'bg-emerald-500/15 border-emerald-400 ring-1 ring-emerald-500/40 text-emerald-300'
+                        : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
                     } ${!isOwner ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-semibold text-sm text-slate-100">
-                        <Edit3 size={16} className="text-emerald-400" />
-                        Chỉnh Sửa (Editor)
+                      <div className="flex items-center gap-1.5 font-bold text-xs">
+                        <Edit3 size={13} className="text-emerald-400" />
+                        <span>Chỉnh Sửa</span>
                       </div>
-                      {role === 'EDITOR' && <CheckCircle size={16} className="text-emerald-400" />}
+                      {role === 'EDITOR' && <CheckCircle size={13} className="text-emerald-400" />}
                     </div>
-                    <p className="text-[11px] text-slate-400">
-                      Được phép thêm thành viên nhánh, cập nhật thông tin ngày sinh/mất, chỉnh sửa tiểu sử.
-                    </p>
+                    <span className="text-[10px] text-slate-400 leading-tight">
+                      Thêm & sửa thành viên
+                    </span>
+                  </div>
+
+                  {/* OWNER (Max 2) */}
+                  <div
+                    onClick={() => {
+                      if (!isOwner) return;
+                      if (isMaxOwnersReached) {
+                        toast.info('Cây đã có tối đa 2 Chủ nhánh.');
+                        return;
+                      }
+                      setRole('OWNER');
+                    }}
+                    className={`cursor-pointer p-2.5 rounded-xl border transition flex flex-col gap-1 ${
+                      role === 'OWNER'
+                        ? 'bg-amber-500/15 border-amber-400 ring-1 ring-amber-500/40 text-amber-300'
+                        : isMaxOwnersReached
+                        ? 'bg-slate-950/30 border-slate-800/60 text-slate-500 opacity-60 cursor-not-allowed'
+                        : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                    } ${!isOwner ? 'opacity-50 pointer-events-none' : ''}`}
+                    title={isMaxOwnersReached ? 'Đã đủ 2 Chủ nhánh' : 'Đồng chủ nhánh cây gia phả'}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-bold text-xs">
+                        <Crown size={13} className="text-amber-400" />
+                        <span>Chủ Nhánh</span>
+                      </div>
+                      {role === 'OWNER' && <CheckCircle size={13} className="text-amber-400" />}
+                    </div>
+                    <span className="text-[10px] text-slate-400 leading-tight">
+                      Toàn quyền & phân role
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Invitation Message */}
+              {/* Note (Optional) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Tin nhắn đính kèm (Tùy chọn)
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                  Lời nhắn đính kèm (Tùy chọn)
                 </label>
-                <div className="relative">
-                  <textarea
-                    rows={2}
-                    disabled={!isOwner}
-                    placeholder="Ví dụ: Cháu mời bác vào cùng xem và bổ sung chi nhánh của gia đình mình ạ..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    className="w-full p-3 bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition disabled:opacity-50"
-                  />
-                </div>
+                <textarea
+                  rows={2}
+                  disabled={!isOwner}
+                  placeholder="Ví dụ: Cháu mời bác vào cùng xem và bổ sung chi nhánh của gia đình mình ạ..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full p-2.5 bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition disabled:opacity-50"
+                />
               </div>
 
               {/* Submit button */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <button
                   type="submit"
                   disabled={!isOwner || isSubmitting}
-                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs shadow-md shadow-emerald-950/50 flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Send size={16} />
+                  <Send size={14} />
                   <span>{isSubmitting ? 'Đang gửi lời mời...' : 'Gửi Lời Mời Ngay'}</span>
                 </button>
               </div>
             </form>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               {isLoadingList ? (
-                <div className="py-8 text-center text-slate-400 text-sm">
-                  Đang tải danh sách cộng tác viên...
+                <div className="py-8 text-center text-slate-400 text-xs">
+                  Đang tải danh sách thành viên...
                 </div>
               ) : (
                 <>
-                  {/* Current Active Collaborators */}
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-                      <Users size={14} className="text-emerald-400" />
-                      Đang Cộng Tác ({collaborators.length})
-                    </h4>
+                  {/* Status Bar */}
+                  <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">
+                      Chủ nhánh phụ trách: <strong className="text-amber-300">{totalOwnersCount}/2</strong> người
+                    </span>
+                    <span className="text-[10px] text-slate-500">
+                      Chủ nhánh có quyền phân vai trò
+                    </span>
+                  </div>
+
+                  {/* Original Creator */}
+                  {treeOwner && (
+                    <div className="p-2.5 bg-slate-950/80 border border-amber-500/30 rounded-xl flex items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center font-bold text-xs text-amber-300 flex-shrink-0">
+                          {treeOwner.fullName?.charAt(0) || 'O'}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-xs text-white truncate flex items-center gap-1.5">
+                            <span>{treeOwner.fullName}</span>
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                              Chủ Sáng Lập
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 truncate">
+                            {treeOwner.phone || treeOwner.email}
+                          </div>
+                        </div>
+                      </div>
+                      <Crown size={15} className="text-amber-400 flex-shrink-0 mr-1" />
+                    </div>
+                  )}
+
+                  {/* Active Collaborators */}
+                  <div className="space-y-2">
+                    <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Users size={12} className="text-emerald-400" />
+                      <span>Thành Viên Đã Tham Gia ({collaborators.length})</span>
+                    </div>
 
                     {collaborators.length === 0 ? (
-                      <p className="text-xs text-slate-500 italic p-3 bg-slate-950/40 rounded-xl border border-slate-800">
-                        Chưa có người thân nào tham gia cộng tác trong cây gia phả này.
+                      <p className="text-xs text-slate-500 italic p-3 bg-slate-950/30 rounded-xl border border-slate-800 text-center">
+                        Chưa có người thân nào tham gia cộng tác trong cây này.
                       </p>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {collaborators.map((c) => (
                           <div
                             key={c.id}
-                            className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl flex items-center justify-between gap-3"
+                            className="p-2.5 bg-slate-950/60 border border-slate-800 hover:border-slate-700 rounded-xl flex items-center justify-between gap-2 transition"
                           >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-8 h-8 rounded-full bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center font-bold text-xs text-emerald-300 flex-shrink-0">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-7 h-7 rounded-full bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center font-bold text-xs text-emerald-300 flex-shrink-0">
                                 {c.user.fullName?.charAt(0) || 'U'}
                               </div>
                               <div className="min-w-0">
-                                <div className="font-semibold text-sm text-slate-200 truncate">
+                                <div className="font-semibold text-xs text-slate-200 truncate">
                                   {c.user.fullName}
                                 </div>
-                                <div className="text-[11px] text-slate-400 flex items-center gap-2 truncate">
-                                  <span>{c.user.phone || c.user.email}</span>
-                                  {c.person && (
-                                    <span className="text-emerald-400">
-                                      • Liên kết: {c.person.fullName}
-                                    </span>
-                                  )}
+                                <div className="text-[10px] text-slate-400 truncate">
+                                  {c.user.phone || c.user.email}
                                 </div>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                                  c.role === 'EDITOR'
-                                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                    : 'bg-slate-500/20 text-slate-300 border-slate-500/40'
-                                }`}
-                              >
-                                {c.role === 'EDITOR' ? 'Chỉnh sửa' : 'Chỉ xem'}
-                              </span>
+                              {/* Role Selector Dropdown (CRUD) */}
+                              {isOwner ? (
+                                <select
+                                  disabled={isUpdatingRole === c.userId}
+                                  value={c.role}
+                                  onChange={(e) => handleRoleChange(c.userId, e.target.value as TreeRole)}
+                                  className="py-1 px-2 bg-slate-900 border border-slate-700 rounded-lg text-[10px] font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                                >
+                                  <option value="VIEWER">Chỉ Xem</option>
+                                  <option value="EDITOR">Chỉnh Sửa</option>
+                                  <option
+                                    value="OWNER"
+                                    disabled={isMaxOwnersReached && c.role !== 'OWNER'}
+                                  >
+                                    Chủ Nhánh {isMaxOwnersReached && c.role !== 'OWNER' ? '(Đủ 2)' : ''}
+                                  </option>
+                                </select>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                                  {c.role === 'OWNER' ? 'Chủ nhánh' : c.role === 'EDITOR' ? 'Chỉnh sửa' : 'Chỉ xem'}
+                                </span>
+                              )}
 
+                              {/* Kick out button */}
                               {isOwner && (
                                 <button
                                   type="button"
+                                  disabled={isDeleting === c.userId}
                                   onClick={() => handleRemoveCollaborator(c.userId, c.user.fullName)}
-                                  className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition"
-                                  title="Thu hồi quyền"
+                                  className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                                  title="Đuổi khỏi cây"
                                 >
-                                  <Trash2 size={15} />
+                                  <Trash2 size={13} />
                                 </button>
                               )}
                             </div>
@@ -369,29 +495,42 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
 
                   {/* Pending Invitations */}
                   {pendingInvitations.length > 0 && (
-                    <div className="pt-2">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400/90 mb-2 flex items-center gap-1.5">
-                        <Clock size={14} className="text-amber-400" />
-                        Lời Mời Đang Chờ Phản Hồi ({pendingInvitations.length})
-                      </h4>
+                    <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                      <div className="text-[11px] font-semibold text-amber-400/90 uppercase tracking-wider flex items-center gap-1.5">
+                        <Clock size={12} className="text-amber-400" />
+                        <span>Lời Mời Đang Chờ ({pendingInvitations.length})</span>
+                      </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {pendingInvitations.map((inv) => (
                           <div
                             key={inv.id}
-                            className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl flex items-center justify-between gap-3 text-xs"
+                            className="p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-xl flex items-center justify-between gap-2"
                           >
                             <div className="min-w-0">
-                              <div className="font-semibold text-slate-200 truncate">
-                                Người nhận: {inv.inviter?.fullName || 'Người dùng'}
+                              <div className="font-semibold text-xs text-slate-200 truncate">
+                                {inv.receiver?.fullName || 'Người nhận'} ({inv.receiver?.phone || 'Chờ xác nhận'})
                               </div>
-                              <div className="text-[11px] text-slate-400 truncate">
-                                Quyền: {inv.role === 'EDITOR' ? 'Chỉnh sửa' : 'Chỉ xem'} • Đang chờ chấp nhận
+                              <div className="text-[10px] text-slate-400 truncate">
+                                Vai trò: {inv.role === 'OWNER' ? 'Chủ nhánh' : inv.role === 'EDITOR' ? 'Chỉnh sửa' : 'Chỉ xem'}
                               </div>
                             </div>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                              Chờ duyệt
-                            </span>
+
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                Chờ duyệt
+                              </span>
+                              {isOwner && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelInvitation(inv.id)}
+                                  className="p-1 rounded text-slate-400 hover:text-rose-400 transition"
+                                  title="Hủy lời mời"
+                                >
+                                  <X size={13} />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>

@@ -204,11 +204,42 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
   const zoomOut = () => zoomAroundPoint(0.85);
 
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
-    zoomAroundPoint(factor, e.clientX, e.clientY);
-  };
+  // Dedicated Non-Passive Wheel & Pinch-To-Zoom listener on Canvas container.
+  // CRITICAL: Calling e.preventDefault() in a non-passive listener stops the browser
+  // from zooming the entire page (which would blow up the navbar, sidebar, etc.).
+  // ONLY the tree canvas elements inside .canvas-plane zoom in/out!
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const onNativeWheel = (e: WheelEvent) => {
+      e.preventDefault();
+
+      if (e.ctrlKey) {
+        // Trackpad pinch-to-zoom (produces smooth fractional deltaY)
+        const zoomFactor = Math.exp(-e.deltaY * 0.012);
+        zoomAroundPoint(zoomFactor, e.clientX, e.clientY);
+      } else {
+        // Standard mouse wheel
+        const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+        zoomAroundPoint(factor, e.clientX, e.clientY);
+      }
+    };
+
+    const preventGesture = (e: Event) => {
+      e.preventDefault();
+    };
+
+    container.addEventListener('wheel', onNativeWheel, { passive: false });
+    container.addEventListener('gesturestart', preventGesture as any, { passive: false });
+    container.addEventListener('gesturechange', preventGesture as any, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', onNativeWheel);
+      container.removeEventListener('gesturestart', preventGesture as any);
+      container.removeEventListener('gesturechange', preventGesture as any);
+    };
+  }, [zoomAroundPoint]);
 
   // Fit to screen function: centers and scales tree to perfectly fit screen
   // On Mobile (<768px): Uses Smart Focus centered on mePerson/immediate family
@@ -888,7 +919,6 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onWheel={handleWheel}
     >
 
       {/* 2. Infinite Canvas Plane */}
