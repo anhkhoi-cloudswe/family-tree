@@ -13,6 +13,7 @@ import {
 import { FamilyTree, Person } from '../types';
 import { getKinshipToMe, getPaternalMaternalMemberIds } from '../utils/kinshipHelper';
 import { formatDateVN } from '../utils/dateHelper';
+import { getSolarAnniversaryForYear } from '../utils/lunarHelper';
 import { getInitials } from '../utils/formatHelper';
 
 interface MemberListViewProps {
@@ -40,22 +41,7 @@ export const MemberListView: React.FC<MemberListViewProps> = ({
 
   // Generation titles for Vietnamese genealogy
   const getGenerationTitle = (gen: number) => {
-    switch (gen) {
-      case 1:
-        return 'Đời I • Tiền Nhân Tổ Phụ';
-      case 2:
-        return 'Đời II • Hàng Ông Bà';
-      case 3:
-        return 'Đời III • Hàng Bố Mẹ, Cô Bác, Chú Dì';
-      case 4:
-        return 'Đời IV • Thế Hệ Tôi, Anh Chị Em';
-      case 5:
-        return 'Đời V • Hàng Con Cháu';
-      case 6:
-        return 'Đời VI • Hàng Chắt';
-      default:
-        return `Đời ${toRoman(gen)} • Hậu Duệ Dòng Tộc`;
-    }
+    return `Đời ${toRoman(gen)}`;
   };
 
   // Classify members into Paternal (Bên Nội) or Maternal (Bên Ngoại)
@@ -312,13 +298,31 @@ export const MemberListView: React.FC<MemberListViewProps> = ({
                                   <>
                                     {member.birthDate && (member.deathDate || member.lunarDeathDay) && ' • '}
                                     {member.deathDate && (
-                                      <span>Giỗ Dương: {formatDateVN(member.deathDate)}</span>
+                                      <span>Mất: {formatDateVN(member.deathDate)}</span>
                                     )}
-                                    {member.deathDate && member.lunarDeathDay && ' • '}
-                                    {member.lunarDeathDay && (
-                                      <strong className="lunar-death-highlight">
-                                        Giỗ Âm: {member.lunarDeathDay.replace(/\s*Âm\s*lịch/i, '').trim()} Âm lịch
-                                      </strong>
+                                    {member.lunarDeathDay && (() => {
+                                      const cleanLunar = member.lunarDeathDay.replace(/\s*Âm\s*lịch/i, '').trim();
+                                      const anniversary = getSolarAnniversaryForYear(member.lunarDeathDay);
+                                      return (
+                                        <>
+                                          {(member.birthDate || member.deathDate) && ' • '}
+                                          {anniversary && (
+                                            <>
+                                              <span>Giỗ Dương: {anniversary.dateStr}</span>
+                                              {' • '}
+                                            </>
+                                          )}
+                                          <strong className="lunar-death-highlight">
+                                            Giỗ Âm: {cleanLunar} Âm lịch
+                                          </strong>
+                                        </>
+                                      );
+                                    })()}
+                                    {!member.lunarDeathDay && member.deathDate && (
+                                      <>
+                                        {' • '}
+                                        <span>Giỗ Dương: {formatDateVN(member.deathDate)}</span>
+                                      </>
                                     )}
                                   </>
                                 )}

@@ -111,7 +111,7 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
   };
 
   return (
-    <div className="flex-1 h-full overflow-y-auto bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-6 lg:p-8 flex flex-col">
+    <div className="flex-1 h-full overflow-y-auto bg-slate-950/40 backdrop-blur-xs p-4 sm:p-6 lg:p-8 flex flex-col">
       <div className="max-w-6xl w-full mx-auto space-y-5">
         {/* Top Header - Tinh gọn, nhất quán, không lan man */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-emerald-500/20 shadow-xl backdrop-blur-md">

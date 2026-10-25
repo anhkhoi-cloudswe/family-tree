@@ -151,7 +151,7 @@ export const Layout: React.FC<LayoutProps> = ({
   const navItems: NavItemConfig[] = [
     {
       key: 'BRANCHES',
-      label: 'Tất cả Nhánh cây',
+      label: 'Tất cả nhánh',
       icon: Layers,
       badge: allTreesCount ? `${allTreesCount}` : undefined,
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
@@ -159,31 +159,31 @@ export const Layout: React.FC<LayoutProps> = ({
     },
     {
       key: 'TREE',
-      label: 'Sơ đồ Cây',
+      label: 'Sơ đồ cây',
       icon: LayoutGrid,
     },
     {
       key: 'LIST',
-      label: 'Danh bạ Gia Phả',
+      label: 'Danh bạ',
       icon: Users,
       badge: tree?.members ? `${tree.members.length}` : undefined,
     },
     {
       key: 'LUNAR',
-      label: 'Lịch Giỗ & Mộ phần',
+      label: 'Lịch Giỗ',
       icon: Calendar,
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
     },
     {
       key: 'FLASHCARD',
-      label: 'Trắc nghiệm Gia Đình',
+      label: 'Chơi Trắc Nghiệm',
       icon: Sparkles,
       badge: 'Mini App',
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
     },
     {
       key: 'REMINDER',
-      label: 'Cài đặt Nhắc nhở',
+      label: 'Nhắc nhở',
       icon: Settings,
     },
     {
@@ -205,7 +205,7 @@ export const Layout: React.FC<LayoutProps> = ({
       : []),
     {
       key: 'TOUR',
-      label: 'Hướng dẫn sử dụng',
+      label: 'Hướng dẫn',
       icon: BookOpen,
     },
   ];
@@ -485,11 +485,13 @@ export const Layout: React.FC<LayoutProps> = ({
                   }
                   if (mobileOpen) setMobileOpen(false);
                 }}
-                className={`group relative w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 outline-none
+                className={`group relative w-full flex items-center ${
+                  isExpanded ? 'gap-3.5 px-3 justify-start' : 'justify-center px-0'
+                } h-11 rounded-xl text-sm font-medium transition-all duration-200 outline-none
                   ${
                     isActive
                       ? 'bg-gradient-to-r from-emerald-600/30 to-teal-600/20 text-emerald-300 border border-emerald-500/40 shadow-lg shadow-emerald-950/40'
-                      : 'text-slate-300 hover:text-slate-100 hover:bg-slate-800/60'
+                      : 'text-slate-300 hover:text-slate-100 hover:bg-slate-800/60 border border-transparent'
                   }
                 `}
                 title={!isExpanded ? item.label : undefined}
@@ -499,7 +501,7 @@ export const Layout: React.FC<LayoutProps> = ({
                   <span className="absolute left-0 top-2 bottom-2 w-1 bg-emerald-400 rounded-r-full shadow-emerald-400 shadow-[0_0_8px]" />
                 )}
 
-                <div className={`flex-shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-emerald-400' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                <div className={`flex items-center justify-center transition-transform group-hover:scale-110 ${isActive ? 'text-emerald-400' : 'text-slate-400 group-hover:text-slate-200'}`}>
                   <Icon size={20} />
                 </div>
 
