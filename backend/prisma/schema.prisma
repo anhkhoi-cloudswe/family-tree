@@ -19,6 +19,8 @@ model User {
   status              String             @default("ACTIVE") // ACTIVE, INACTIVE, BLOCKED, PENDING_DELETE
   deletedAt           DateTime?          @map("deleted_at")
   isVerified          Boolean            @default(false)
+  subscriptionTier    String             @default("FREE") // FREE, PRO
+  subscriptionExpiresAt DateTime?        @map("subscription_expires_at")
   trees               FamilyTree[]
   collaborations      TreeCollaborator[]
   sentInvitations     TreeInvitation[]   @relation("SentInvitations")

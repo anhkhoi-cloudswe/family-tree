@@ -621,6 +621,30 @@ button, input, select, textarea {
   flex-shrink: 0;
 }
 
+.navbar-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.38rem 0.85rem;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1.5px solid rgba(52, 211, 153, 0.35);
+  border-radius: 999px;
+  color: #34d399;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.navbar-back-btn:hover {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: rgba(52, 211, 153, 0.7);
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);
+}
+
 /* Branch Filter Dropdown (Universal Desktop + Mobile) */
 .branch-dropdown-wrapper {
   position: relative;

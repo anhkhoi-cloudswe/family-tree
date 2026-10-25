@@ -14,6 +14,7 @@ import kinshipRoutes from './routes/kinship.routes';
 import exportRoutes from './routes/export.routes';
 import adminRoutes from './routes/admin.routes';
 import invitationRoutes from './routes/invitation.routes';
+import subscriptionRoutes from './routes/subscription.routes';
 import { cleanupPendingDeleteAccounts } from './controllers/auth.controller';
 import { initWebSocketServer } from './services/websocket.service';
 
@@ -71,6 +72,7 @@ app.use('/api/kinship', kinshipRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/invitations', invitationRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

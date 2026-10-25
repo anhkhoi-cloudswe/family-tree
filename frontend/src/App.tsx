@@ -21,9 +21,13 @@ import { InvitationNotificationModal } from './components/InvitationNotification
 import { UpdatePhoneModal } from './components/UpdatePhoneModal';
 import { UserProfileModal } from './components/UserProfileModal';
 import { AccountRestoreOverlay } from './components/AccountRestoreOverlay';
+import { BranchesHubView } from './components/BranchesHubView';
+import { SubscriptionModal } from './components/SubscriptionModal';
+import { RenameTreeModal } from './components/RenameTreeModal';
+import { CreateTreeModal } from './components/CreateTreeModal';
 import { FamilyTreeLogo } from './components/FamilyTreeLogo';
 import { ToastProvider, useToast } from './components/Toast';
-import { User, FamilyTree, Person, TreeRole, TreeInvitation } from './types';
+import { User, FamilyTree, Person, TreeRole, TreeInvitation, SubscriptionStatus } from './types';
 import {
   ReminderSettings,
   getStoredReminderSettings,
@@ -37,6 +41,8 @@ import {
   apiGetTrees,
   apiGetTreeById,
   apiCreateTree,
+  apiDeleteTree,
+  apiGetSubscriptionStatus,
   apiCreatePerson,
   apiMagicLogin,
   apiVerifyRegistration,
@@ -58,6 +64,8 @@ import { wsClient } from './services/websocket';
 const AppContent: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [tree, setTree] = useState<FamilyTree | null>(null);
+  const [allTrees, setAllTrees] = useState<FamilyTree[]>([]);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [mePerson, setMePerson] = useState<Person | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
@@ -69,8 +77,8 @@ const AppContent: React.FC = () => {
   const [isSubmittingMagicLink, setIsSubmittingMagicLink] = useState<boolean>(false);
   const [magicLinkError, setMagicLinkError] = useState<string | null>(null);
 
-  // Main View: Sơ đồ Cây (TREE) or Danh Bạ Thu Gọn (LIST)
-  const [mainView, setMainView] = useState<'TREE' | 'LIST'>('TREE');
+  // Main View: Tất cả Nhánh (BRANCHES) | Sơ đồ Cây (TREE) | Danh Bạ Thu Gọn (LIST)
+  const [mainView, setMainView] = useState<'BRANCHES' | 'TREE' | 'LIST'>('TREE');
 
   // Modals & Drawer states
   const [drawerPerson, setDrawerPerson] = useState<Person | null>(null);
@@ -88,6 +96,11 @@ const AppContent: React.FC = () => {
   const [showQuickOnboarding, setShowQuickOnboarding] = useState<boolean>(false);
   const [showFlashcardModal, setShowFlashcardModal] = useState<boolean>(false);
   const [showShareModal, setShowShareModal] = useState<boolean>(false);
+  const [sharingTree, setSharingTree] = useState<FamilyTree | null>(null);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState<boolean>(false);
+  const [showRenameTreeModal, setShowRenameTreeModal] = useState<boolean>(false);
+  const [renamingTree, setRenamingTree] = useState<FamilyTree | null>(null);
+  const [showCreateTreeModal, setShowCreateTreeModal] = useState<boolean>(false);
   const [showInvitationsModal, setShowInvitationsModal] = useState<boolean>(false);
   const [showUpdatePhoneModal, setShowUpdatePhoneModal] = useState<boolean>(false);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
@@ -158,34 +171,63 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
+  // Tải danh sách các nhánh và thông tin gói hội viên
+  const refreshTreesAndSubscription = useCallback(async () => {
+    if (!getStoredToken()) return;
+    try {
+      const [treesRes, subRes] = await Promise.allSettled([
+        apiGetTrees(),
+        apiGetSubscriptionStatus(),
+      ]);
+      if (treesRes.status === 'fulfilled') {
+        setAllTrees(treesRes.value || []);
+      }
+      if (subRes.status === 'fulfilled') {
+        setSubscriptionStatus(subRes.value);
+      }
+    } catch (err) {
+      console.warn('Lỗi tải danh sách cây và trạng thái gói:', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (user) {
       loadPendingInvitations();
+      refreshTreesAndSubscription();
     }
-  }, [user, loadPendingInvitations]);
+  }, [user, loadPendingInvitations, refreshTreesAndSubscription]);
 
   // 1. WebSocket: Tự động đồng bộ cây gia phả theo thời gian thực mà không cần tải lại trang
   useEffect(() => {
     if (!tree?.id) return;
     const unsubscribe = wsClient.subscribeToTree(tree.id, () => {
       loadTreeData(tree.id, user);
+      refreshTreesAndSubscription();
     });
     return () => unsubscribe();
-  }, [tree?.id, user]);
+  }, [tree?.id, user, refreshTreesAndSubscription]);
 
-  // 2. WebSocket: Tự động cập nhật thông báo cá nhân (lời mời mới, quyền hạn cộng tác)
+  // 2. WebSocket: Tự động cập nhật thông báo cá nhân (lời mời mới, quyền hạn cộng tác, thay đổi gói, thêm/xóa nhánh)
   useEffect(() => {
     if (!user?.id) return;
     const unsubscribe = wsClient.subscribeToUser(user.id, (data) => {
       loadPendingInvitations();
-      if (data?.action === 'ROLE_UPDATED' || data?.action === 'COLLABORATOR_REMOVED') {
+      refreshTreesAndSubscription();
+      if (
+        data?.action === 'ROLE_UPDATED' ||
+        data?.action === 'COLLABORATOR_REMOVED' ||
+        data?.action === 'SUBSCRIPTION_UPDATED' ||
+        data?.action === 'TREE_CREATED' ||
+        data?.action === 'TREE_UPDATED' ||
+        data?.action === 'TREE_DELETED'
+      ) {
         if (tree?.id) {
           loadTreeData(tree.id, user);
         }
       }
     });
     return () => unsubscribe();
-  }, [user?.id, tree?.id, loadPendingInvitations]);
+  }, [user?.id, tree?.id, loadPendingInvitations, refreshTreesAndSubscription]);
 
   // Initialize Auth
   useEffect(() => {
@@ -419,8 +461,13 @@ const AppContent: React.FC = () => {
       if (targetTreeId) {
         try {
           fullTree = await apiGetTreeById(targetTreeId);
-        } catch (fetchErr) {
-          console.warn(`Cây ${targetTreeId} không tồn tại hoặc đã bị xóa khỏi cơ sở dữ liệu:`, fetchErr);
+        } catch (fetchErr: any) {
+          console.warn(`Cây ${targetTreeId} không tồn tại hoặc đã bị khóa/xóa:`, fetchErr);
+          if (fetchErr?.message?.includes('khóa') || fetchErr?.isLocked) {
+            toast.error('Nhánh cây này đang bị khóa do vượt giới hạn gói Miễn Phí. Vui lòng nâng cấp PRO để mở khóa!');
+            setShowSubscriptionModal(true);
+            setMainView('BRANCHES');
+          }
           localStorage.removeItem('fam3_current_tree_id');
           targetTreeId = undefined;
           fullTree = null;
@@ -432,13 +479,15 @@ const AppContent: React.FC = () => {
         let trees: FamilyTree[] = [];
         try {
           trees = await apiGetTrees();
+          setAllTrees(trees || []);
         } catch (treesErr: any) {
           console.warn('Lỗi lấy danh sách cây gia phả:', treesErr);
         }
 
-        if (trees && trees.length > 0) {
+        const firstUnlocked = trees.find((t) => !t.isLocked);
+        if (firstUnlocked) {
           try {
-            fullTree = await apiGetTreeById(trees[0].id);
+            fullTree = await apiGetTreeById(firstUnlocked.id);
           } catch (firstTreeErr) {
             console.error('Không thể tải cây đầu tiên trong danh sách:', firstTreeErr);
           }
@@ -529,6 +578,7 @@ const AppContent: React.FC = () => {
         branchName: 'Chi Trưởng',
       });
       await loadTreeData(newTree.id, user);
+      await refreshTreesAndSubscription();
       toast.success('Đã tạo thành công cây gia phả ban đầu!');
     } catch (err: any) {
       console.error('Lỗi tạo cây ban đầu:', err);
@@ -536,6 +586,58 @@ const AppContent: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSelectTree = async (treeId: string) => {
+    const target = allTrees.find((t) => t.id === treeId);
+    if (target?.isLocked) {
+      toast.error('Nhánh cây này đang bị khóa do vượt quá 5 nhánh của gói Miễn Phí. Vui lòng nâng cấp PRO để mở khóa!');
+      setShowSubscriptionModal(true);
+      return;
+    }
+    setIsLoading(true);
+    await loadTreeData(treeId);
+    setMainView('TREE');
+    setIsLoading(false);
+  };
+
+  const handleDeleteTree = async (treeId: string, treeName: string) => {
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn xóa nhánh cây "${treeName}"? Toàn bộ thành viên và dữ liệu của nhánh này sẽ bị xóa vĩnh viễn.`
+      )
+    ) {
+      return;
+    }
+    try {
+      setIsLoading(true);
+      await apiDeleteTree(treeId);
+      toast.success(`Đã xóa thành công nhánh "${treeName}"!`);
+      await refreshTreesAndSubscription();
+      if (tree?.id === treeId) {
+        setTree(null);
+        setMePerson(null);
+        localStorage.removeItem('fam3_current_tree_id');
+        setMainView('BRANCHES');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi khi xóa nhánh cây gia phả');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRenameSuccess = (updated: FamilyTree) => {
+    setAllTrees((prev) => prev.map((t) => (t.id === updated.id ? { ...t, ...updated } : t)));
+    if (tree?.id === updated.id) {
+      setTree((prev) => (prev ? { ...prev, ...updated } : prev));
+    }
+  };
+
+  const handleTreeCreated = async (newTree: FamilyTree) => {
+    await refreshTreesAndSubscription();
+    await loadTreeData(newTree.id);
+    setMainView('TREE');
   };
 
   const handleConfirmMagicLinkEmail = async (e: React.FormEvent) => {
@@ -729,67 +831,103 @@ const AppContent: React.FC = () => {
         tree={tree}
         activeNav={mainView}
         onSelectNav={(key) => {
-          if (key === 'TREE') setMainView('TREE');
+          if (key === 'BRANCHES') setMainView('BRANCHES');
+          else if (key === 'TREE') setMainView('TREE');
           else if (key === 'LIST') setMainView('LIST');
           else if (key === 'LUNAR') setShowLunarModal(true);
           else if (key === 'FLASHCARD') setShowFlashcardModal(true);
           else if (key === 'REMINDER') setShowReminderModal(true);
-          else if (key === 'SHARE') setShowShareModal(true);
+          else if (key === 'SHARE') {
+            setSharingTree(tree);
+            setShowShareModal(true);
+          }
           else if (key === 'TOUR') setShowTour(true);
           else if (key === 'ADMIN') setShowAdminModal(true);
         }}
         pendingInvitationsCount={pendingInvitations.length}
         onOpenInvitations={() => setShowInvitationsModal(true)}
-        onOpenShareModal={() => setShowShareModal(true)}
+        onOpenShareModal={() => {
+          setSharingTree(tree);
+          setShowShareModal(true);
+        }}
+        onOpenBranchesHub={() => setMainView('BRANCHES')}
+        allTreesCount={allTrees.length}
+        onOpenSubscription={() => setShowSubscriptionModal(true)}
+        isPro={subscriptionStatus?.tier === 'PRO'}
         onUpdatePhone={() => setShowUpdatePhoneModal(true)}
         onOpenProfile={() => setShowProfileModal(true)}
         onLogout={handleLogout}
       >
-        {/* 2-Tier Sticky Navbar */}
-        <Navbar
-          user={user}
-          tree={tree}
-          mePerson={mePerson}
-          userRole={tree?.userRole || 'OWNER'}
-          pendingInvitationsCount={pendingInvitations.length}
-          onOpenInvitations={() => setShowInvitationsModal(true)}
-          onOpenShareModal={() => setShowShareModal(true)}
-          mainView={mainView}
-          onMainViewChange={setMainView}
-          branchFilter={branchFilter}
-          onBranchFilterChange={setBranchFilter}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          onOpenPersonPicker={() => setShowPersonPicker(true)}
-          onOpenAddMember={() => {
-            setAddMemberTarget(null);
-            setShowAddMemberModal(true);
-          }}
-          onOpenLunar={() => setShowLunarModal(true)}
-          onOpenReminder={() => setShowReminderModal(true)}
-          onOpenFlashcard={() => setShowFlashcardModal(true)}
-          onExportImage={handleExportImageClick}
-          isExportingImage={isExportingImage}
-          onLogout={handleLogout}
-          onPanToMe={() => mePerson && setFocusPersonId(mePerson.id)}
-          onPanToGen1={() => {
-            if (tree && tree.members.length > 0) {
-              const gen1 = tree.members.find((m) => m.generation === 1);
-              if (gen1) setFocusPersonId(gen1.id);
-            }
-          }}
-          onOpenHelp={() => setShowTour(true)}
-          adminActiveTab={adminActiveTab}
-          onAdminTabChange={setAdminActiveTab}
-        />
+        {/* 2-Tier Sticky Navbar: Show when viewing Tree or Member List */}
+        {mainView !== 'BRANCHES' && (
+          <Navbar
+            user={user}
+            tree={tree}
+            mePerson={mePerson}
+            userRole={tree?.userRole || 'OWNER'}
+            pendingInvitationsCount={pendingInvitations.length}
+            onOpenInvitations={() => setShowInvitationsModal(true)}
+            onOpenShareModal={() => {
+              setSharingTree(tree);
+              setShowShareModal(true);
+            }}
+            onBackToBranches={() => setMainView('BRANCHES')}
+            mainView={mainView as 'TREE' | 'LIST'}
+            onMainViewChange={(mode) => setMainView(mode)}
+            branchFilter={branchFilter}
+            onBranchFilterChange={setBranchFilter}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            onOpenPersonPicker={() => setShowPersonPicker(true)}
+            onOpenAddMember={() => {
+              setAddMemberTarget(null);
+              setShowAddMemberModal(true);
+            }}
+            onOpenLunar={() => setShowLunarModal(true)}
+            onOpenReminder={() => setShowReminderModal(true)}
+            onOpenFlashcard={() => setShowFlashcardModal(true)}
+            onExportImage={handleExportImageClick}
+            isExportingImage={isExportingImage}
+            onLogout={handleLogout}
+            onPanToMe={() => mePerson && setFocusPersonId(mePerson.id)}
+            onPanToGen1={() => {
+              if (tree && tree.members.length > 0) {
+                const gen1 = tree.members.find((m) => m.generation === 1);
+                if (gen1) setFocusPersonId(gen1.id);
+              }
+            }}
+            onOpenHelp={() => setShowTour(true)}
+            adminActiveTab={adminActiveTab}
+            onAdminTabChange={setAdminActiveTab}
+          />
+        )}
 
-        {/* Main Canvas Viewport or Embedded Admin Dashboard */}
+        {/* Main Canvas Viewport, Branches Hub, or Embedded Admin Dashboard */}
         <main style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', width: '100%', display: 'flex', flexDirection: 'column' }}>
         {user?.role === 'ADMIN' ? (
           <AdminDashboard
             activeTab={adminActiveTab}
             onTabChange={setAdminActiveTab}
             onLogout={handleLogout}
+          />
+        ) : mainView === 'BRANCHES' ? (
+          <BranchesHubView
+            trees={allTrees}
+            currentTreeId={tree?.id || null}
+            currentUser={user}
+            subscriptionStatus={subscriptionStatus}
+            onSelectTree={handleSelectTree}
+            onOpenCreateTree={() => setShowCreateTreeModal(true)}
+            onOpenRenameTree={(t) => {
+              setRenamingTree(t);
+              setShowRenameTreeModal(true);
+            }}
+            onOpenShareTree={(t) => {
+              setSharingTree(t);
+              setShowShareModal(true);
+            }}
+            onDeleteTree={handleDeleteTree}
+            onOpenSubscriptionModal={() => setShowSubscriptionModal(true)}
           />
         ) : tree ? (
           mainView === 'TREE' ? (
@@ -836,13 +974,22 @@ const AppContent: React.FC = () => {
         ) : (
           <div className="canvas-empty-tree">
             <p className="empty-tree-title">Chưa có cây gia phả nào được nạp.</p>
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={handleCreateInitialTree}
-            >
-              + Tạo Cây Gia Phả Đầu Tiên
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => setMainView('BRANCHES')}
+              >
+                Xem Danh Sách Nhánh ({allTrees.length})
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setShowCreateTreeModal(true)}
+              >
+                + Tạo Nhánh Mới
+              </button>
+            </div>
           </div>
         )}
       </main>
@@ -1134,18 +1281,55 @@ const AppContent: React.FC = () => {
       )}
 
       {/* Share Tree Modal */}
-      {tree && (
+      {(sharingTree || tree) && (
         <ShareTreeModal
           isOpen={showShareModal}
-          tree={tree}
-          currentUserRole={tree.userRole || 'OWNER'}
-          onClose={() => setShowShareModal(false)}
+          tree={sharingTree || tree!}
+          currentUserRole={(sharingTree || tree)!.userRole || 'OWNER'}
+          onClose={() => {
+            setShowShareModal(false);
+            setSharingTree(null);
+          }}
           onNeedUpdatePhone={() => {
             setShowShareModal(false);
             setShowUpdatePhoneModal(true);
           }}
         />
       )}
+
+      {/* Rename Tree Modal */}
+      <RenameTreeModal
+        isOpen={showRenameTreeModal}
+        tree={renamingTree}
+        onClose={() => {
+          setShowRenameTreeModal(false);
+          setRenamingTree(null);
+        }}
+        onSuccess={handleRenameSuccess}
+      />
+
+      {/* Create Tree Modal */}
+      <CreateTreeModal
+        isOpen={showCreateTreeModal}
+        onClose={() => setShowCreateTreeModal(false)}
+        onSuccess={handleTreeCreated}
+        onOpenSubscriptionModal={() => setShowSubscriptionModal(true)}
+        canCreateMore={subscriptionStatus?.canCreateMore ?? (allTrees.length < 5)}
+        currentCount={allTrees.length}
+        maxFree={subscriptionStatus?.maxFreeBranches ?? 5}
+        isPro={subscriptionStatus?.tier === 'PRO'}
+      />
+
+      {/* Subscription Modal */}
+      <SubscriptionModal
+        isOpen={showSubscriptionModal}
+        status={subscriptionStatus}
+        onClose={() => setShowSubscriptionModal(false)}
+        onRefreshStatus={async () => {
+          await refreshTreesAndSubscription();
+          if (tree) await loadTreeData(tree.id);
+        }}
+      />
 
       {/* Invitations Notification Modal */}
       <InvitationNotificationModal

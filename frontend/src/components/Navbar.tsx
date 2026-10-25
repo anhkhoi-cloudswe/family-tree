@@ -7,6 +7,7 @@ import {
   Search,
   FileSpreadsheet,
   Download,
+  Layers,
 } from 'lucide-react';
 import { User, FamilyTree, Person, TreeRole } from '../types';
 import { downloadTreeExcel } from '../services/api';
@@ -20,6 +21,7 @@ interface NavbarProps {
   pendingInvitationsCount?: number;
   onOpenInvitations?: () => void;
   onOpenShareModal?: () => void;
+  onBackToBranches?: () => void;
   mainView: 'TREE' | 'LIST';
   onMainViewChange: (mode: 'TREE' | 'LIST') => void;
   branchFilter: 'ALL' | 'PATERNAL' | 'MATERNAL';
@@ -52,6 +54,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenPersonPicker,
   onExportImage,
   isExportingImage,
+  onBackToBranches,
 }) => {
   const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
@@ -116,6 +119,18 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="navbar-tier-2">
         {/* 1. LEFT GROUP: [Sơ đồ Cây] / [Danh Sách] + [Dropdown Nhánh Phả Hệ] */}
         <div className="navbar-left-group">
+          {onBackToBranches && (
+            <button
+              type="button"
+              className="navbar-back-btn"
+              onClick={onBackToBranches}
+              title="Quay lại danh sách các chi nhánh gia phả"
+            >
+              <Layers size={14} className="text-emerald-400" />
+              <span className="hidden md:inline">Tất Cả Nhánh</span>
+            </button>
+          )}
+
           {/* Main View Mode Segmented Tabs */}
           <div className="tier2-mainview-tabs" role="tablist" aria-label="Chế độ sơ đồ hoặc danh sách">
             <button

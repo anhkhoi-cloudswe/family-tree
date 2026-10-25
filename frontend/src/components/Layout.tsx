@@ -24,6 +24,7 @@ import {
   LucideIcon,
   PanelLeftClose,
   PanelLeftOpen,
+  Layers,
 } from 'lucide-react';
 import { User, FamilyTree, TreeRole } from '../types';
 import { FamilyTreeLogo } from './FamilyTreeLogo';
@@ -57,6 +58,10 @@ interface LayoutProps {
   onLogout: () => void;
   headerContent?: React.ReactNode;
   children: React.ReactNode;
+  onOpenBranchesHub?: () => void;
+  allTreesCount?: number;
+  onOpenSubscription?: () => void;
+  isPro?: boolean;
 }
 
 const STORAGE_KEY = 'sidebar_mode_preference';
@@ -74,6 +79,10 @@ export const Layout: React.FC<LayoutProps> = ({
   onLogout,
   headerContent,
   children,
+  onOpenBranchesHub,
+  allTreesCount = 0,
+  onOpenSubscription,
+  isPro = false,
 }) => {
   // Sidebar mode state: expanded | collapsed | hover-expand
   const [mode, setMode] = useState<SidebarMode>(() => {
@@ -140,6 +149,14 @@ export const Layout: React.FC<LayoutProps> = ({
 
   // Navigation items config
   const navItems: NavItemConfig[] = [
+    {
+      key: 'BRANCHES',
+      label: 'Tất cả Nhánh cây',
+      icon: Layers,
+      badge: allTreesCount ? `${allTreesCount}` : undefined,
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+      onClick: onOpenBranchesHub,
+    },
     {
       key: 'TREE',
       label: 'Sơ đồ Cây',
@@ -427,20 +444,25 @@ export const Layout: React.FC<LayoutProps> = ({
           )}
         </div>
 
-        {/* Tree Info Pill (When Expanded) */}
+        {/* Tree Info Pill (When Expanded) - Bỏ dòng chữ Chi/Nhánh: Chi Trưởng theo yêu cầu người dùng */}
         {isExpanded && tree && (
           <div className="mx-3 my-2.5 p-2.5 rounded-xl bg-slate-900/80 border border-emerald-500/20 flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-slate-400">Cây gia phả đang xem:</span>
               {renderRoleBadge(tree.userRole || 'OWNER')}
             </div>
-            <div className="font-semibold text-sm text-slate-100 truncate">
+            <div className="font-semibold text-sm text-slate-100 truncate" title={tree.name}>
               {tree.name}
             </div>
-            {tree.branchName && (
-              <div className="text-[11px] text-emerald-400/90 truncate">
-                Chi/Nhánh: {tree.branchName}
-              </div>
+            {onOpenBranchesHub && (
+              <button
+                type="button"
+                onClick={onOpenBranchesHub}
+                className="mt-1 py-1 px-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-[10px] font-semibold flex items-center justify-center gap-1.5 transition"
+              >
+                <Layers size={11} />
+                <span>Đổi nhánh cây ({allTreesCount || 1})</span>
+              </button>
             )}
           </div>
         )}
@@ -568,11 +590,37 @@ export const Layout: React.FC<LayoutProps> = ({
                 <div className="font-semibold text-xs text-slate-200 group-hover:text-emerald-300 truncate">
                   {user?.fullName || 'Người dùng'}
                 </div>
-                <div className="flex items-center gap-1 text-[11px] text-slate-400 group-hover:text-emerald-400 transition truncate mt-0.5">
-                  <Phone size={11} className={user?.phone ? 'text-emerald-400' : 'text-amber-400'} />
-                  <span className="truncate">
-                    {user?.phone ? user.phone : 'Chỉnh sửa hồ sơ'}
-                  </span>
+                <div className="flex items-center justify-between gap-1 mt-0.5">
+                  <div className="flex items-center gap-1 text-[11px] text-slate-400 group-hover:text-emerald-400 transition truncate">
+                    <Phone size={11} className={user?.phone ? 'text-emerald-400' : 'text-amber-400'} />
+                    <span className="truncate">
+                      {user?.phone ? user.phone : 'Chỉnh sửa hồ sơ'}
+                    </span>
+                  </div>
+                  {isPro ? (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenSubscription?.();
+                      }}
+                      className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-0.5 hover:bg-amber-500/30 transition flex-shrink-0"
+                      title="Gói PRO VIP"
+                    >
+                      <Crown size={9} />
+                      <span>PRO</span>
+                    </span>
+                  ) : (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenSubscription?.();
+                      }}
+                      className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-800 text-slate-400 hover:text-amber-300 border border-slate-700 hover:border-amber-500/40 transition flex-shrink-0"
+                      title="Nâng cấp gói PRO"
+                    >
+                      FREE
+                    </span>
+                  )}
                 </div>
               </button>
             )}

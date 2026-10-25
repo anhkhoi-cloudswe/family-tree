@@ -1,4 +1,4 @@
-import { User, FamilyTree, Person, Relationship, KinshipResult, TreeCollaborator, TreeInvitation, TreeRole } from '../types';
+import { User, FamilyTree, Person, Relationship, KinshipResult, TreeCollaborator, TreeInvitation, TreeRole, SubscriptionStatus } from '../types';
 import { isSupabaseConfigured, uploadAvatarToSupabase } from './supabase';
 
 const rawApiBase = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
@@ -317,5 +317,20 @@ export const apiCloseAccount = () =>
 
 export const apiRestoreAccount = () =>
   request<{ success: boolean; message: string; user: User }>('/auth/restore-account', {
+    method: 'POST',
+  });
+
+// Subscription Management
+export const apiGetSubscriptionStatus = () =>
+  request<SubscriptionStatus>('/subscription/status');
+
+export const apiUpgradeSubscription = (durationDays: number = 30) =>
+  request<{ message: string; subscription: any }>('/subscription/upgrade', {
+    method: 'POST',
+    body: JSON.stringify({ durationDays }),
+  });
+
+export const apiSimulateSubscriptionExpiry = () =>
+  request<{ message: string; subscription: any }>('/subscription/simulate-expiry', {
     method: 'POST',
   });

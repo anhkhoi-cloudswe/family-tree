@@ -8,7 +8,23 @@ export interface User {
   role: string;
   status?: 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'PENDING_DELETE';
   deletedAt?: string | null;
+  subscriptionTier?: 'FREE' | 'PRO';
+  subscriptionExpiresAt?: string | null;
   trees?: FamilyTree[];
+}
+
+export interface SubscriptionStatus {
+  tier: 'FREE' | 'PRO';
+  rawTier?: string;
+  expiresAt?: string | null;
+  isExpired: boolean;
+  totalBranches: number;
+  ownedCount: number;
+  joinedCount: number;
+  maxFreeBranches: number;
+  isLimitReached: boolean;
+  canCreateMore?: boolean;
+  lockedBranchesCount: number;
 }
 
 export type TreeRole = 'OWNER' | 'EDITOR' | 'VIEWER';
@@ -110,10 +126,17 @@ export interface FamilyTree {
   branchName?: string | null;
   ancestorInfo?: string | null;
   ownerId: string;
+  owner?: {
+    id: string;
+    fullName: string;
+    phone?: string | null;
+  };
   userRole?: TreeRole;
   linkedPersonId?: string | null;
   members: Person[];
   relationships: Relationship[];
+  membersCount?: number;
+  isLocked?: boolean;
   createdAt: string;
   updatedAt: string;
 }
