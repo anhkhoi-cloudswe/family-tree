@@ -136,6 +136,9 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
     ? getKinshipToMe(mePerson || null, person, tree.members, tree.relationships)
     : 'Người thân';
 
+  // Quyền chỉnh sửa (chỉ OWNER và EDITOR được phép sửa/thêm/xóa thành viên)
+  const isCanEdit = !tree?.userRole || tree.userRole === 'OWNER' || tree.userRole === 'EDITOR';
+
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -286,7 +289,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              {!isEditing && (
+              {!isEditing && isCanEdit && (
                 <button
                   type="button"
                   className="btn-ghost-sm"
@@ -367,17 +370,19 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                   </div>
 
                   {/* Quick Add Relative Button */}
-                  <button
-                    type="button"
-                    className="btn-secondary drawer-add-rel-btn"
-                    onClick={() => {
-                      onClose();
-                      onAddRelativeFor(person);
-                    }}
-                  >
-                    <UserPlus size={16} color="#059669" />
-                    <span>+ Thêm Quan Hệ Cho Người Này</span>
-                  </button>
+                  {isCanEdit && (
+                    <button
+                      type="button"
+                      className="btn-secondary drawer-add-rel-btn"
+                      onClick={() => {
+                        onClose();
+                        onAddRelativeFor(person);
+                      }}
+                    >
+                      <UserPlus size={16} color="#059669" />
+                      <span>+ Thêm Quan Hệ Cho Người Này</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Details Sections */}
@@ -644,17 +649,19 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                   )}
 
                   {/* Delete button at bottom of drawer */}
-                  <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
-                    <button
-                      type="button"
-                      className="btn-danger-ghost"
-                      onClick={() => setShowDeleteConfirm(true)}
-                      disabled={isDeleting}
-                    >
-                      <Trash2 size={16} />
-                      <span>{isDeleting ? 'Đang xóa...' : 'Xóa thành viên này khỏi cây'}</span>
-                    </button>
-                  </div>
+                  {isCanEdit && (
+                    <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
+                      <button
+                        type="button"
+                        className="btn-danger-ghost"
+                        onClick={() => setShowDeleteConfirm(true)}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 size={16} />
+                        <span>{isDeleting ? 'Đang xóa...' : 'Xóa thành viên này khỏi cây'}</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

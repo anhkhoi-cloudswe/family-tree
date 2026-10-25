@@ -347,6 +347,7 @@ export const login = async (req: Request, res: Response) => {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
+        phone: user.phone,
         avatarUrl: user.avatarUrl,
         role: user.role,
       },
@@ -458,6 +459,7 @@ export const getMe = async (req: AuthRequest, res: Response) => {
         id: true,
         email: true,
         fullName: true,
+        phone: true,
         avatarUrl: true,
         role: true,
         createdAt: true,
@@ -519,6 +521,7 @@ export const magicLogin = async (req: Request, res: Response) => {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
+        phone: user.phone,
         avatarUrl: user.avatarUrl,
         role: user.role,
       },
@@ -527,5 +530,58 @@ export const magicLogin = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Lỗi magicLogin:', error);
     return res.status(500).json({ error: 'Đã xảy ra lỗi.' });
+  }
+};
+
+/**
+ * Cập nhật Số Điện Thoại cho tài khoản hiện tại
+ */
+export const updatePhone = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { phone } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Chưa đăng nhập.' });
+    }
+
+    if (!phone || typeof phone !== 'string' || !phone.trim()) {
+      return res.status(400).json({ error: 'Vui lòng cung cấp số điện thoại hợp lệ.' });
+    }
+
+    const cleanPhone = phone.trim();
+
+    // Kiểm tra xem số điện thoại đã được đăng ký bởi tài khoản khác chưa
+    const existing = await prisma.user.findFirst({
+      where: {
+        phone: cleanPhone,
+        NOT: { id: userId },
+      },
+    });
+
+    if (existing) {
+      return res.status(400).json({ error: 'Số điện thoại này đã được sử dụng bởi một tài khoản khác.' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { phone: cleanPhone },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        avatarUrl: true,
+        role: true,
+      },
+    });
+
+    return res.json({
+      message: 'Cập nhật số điện thoại thành công!',
+      user: updatedUser,
+    });
+  } catch (error: any) {
+    console.error('Lỗi updatePhone:', error);
+    return res.status(500).json({ error: error?.message || 'Lỗi máy chủ.' });
   }
 };

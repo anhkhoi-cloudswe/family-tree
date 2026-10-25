@@ -9,30 +9,65 @@ generator client {
 }
 
 model User {
-  id           String        @id @default(uuid())
-  email        String        @unique
-  passwordHash String
-  fullName     String
-  avatarUrl    String?
-  role         String        @default("MEMBER")
-  isVerified   Boolean       @default(false)
-  trees        FamilyTree[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id                  String             @id @default(uuid())
+  email               String             @unique
+  phone               String?            @unique
+  passwordHash        String
+  fullName            String
+  avatarUrl           String?
+  role                String             @default("MEMBER")
+  isVerified          Boolean            @default(false)
+  trees               FamilyTree[]
+  collaborations      TreeCollaborator[]
+  sentInvitations     TreeInvitation[]   @relation("SentInvitations")
+  receivedInvitations TreeInvitation[]   @relation("ReceivedInvitations")
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 }
 
 model FamilyTree {
-  id            String         @id @default(uuid())
+  id            String             @id @default(uuid())
   name          String
   description   String?
   branchName    String?
   ancestorInfo  String?
   ownerId       String
-  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner         User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   members       Person[]
   relationships Relationship[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  collaborators TreeCollaborator[]
+  invitations   TreeInvitation[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model TreeCollaborator {
+  id        String     @id @default(uuid())
+  treeId    String
+  tree      FamilyTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String     @default("VIEWER") // VIEWER, EDITOR
+  personId  String?    // Liên kết node người thân đại diện cho user này trong cây ("Tôi")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([treeId, userId])
+}
+
+model TreeInvitation {
+  id          String     @id @default(uuid())
+  treeId      String
+  tree        FamilyTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  inviterId   String
+  inviter     User       @relation("SentInvitations", fields: [inviterId], references: [id], onDelete: Cascade)
+  receiverId  String
+  receiver    User       @relation("ReceivedInvitations", fields: [receiverId], references: [id], onDelete: Cascade)
+  role        String     @default("VIEWER") // VIEWER, EDITOR
+  status      String     @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  message     String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
 model Person {

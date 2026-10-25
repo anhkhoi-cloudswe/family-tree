@@ -2,9 +2,57 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
+  phone?: string | null;
   avatarUrl?: string;
   role: string;
   trees?: FamilyTree[];
+}
+
+export type TreeRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+
+export interface TreeCollaborator {
+  id: string;
+  treeId: string;
+  userId: string;
+  role: 'EDITOR' | 'VIEWER';
+  personId?: string | null;
+  createdAt: string;
+  user: {
+    id: string;
+    email: string;
+    fullName: string;
+    phone?: string | null;
+    avatarUrl?: string | null;
+  };
+  person?: {
+    id: string;
+    fullName: string;
+    avatarUrl?: string | null;
+    generation: number;
+  } | null;
+}
+
+export interface TreeInvitation {
+  id: string;
+  treeId: string;
+  inviterId: string;
+  receiverId: string;
+  role: 'EDITOR' | 'VIEWER';
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+  message?: string | null;
+  createdAt: string;
+  tree: {
+    id: string;
+    name: string;
+    branchName?: string | null;
+  };
+  inviter: {
+    id: string;
+    email: string;
+    fullName: string;
+    phone?: string | null;
+    avatarUrl?: string | null;
+  };
 }
 
 export interface Person {
@@ -45,6 +93,8 @@ export interface FamilyTree {
   branchName?: string | null;
   ancestorInfo?: string | null;
   ownerId: string;
+  userRole?: TreeRole;
+  linkedPersonId?: string | null;
   members: Person[];
   relationships: Relationship[];
   createdAt: string;

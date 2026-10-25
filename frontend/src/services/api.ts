@@ -1,4 +1,4 @@
-import { User, FamilyTree, Person, Relationship, KinshipResult } from '../types';
+import { User, FamilyTree, Person, Relationship, KinshipResult, TreeCollaborator, TreeInvitation, TreeRole } from '../types';
 import { isSupabaseConfigured, uploadAvatarToSupabase } from './supabase';
 
 const rawApiBase = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
@@ -215,3 +215,39 @@ export const apiDeleteAdminUser = (id: string) =>
     method: 'DELETE',
   });
 export const apiGetAdminTrees = () => request<AdminTreeItem[]>('/admin/trees');
+
+// Phone Management
+export const apiUpdatePhone = (phone: string) =>
+  request<{ message: string; user: User }>('/auth/phone', {
+    method: 'PUT',
+    body: JSON.stringify({ phone }),
+  });
+
+// Tree Collaboration & Invitations
+export const apiSendInvitation = (data: { treeId: string; phone: string; role: 'VIEWER' | 'EDITOR'; message?: string }) =>
+  request<{ message: string; invitation: TreeInvitation }>('/invitations', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+
+export const apiGetPendingInvitations = () =>
+  request<TreeInvitation[]>('/invitations/pending');
+
+export const apiAcceptInvitation = (id: string, personId?: string) =>
+  request<{ message: string; treeId: string; treeName: string }>(`/invitations/${id}/accept`, {
+    method: 'POST',
+    body: JSON.stringify({ personId }),
+  });
+
+export const apiDeclineInvitation = (id: string) =>
+  request<{ message: string }>(`/invitations/${id}/decline`, {
+    method: 'POST',
+  });
+
+export const apiGetTreeCollaborators = (treeId: string) =>
+  request<{ collaborators: TreeCollaborator[]; pendingInvitations: TreeInvitation[] }>(`/invitations/tree/${treeId}`);
+
+export const apiRemoveCollaborator = (treeId: string, collaboratorUserId: string) =>
+  request<{ message: string }>(`/invitations/tree/${treeId}/collaborator/${collaboratorUserId}`, {
+    method: 'DELETE',
+  });

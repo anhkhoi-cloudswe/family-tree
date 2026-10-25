@@ -12,6 +12,7 @@ import personRoutes from './routes/person.routes';
 import kinshipRoutes from './routes/kinship.routes';
 import exportRoutes from './routes/export.routes';
 import adminRoutes from './routes/admin.routes';
+import invitationRoutes from './routes/invitation.routes';
 
 dotenv.config();
 
@@ -66,6 +67,7 @@ app.use('/api/persons', personRoutes);
 app.use('/api/kinship', kinshipRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/invitations', invitationRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

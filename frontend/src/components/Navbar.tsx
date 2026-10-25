@@ -19,8 +19,12 @@ import {
   Check,
   Sparkles,
   Search,
+  Share2,
+  Bell,
+  Eye,
+  Edit3,
 } from 'lucide-react';
-import { User, FamilyTree, Person } from '../types';
+import { User, FamilyTree, Person, TreeRole } from '../types';
 import { downloadTreeExcel } from '../services/api';
 import { useToast } from './Toast';
 import { FamilyTreeLogo } from './FamilyTreeLogo';
@@ -29,6 +33,10 @@ interface NavbarProps {
   user: User | null;
   tree: FamilyTree | null;
   mePerson: Person | null;
+  userRole?: TreeRole;
+  pendingInvitationsCount?: number;
+  onOpenInvitations?: () => void;
+  onOpenShareModal?: () => void;
   mainView: 'TREE' | 'LIST';
   onMainViewChange: (mode: 'TREE' | 'LIST') => void;
   branchFilter: 'ALL' | 'PATERNAL' | 'MATERNAL';
@@ -55,6 +63,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   user,
   tree,
   mePerson,
+  userRole,
+  pendingInvitationsCount = 0,
+  onOpenInvitations,
+  onOpenShareModal,
   mainView,
   onMainViewChange,
   branchFilter,
@@ -160,8 +172,39 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="brand-text-box">
               <div className="brand-title-row">
                 <h1 className="brand-title">Famlykin</h1>
-                {user?.role === 'ADMIN' && (
+                {user?.role === 'ADMIN' ? (
                   <span className="brand-admin-badge">Admin</span>
+                ) : (
+                  userRole && (
+                    <span
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '999px',
+                        background:
+                          userRole === 'OWNER'
+                            ? 'rgba(245, 158, 11, 0.2)'
+                            : userRole === 'EDITOR'
+                            ? 'rgba(16, 185, 129, 0.2)'
+                            : 'rgba(148, 163, 184, 0.2)',
+                        border:
+                          userRole === 'OWNER'
+                            ? '1px solid rgba(245, 158, 11, 0.4)'
+                            : userRole === 'EDITOR'
+                            ? '1px solid rgba(16, 185, 129, 0.4)'
+                            : '1px solid rgba(148, 163, 184, 0.4)',
+                        color:
+                          userRole === 'OWNER'
+                            ? '#fbbf24'
+                            : userRole === 'EDITOR'
+                            ? '#34d399'
+                            : '#cbd5e1',
+                      }}
+                    >
+                      {userRole === 'OWNER' ? '👑 Chủ cây' : userRole === 'EDITOR' ? '✏️ Chỉnh sửa' : '👁️ Chỉ xem'}
+                    </span>
+                  )
                 )}
               </div>
             </div>
@@ -306,6 +349,71 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
+            {/* Mời Người Thân CTA */}
+            {onOpenShareModal && user?.role !== 'ADMIN' && (
+              <button
+                type="button"
+                className="navbar-search-btn-desktop"
+                onClick={onOpenShareModal}
+                title="Mời người thân vào cùng xem hoặc chỉnh sửa cây gia phả"
+                style={{
+                  borderColor: 'rgba(52, 211, 153, 0.45)',
+                  background: 'rgba(6, 78, 59, 0.35)',
+                  color: '#34d399',
+                  paddingLeft: '0.75rem',
+                  paddingRight: '0.75rem',
+                }}
+              >
+                <Share2 size={15} />
+                <span className="search-label" style={{ color: '#6ee7b7', fontWeight: 600 }}>
+                  Mời người thân
+                </span>
+              </button>
+            )}
+
+            {/* Pending Invitations Bell Button */}
+            {pendingInvitationsCount > 0 && onOpenInvitations && (
+              <button
+                type="button"
+                className="navbar-search-btn-desktop"
+                onClick={onOpenInvitations}
+                title="Xem lời mời tham gia cây gia phả"
+                style={{
+                  position: 'relative',
+                  borderColor: 'rgba(245, 158, 11, 0.5)',
+                  background: 'rgba(120, 53, 15, 0.35)',
+                  color: '#fcd34d',
+                  paddingLeft: '0.75rem',
+                  paddingRight: '0.75rem',
+                }}
+              >
+                <Bell size={15} />
+                <span className="search-label" style={{ color: '#fcd34d', fontWeight: 600 }}>
+                  {pendingInvitationsCount} lời mời
+                </span>
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: -5,
+                    right: -5,
+                    width: 18,
+                    height: 18,
+                    borderRadius: '50%',
+                    background: '#ef4444',
+                    color: '#fff',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.5)',
+                  }}
+                >
+                  {pendingInvitationsCount}
+                </span>
+              </button>
+            )}
+
             {/* User Profile & Prominent Logout */}
             {user && (
               <div className="framer-user-pill">
@@ -334,8 +442,46 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* Mobile Right Controls: Quick Search (User only) + Hamburger Button */}
+          {/* Mobile Right Controls: Bell + Search + Hamburger Button */}
           <div className="mobile-header-actions">
+            {pendingInvitationsCount > 0 && onOpenInvitations && (
+              <button
+                type="button"
+                className="mobile-quick-search-btn"
+                onClick={onOpenInvitations}
+                style={{
+                  position: 'relative',
+                  background: 'rgba(120, 53, 15, 0.4)',
+                  borderColor: 'rgba(245, 158, 11, 0.5)',
+                  color: '#fbbf24',
+                  paddingLeft: '0.6rem',
+                  paddingRight: '0.6rem',
+                }}
+                title="Lời mời gia phả"
+              >
+                <Bell size={17} />
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    width: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    background: '#ef4444',
+                    color: '#fff',
+                    fontSize: 9,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {pendingInvitationsCount}
+                </span>
+              </button>
+            )}
+
             {user?.role !== 'ADMIN' && (
               <button
                 type="button"
@@ -701,25 +847,83 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </button>
                   )}
 
-                  {/* 1. Thêm Người Thân Mới */}
-                  <button
-                    type="button"
-                    className="mobile-action-card primary"
-                    onClick={() => {
-                      closeDrawer();
-                      onOpenAddMember();
-                    }}
-                  >
-                    <div className="mobile-action-icon-box" style={{ background: '#14532d' }}>
-                      <UserPlus size={20} color="#ffffff" />
-                    </div>
-                    <div className="mobile-action-content">
-                      <div className="mobile-action-title">+ Thêm Người Thân Mới</div>
-                      <div className="mobile-action-desc">
-                        Thêm con cháu, cha mẹ hoặc dâu rể
+                  {/* Mời Người Thân */}
+                  {onOpenShareModal && (
+                    <button
+                      type="button"
+                      className="mobile-action-card"
+                      onClick={() => {
+                        closeDrawer();
+                        onOpenShareModal();
+                      }}
+                      style={{
+                        background: 'rgba(6, 78, 59, 0.25)',
+                        borderColor: 'rgba(52, 211, 153, 0.4)',
+                      }}
+                    >
+                      <div className="mobile-action-icon-box" style={{ background: '#064e3b' }}>
+                        <Share2 size={20} color="#34d399" />
                       </div>
-                    </div>
-                  </button>
+                      <div className="mobile-action-content">
+                        <div className="mobile-action-title" style={{ color: '#6ee7b7' }}>
+                          Mời Người Thân Vào Cây
+                        </div>
+                        <div className="mobile-action-desc">
+                          Chia sẻ qua số điện thoại để cùng xem hoặc biên tập
+                        </div>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* Lời mời đang chờ */}
+                  {pendingInvitationsCount > 0 && onOpenInvitations && (
+                    <button
+                      type="button"
+                      className="mobile-action-card"
+                      onClick={() => {
+                        closeDrawer();
+                        onOpenInvitations();
+                      }}
+                      style={{
+                        background: 'rgba(120, 53, 15, 0.25)',
+                        borderColor: 'rgba(245, 158, 11, 0.4)',
+                      }}
+                    >
+                      <div className="mobile-action-icon-box" style={{ background: '#78350f' }}>
+                        <Bell size={20} color="#fbbf24" />
+                      </div>
+                      <div className="mobile-action-content">
+                        <div className="mobile-action-title" style={{ color: '#fde68a' }}>
+                          {pendingInvitationsCount} Lời Mời Gia Phả
+                        </div>
+                        <div className="mobile-action-desc">
+                          Bấm để xem và chấp nhận tham gia cây gia phả
+                        </div>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* 1. Thêm Người Thân Mới (Chỉ hiện nếu không phải VIEWER) */}
+                  {userRole !== 'VIEWER' && (
+                    <button
+                      type="button"
+                      className="mobile-action-card primary"
+                      onClick={() => {
+                        closeDrawer();
+                        onOpenAddMember();
+                      }}
+                    >
+                      <div className="mobile-action-icon-box" style={{ background: '#14532d' }}>
+                        <UserPlus size={20} color="#ffffff" />
+                      </div>
+                      <div className="mobile-action-content">
+                        <div className="mobile-action-title">+ Thêm Người Thân Mới</div>
+                        <div className="mobile-action-desc">
+                          Thêm con cháu, cha mẹ hoặc dâu rể
+                        </div>
+                      </div>
+                    </button>
+                  )}
 
                   {/* 2. Xuất Excel */}
                   <button

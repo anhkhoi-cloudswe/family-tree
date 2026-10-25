@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Mail, Sparkles } from 'lucide-react';
+import { Layout } from './components/Layout';
 import { Navbar } from './components/Navbar';
 import { TreeCanvas } from './components/TreeCanvas';
 import { MemberListView } from './components/MemberListView';
@@ -15,9 +16,12 @@ import { AdminDashboard, AdminTab } from './components/AdminDashboard';
 import { OnboardingTour } from './components/OnboardingTour';
 import { QuickOnboardingModal } from './components/QuickOnboardingModal';
 import { FamilyFlashcardModal } from './components/FamilyFlashcardModal';
+import { ShareTreeModal } from './components/ShareTreeModal';
+import { InvitationNotificationModal } from './components/InvitationNotificationModal';
+import { UpdatePhoneModal } from './components/UpdatePhoneModal';
 import { FamilyTreeLogo } from './components/FamilyTreeLogo';
 import { ToastProvider, useToast } from './components/Toast';
-import { User, FamilyTree, Person } from './types';
+import { User, FamilyTree, Person, TreeRole, TreeInvitation } from './types';
 import {
   ReminderSettings,
   getStoredReminderSettings,
@@ -35,6 +39,7 @@ import {
   apiMagicLogin,
   apiVerifyRegistration,
   apiCompleteRegistration,
+  apiGetPendingInvitations,
   getStoredToken,
   setStoredToken,
   removeStoredToken,
@@ -79,6 +84,10 @@ const AppContent: React.FC = () => {
   const [showTour, setShowTour] = useState<boolean>(false);
   const [showQuickOnboarding, setShowQuickOnboarding] = useState<boolean>(false);
   const [showFlashcardModal, setShowFlashcardModal] = useState<boolean>(false);
+  const [showShareModal, setShowShareModal] = useState<boolean>(false);
+  const [showInvitationsModal, setShowInvitationsModal] = useState<boolean>(false);
+  const [showUpdatePhoneModal, setShowUpdatePhoneModal] = useState<boolean>(false);
+  const [pendingInvitations, setPendingInvitations] = useState<TreeInvitation[]>([]);
 
   // Dedicated Admin Dashboard states
   const [adminActiveTab, setAdminActiveTab] = useState<AdminTab>('USERS');
@@ -133,6 +142,23 @@ const AppContent: React.FC = () => {
       toast.info(`🔔 Nhắc lịch (${daysToScan} ngày tới): ${summaryText}${moreText}`);
     }
   }, [toast]);
+
+  // Load pending invitations for current user
+  const loadPendingInvitations = useCallback(async () => {
+    if (!getStoredToken()) return;
+    try {
+      const list = await apiGetPendingInvitations();
+      setPendingInvitations(list || []);
+    } catch (err) {
+      console.warn('Lỗi kiểm tra lời mời gia phả:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadPendingInvitations();
+    }
+  }, [user, loadPendingInvitations]);
 
   // Initialize Auth
   useEffect(() => {
@@ -394,9 +420,22 @@ const AppContent: React.FC = () => {
         setTree(fullTree);
         localStorage.setItem('fam3_current_tree_id', fullTree.id);
 
-        // Xác định ô "Tôi" (cá nhân người dùng)
+        // Xác định ô "Tôi" (cá nhân người dùng độc lập)
         let matchedMe: Person | undefined = undefined;
-        if (activeUser && activeUser.fullName) {
+
+        // 1. Ưu tiên: nếu là người cộng tác được chia sẻ và có linkedPersonId
+        if (fullTree.linkedPersonId) {
+          matchedMe = fullTree.members.find((m) => m.id === fullTree.linkedPersonId);
+        }
+
+        // 2. Nếu người dùng có số điện thoại, so khớp với SĐT thành viên trong cây
+        if (!matchedMe && activeUser?.phone) {
+          const cleanPhone = activeUser.phone.trim();
+          matchedMe = fullTree.members.find((m) => m.phone && m.phone.trim() === cleanPhone);
+        }
+
+        // 3. So khớp theo Họ tên người dùng
+        if (!matchedMe && activeUser && activeUser.fullName) {
           const userLower = activeUser.fullName.toLowerCase().trim();
           matchedMe = fullTree.members.find(
             (m) => m.fullName.toLowerCase().trim() === userLower
@@ -652,42 +691,67 @@ const AppContent: React.FC = () => {
         <div className="app-video-bg-overlay" />
       </div>
 
-      {/* 2-Tier Sticky Navbar */}
-      <Navbar
+      {/* 3-Mode Sidebar Layout */}
+      <Layout
         user={user}
         tree={tree}
-        mePerson={mePerson}
-        mainView={mainView}
-        onMainViewChange={setMainView}
-        branchFilter={branchFilter}
-        onBranchFilterChange={setBranchFilter}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onOpenPersonPicker={() => setShowPersonPicker(true)}
-        onOpenAddMember={() => {
-          setAddMemberTarget(null);
-          setShowAddMemberModal(true);
+        activeNav={mainView}
+        onSelectNav={(key) => {
+          if (key === 'TREE') setMainView('TREE');
+          else if (key === 'LIST') setMainView('LIST');
+          else if (key === 'LUNAR') setShowLunarModal(true);
+          else if (key === 'FLASHCARD') setShowFlashcardModal(true);
+          else if (key === 'REMINDER') setShowReminderModal(true);
+          else if (key === 'SHARE') setShowShareModal(true);
+          else if (key === 'TOUR') setShowTour(true);
+          else if (key === 'ADMIN') setShowAdminModal(true);
         }}
-        onOpenLunar={() => setShowLunarModal(true)}
-        onOpenReminder={() => setShowReminderModal(true)}
-        onOpenFlashcard={() => setShowFlashcardModal(true)}
-        onExportImage={handleExportImageClick}
-        isExportingImage={isExportingImage}
+        pendingInvitationsCount={pendingInvitations.length}
+        onOpenInvitations={() => setShowInvitationsModal(true)}
+        onOpenShareModal={() => setShowShareModal(true)}
+        onUpdatePhone={() => setShowUpdatePhoneModal(true)}
         onLogout={handleLogout}
-        onPanToMe={() => mePerson && setFocusPersonId(mePerson.id)}
-        onPanToGen1={() => {
-          if (tree && tree.members.length > 0) {
-            const gen1 = tree.members.find((m) => m.generation === 1);
-            if (gen1) setFocusPersonId(gen1.id);
-          }
-        }}
-        onOpenHelp={() => setShowTour(true)}
-        adminActiveTab={adminActiveTab}
-        onAdminTabChange={setAdminActiveTab}
-      />
+      >
+        {/* 2-Tier Sticky Navbar */}
+        <Navbar
+          user={user}
+          tree={tree}
+          mePerson={mePerson}
+          userRole={tree?.userRole || 'OWNER'}
+          pendingInvitationsCount={pendingInvitations.length}
+          onOpenInvitations={() => setShowInvitationsModal(true)}
+          onOpenShareModal={() => setShowShareModal(true)}
+          mainView={mainView}
+          onMainViewChange={setMainView}
+          branchFilter={branchFilter}
+          onBranchFilterChange={setBranchFilter}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onOpenPersonPicker={() => setShowPersonPicker(true)}
+          onOpenAddMember={() => {
+            setAddMemberTarget(null);
+            setShowAddMemberModal(true);
+          }}
+          onOpenLunar={() => setShowLunarModal(true)}
+          onOpenReminder={() => setShowReminderModal(true)}
+          onOpenFlashcard={() => setShowFlashcardModal(true)}
+          onExportImage={handleExportImageClick}
+          isExportingImage={isExportingImage}
+          onLogout={handleLogout}
+          onPanToMe={() => mePerson && setFocusPersonId(mePerson.id)}
+          onPanToGen1={() => {
+            if (tree && tree.members.length > 0) {
+              const gen1 = tree.members.find((m) => m.generation === 1);
+              if (gen1) setFocusPersonId(gen1.id);
+            }
+          }}
+          onOpenHelp={() => setShowTour(true)}
+          adminActiveTab={adminActiveTab}
+          onAdminTabChange={setAdminActiveTab}
+        />
 
-      {/* Main Canvas Viewport or Embedded Admin Dashboard */}
-      <main style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', width: '100%', display: 'flex', flexDirection: 'column' }}>
+        {/* Main Canvas Viewport or Embedded Admin Dashboard */}
+        <main style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', width: '100%', display: 'flex', flexDirection: 'column' }}>
         {user?.role === 'ADMIN' ? (
           <AdminDashboard
             activeTab={adminActiveTab}
@@ -749,6 +813,7 @@ const AppContent: React.FC = () => {
           </div>
         )}
       </main>
+      </Layout>
 
       {/* Member Details Drawer */}
       {drawerPerson && (
@@ -1034,6 +1099,42 @@ const AppContent: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Share Tree Modal */}
+      {tree && (
+        <ShareTreeModal
+          isOpen={showShareModal}
+          tree={tree}
+          currentUserRole={tree.userRole || 'OWNER'}
+          onClose={() => setShowShareModal(false)}
+          onNeedUpdatePhone={() => {
+            setShowShareModal(false);
+            setShowUpdatePhoneModal(true);
+          }}
+        />
+      )}
+
+      {/* Invitations Notification Modal */}
+      <InvitationNotificationModal
+        isOpen={showInvitationsModal}
+        invitations={pendingInvitations}
+        onClose={() => setShowInvitationsModal(false)}
+        onRefresh={loadPendingInvitations}
+        onAcceptedTree={async (treeId) => {
+          await loadTreeData(treeId);
+          await loadPendingInvitations();
+        }}
+      />
+
+      {/* Update Phone Modal */}
+      <UpdatePhoneModal
+        isOpen={showUpdatePhoneModal}
+        currentUser={user}
+        onClose={() => setShowUpdatePhoneModal(false)}
+        onSuccess={(updatedUser) => {
+          setUser(updatedUser);
+        }}
+      />
 
       {/* Auth Modal */}
       {showAuthModal && (

@@ -8,20 +8,46 @@ export const getTrees = async (req: AuthRequest, res: Response) => {
     const isSuperAdmin = req.user?.role === 'ADMIN';
 
     const trees = await prisma.familyTree.findMany({
-      where: isSuperAdmin ? {} : { ownerId: userId },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        branchName: true,
-        ownerId: true,
-        createdAt: true,
-        updatedAt: true,
+      where: isSuperAdmin
+        ? {}
+        : {
+            OR: [
+              { ownerId: userId },
+              { collaborators: { some: { userId } } },
+            ],
+          },
+      include: {
+        collaborators: {
+          where: userId ? { userId } : undefined,
+          select: { role: true, personId: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return res.json(trees);
+    const formatted = trees.map((t) => {
+      let userRole = 'VIEWER';
+      let linkedPersonId: string | null = null;
+      if (t.ownerId === userId || isSuperAdmin) {
+        userRole = 'OWNER';
+      } else if (t.collaborators && t.collaborators.length > 0) {
+        userRole = t.collaborators[0].role;
+        linkedPersonId = t.collaborators[0].personId;
+      }
+      return {
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        branchName: t.branchName,
+        ownerId: t.ownerId,
+        userRole,
+        linkedPersonId,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+      };
+    });
+
+    return res.json(formatted);
   } catch (error: any) {
     console.error('Lỗi lấy danh sách cây gia phả:', error);
     return res.status(500).json({ error: error?.message || 'Lỗi máy chủ.' });
@@ -31,16 +57,34 @@ export const getTrees = async (req: AuthRequest, res: Response) => {
 export const getTreeById = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.userId;
+    const isSuperAdmin = req.user?.role === 'ADMIN';
+
     const tree = await prisma.familyTree.findUnique({
       where: { id },
       include: {
         members: true,
         relationships: true,
+        collaborators: {
+          where: userId ? { userId } : undefined,
+          select: { role: true, personId: true },
+        },
       },
     });
 
     if (!tree) {
       return res.status(404).json({ error: 'Không tìm thấy cây gia phả.' });
+    }
+
+    let userRole = 'VIEWER';
+    let linkedPersonId: string | null = null;
+    if (tree.ownerId === userId || isSuperAdmin) {
+      userRole = 'OWNER';
+    } else if (tree.collaborators && tree.collaborators.length > 0) {
+      userRole = tree.collaborators[0].role;
+      linkedPersonId = tree.collaborators[0].personId;
+    } else {
+      return res.status(403).json({ error: 'Bạn không có quyền truy cập cây gia phả này.' });
     }
 
     // Tự động kiểm tra và đồng bộ liên kết PARENT_CHILD còn thiếu giữa các anh chị em ruột
@@ -101,7 +145,11 @@ export const getTreeById = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    return res.json(tree);
+    return res.json({
+      ...tree,
+      userRole,
+      linkedPersonId,
+    });
   } catch (error: any) {
     console.error('Lỗi chi tiết cây gia phả:', error);
     return res.status(500).json({ error: error?.message || 'Lỗi máy chủ.' });

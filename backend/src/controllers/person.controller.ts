@@ -31,6 +31,29 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Cần có treeId và họ tên thành viên.' });
     }
 
+    const userId = req.user?.userId;
+    const isSuperAdmin = req.user?.role === 'ADMIN';
+
+    const tree = await prisma.familyTree.findUnique({
+      where: { id: treeId },
+      include: {
+        collaborators: {
+          where: userId ? { userId } : undefined,
+        },
+      },
+    });
+
+    if (!tree) {
+      return res.status(404).json({ error: 'Không tìm thấy cây gia phả.' });
+    }
+
+    const isOwner = tree.ownerId === userId;
+    const isEditor = tree.collaborators && tree.collaborators.length > 0 && tree.collaborators[0].role === 'EDITOR';
+
+    if (!isOwner && !isEditor && !isSuperAdmin) {
+      return res.status(403).json({ error: 'Bạn chỉ có quyền xem, không được thêm thành viên vào cây gia phả này.' });
+    }
+
     // 1. Khởi tạo thành viên
     let finalGeneration = Number(generation) || 1;
 
@@ -297,6 +320,30 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
 export const updatePerson = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.userId;
+    const isSuperAdmin = req.user?.role === 'ADMIN';
+
+    const existingPerson = await prisma.person.findUnique({ where: { id } });
+    if (!existingPerson) {
+      return res.status(404).json({ error: 'Không tìm thấy thành viên.' });
+    }
+
+    const tree = await prisma.familyTree.findUnique({
+      where: { id: existingPerson.treeId },
+      include: {
+        collaborators: {
+          where: userId ? { userId } : undefined,
+        },
+      },
+    });
+
+    const isOwner = tree?.ownerId === userId;
+    const isEditor = tree?.collaborators && tree.collaborators.length > 0 && tree.collaborators[0].role === 'EDITOR';
+
+    if (!isOwner && !isEditor && !isSuperAdmin) {
+      return res.status(403).json({ error: 'Bạn chỉ có quyền xem, không được chỉnh sửa hồ sơ thành viên này.' });
+    }
+
     const {
       fullName,
       nickname,
@@ -344,6 +391,29 @@ export const updatePerson = async (req: AuthRequest, res: Response) => {
 export const deletePerson = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.userId;
+    const isSuperAdmin = req.user?.role === 'ADMIN';
+
+    const existingPerson = await prisma.person.findUnique({ where: { id } });
+    if (!existingPerson) {
+      return res.status(404).json({ error: 'Không tìm thấy thành viên.' });
+    }
+
+    const tree = await prisma.familyTree.findUnique({
+      where: { id: existingPerson.treeId },
+      include: {
+        collaborators: {
+          where: userId ? { userId } : undefined,
+        },
+      },
+    });
+
+    const isOwner = tree?.ownerId === userId;
+    const isEditor = tree?.collaborators && tree.collaborators.length > 0 && tree.collaborators[0].role === 'EDITOR';
+
+    if (!isOwner && !isEditor && !isSuperAdmin) {
+      return res.status(403).json({ error: 'Bạn chỉ có quyền xem, không được xóa thành viên này.' });
+    }
 
     // Xóa tất cả quan hệ liên quan
     await prisma.relationship.deleteMany({
