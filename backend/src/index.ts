@@ -13,6 +13,7 @@ import kinshipRoutes from './routes/kinship.routes';
 import exportRoutes from './routes/export.routes';
 import adminRoutes from './routes/admin.routes';
 import invitationRoutes from './routes/invitation.routes';
+import { cleanupPendingDeleteAccounts } from './controllers/auth.controller';
 
 dotenv.config();
 
@@ -100,6 +101,10 @@ if (isDirectRun && process.env.NODE_ENV !== 'test' && !process.env.CLOUDFLARE_WO
         console.log('[FamilyTree API] Cơ sở dữ liệu đang trống, tự động nạp dữ liệu mẫu...');
         await seedDatabase();
       }
+
+      // Khởi chạy tác vụ quét dọn tài khoản chờ xóa quá hạn 30 ngày (Background Worker)
+      await cleanupPendingDeleteAccounts();
+      setInterval(cleanupPendingDeleteAccounts, 12 * 60 * 60 * 1000);
     } catch (err) {
       console.error('[FamilyTree API] Lỗi khởi tạo/kiểm tra dữ liệu:', err);
     }

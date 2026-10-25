@@ -10,6 +10,9 @@ import {
   resetPassword,
   completeRegistration,
   updatePhone,
+  updateProfile,
+  closeAccount,
+  restoreAccount,
 } from '../controllers/auth.controller';
 import { authenticateToken } from '../middlewares/auth.middleware';
 import { authRateLimiter } from '../middlewares/rateLimit.middleware';
@@ -26,5 +29,8 @@ router.post('/login', authRateLimiter, login);
 router.post('/magic-login', authRateLimiter, magicLogin);
 router.get('/me', authenticateToken, getMe);
 router.put('/phone', authenticateToken, updatePhone);
+router.put('/profile', authenticateToken, updateProfile);
+router.post('/close-account', authenticateToken, closeAccount);
+router.post('/restore-account', authenticateToken, restoreAccount);
 
 export default router;

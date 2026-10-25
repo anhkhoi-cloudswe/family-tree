@@ -51,6 +51,7 @@ interface LayoutProps {
   onOpenInvitations?: () => void;
   onOpenShareModal?: () => void;
   onUpdatePhone?: () => void;
+  onOpenProfile?: () => void;
   onLogout: () => void;
   headerContent?: React.ReactNode;
   children: React.ReactNode;
@@ -67,6 +68,7 @@ export const Layout: React.FC<LayoutProps> = ({
   onOpenInvitations,
   onOpenShareModal,
   onUpdatePhone,
+  onOpenProfile,
   onLogout,
   headerContent,
   children,
@@ -198,7 +200,7 @@ export const Layout: React.FC<LayoutProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-[#090d16] text-slate-100 flex flex-col font-sans overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-200">
+    <div className="relative min-h-screen w-full bg-transparent text-slate-100 flex flex-col font-sans overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-200">
       {/* Mobile Topbar */}
       <header className="lg:hidden sticky top-0 z-40 w-full h-14 bg-slate-900/90 backdrop-blur-md border-b border-emerald-500/20 px-4 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-3">
@@ -211,9 +213,9 @@ export const Layout: React.FC<LayoutProps> = ({
             <Menu size={22} />
           </button>
           <div className="flex items-center gap-2">
-            <FamilyTreeLogo size={24} />
+            <FamilyTreeLogo size={26} />
             <span className="font-bold text-sm bg-gradient-to-r from-emerald-400 to-teal-200 bg-clip-text text-transparent">
-              Gia Phả Số
+              Famlykin
             </span>
           </div>
         </div>
@@ -258,7 +260,7 @@ export const Layout: React.FC<LayoutProps> = ({
       <aside
         onMouseEnter={() => mode === 'hover-expand' && setIsHovered(true)}
         onMouseLeave={() => mode === 'hover-expand' && setIsHovered(false)}
-        className={`fixed top-0 bottom-0 left-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-xl border-r border-emerald-500/20 shadow-2xl transition-all duration-300 ease-in-out
+        className={`fixed top-0 bottom-0 left-0 z-50 flex flex-col bg-slate-950/92 backdrop-blur-2xl border-r border-emerald-500/20 shadow-2xl transition-all duration-300 ease-in-out
           ${
             mobileOpen
               ? 'translate-x-0 w-72'
@@ -274,100 +276,106 @@ export const Layout: React.FC<LayoutProps> = ({
         `}
       >
         {/* Sidebar Header: Logo & Mode Controller */}
-        <div className="h-16 px-4 flex items-center justify-between border-b border-emerald-500/15">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex-shrink-0">
-              <FamilyTreeLogo size={32} />
+        <div className={`h-16 px-4 flex items-center border-b border-emerald-500/15 relative ${isExpanded ? 'justify-between' : 'justify-center'}`}>
+          {!isExpanded ? (
+            <div className="flex items-center justify-center" title="Famlykin - Cây Gia Phả Số">
+              <FamilyTreeLogo size={36} />
             </div>
-            {isExpanded && (
-              <div className="flex flex-col whitespace-nowrap overflow-hidden transition-opacity duration-200">
-                <span className="font-bold text-base bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200 bg-clip-text text-transparent truncate">
-                  Cây Gia Phả Số
-                </span>
-                <span className="text-[11px] text-slate-400 truncate">
-                  Dòng họ Việt Nam
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Desktop Mode Toggle Popover */}
-          <div className="hidden lg:block relative" ref={modeMenuRef}>
-            <button
-              type="button"
-              onClick={() => setShowModeMenu(!showModeMenu)}
-              className={`p-1.5 rounded-lg text-slate-400 hover:text-emerald-300 hover:bg-slate-800/80 transition ${
-                showModeMenu ? 'bg-slate-800 text-emerald-300 ring-1 ring-emerald-500/30' : ''
-              }`}
-              title="Chế độ thanh công cụ bên trái"
-            >
-              <Sliders size={18} />
-            </button>
-
-            {showModeMenu && (
-              <div className="absolute left-8 top-0 w-56 rounded-xl bg-slate-900 border border-emerald-500/30 shadow-2xl p-2 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-2 py-1.5 font-semibold text-slate-300 border-b border-slate-800 mb-1">
-                  Chế độ Sidebar
+          ) : (
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="flex-shrink-0 flex items-center justify-center">
+                  <FamilyTreeLogo size={34} />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSidebarMode('hover-expand')}
-                  className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between transition ${
-                    mode === 'hover-expand'
-                      ? 'bg-emerald-500/20 text-emerald-300 font-medium'
-                      : 'text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  <div>
-                    <div>Di chuột để mở rộng</div>
-                    <div className="text-[10px] text-slate-400 font-normal">Mặc định, tối ưu không gian</div>
-                  </div>
-                  {mode === 'hover-expand' && <span className="text-emerald-400 font-bold">✓</span>}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSidebarMode('expanded')}
-                  className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between transition ${
-                    mode === 'expanded'
-                      ? 'bg-emerald-500/20 text-emerald-300 font-medium'
-                      : 'text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  <div>
-                    <div>Luôn mở rộng (Rộng)</div>
-                    <div className="text-[10px] text-slate-400 font-normal">Cố định 288px</div>
-                  </div>
-                  {mode === 'expanded' && <span className="text-emerald-400 font-bold">✓</span>}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSidebarMode('collapsed')}
-                  className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between transition ${
-                    mode === 'collapsed'
-                      ? 'bg-emerald-500/20 text-emerald-300 font-medium'
-                      : 'text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  <div>
-                    <div>Luôn thu gọn (Icon)</div>
-                    <div className="text-[10px] text-slate-400 font-normal">Cố định 80px</div>
-                  </div>
-                  {mode === 'collapsed' && <span className="text-emerald-400 font-bold">✓</span>}
-                </button>
+                <div className="flex flex-col whitespace-nowrap overflow-hidden">
+                  <span className="font-bold text-base bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200 bg-clip-text text-transparent truncate tracking-tight">
+                    Famlykin
+                  </span>
+                  <span className="text-[11px] text-slate-400 truncate">
+                    Cây Gia Phả Số
+                  </span>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Mobile Close Button */}
-          <button
-            type="button"
-            onClick={() => setMobileOpen(false)}
-            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-          >
-            <X size={20} />
-          </button>
+              {/* Desktop Mode Toggle Popover */}
+              <div className="hidden lg:block relative" ref={modeMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowModeMenu(!showModeMenu)}
+                  className={`p-1.5 rounded-lg text-slate-400 hover:text-emerald-300 hover:bg-slate-800/80 transition ${
+                    showModeMenu ? 'bg-slate-800 text-emerald-300 ring-1 ring-emerald-500/30' : ''
+                  }`}
+                  title="Cấu hình chế độ thanh điều hướng bên trái"
+                >
+                  <Sliders size={18} />
+                </button>
+
+                {showModeMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-slate-900 border border-emerald-500/30 shadow-2xl p-2 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
+                    <div className="px-2 py-1.5 font-semibold text-slate-300 border-b border-slate-800 mb-1">
+                      Chế độ Sidebar
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSidebarMode('hover-expand')}
+                      className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between transition ${
+                        mode === 'hover-expand'
+                          ? 'bg-emerald-500/20 text-emerald-300 font-medium'
+                          : 'text-slate-300 hover:bg-slate-800'
+                      }`}
+                    >
+                      <div>
+                        <div>Di chuột để mở rộng</div>
+                        <div className="text-[10px] text-slate-400 font-normal">Mặc định, tối ưu không gian</div>
+                      </div>
+                      {mode === 'hover-expand' && <span className="text-emerald-400 font-bold">✓</span>}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSidebarMode('expanded')}
+                      className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between transition ${
+                        mode === 'expanded'
+                          ? 'bg-emerald-500/20 text-emerald-300 font-medium'
+                          : 'text-slate-300 hover:bg-slate-800'
+                      }`}
+                    >
+                      <div>
+                        <div>Luôn mở rộng (Rộng)</div>
+                        <div className="text-[10px] text-slate-400 font-normal">Cố định 288px</div>
+                      </div>
+                      {mode === 'expanded' && <span className="text-emerald-400 font-bold">✓</span>}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSidebarMode('collapsed')}
+                      className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between transition ${
+                        (mode as string) === 'collapsed'
+                          ? 'bg-emerald-500/20 text-emerald-300 font-medium'
+                          : 'text-slate-300 hover:bg-slate-800'
+                      }`}
+                    >
+                      <div>
+                        <div>Luôn thu gọn (Icon)</div>
+                        <div className="text-[10px] text-slate-400 font-normal">Cố định 80px</div>
+                      </div>
+                      {(mode as string) === 'collapsed' && <span className="text-emerald-400 font-bold">✓</span>}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Close Button */}
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Tree Info Pill (When Expanded) */}
@@ -484,35 +492,40 @@ export const Layout: React.FC<LayoutProps> = ({
         )}
 
         {/* User Profile Card at Bottom */}
-        <div className="p-2.5 border-t border-emerald-500/15 bg-slate-900/60">
+        <div className="p-2.5 border-t border-emerald-500/15 bg-slate-900/70">
           <div className={`flex items-center gap-3 ${!isExpanded ? 'justify-center' : ''}`}>
-            {/* Avatar */}
-            <div className="relative flex-shrink-0 w-9 h-9 rounded-full bg-emerald-700/40 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-300 overflow-hidden">
+            {/* Avatar button */}
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              className="relative flex-shrink-0 w-9 h-9 rounded-full bg-emerald-700/40 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-300 overflow-hidden hover:ring-2 hover:ring-emerald-400/80 transition cursor-pointer"
+              title="Nhấn để xem & chỉnh sửa thông tin cá nhân"
+            >
               {user?.avatarUrl ? (
                 <img src={user.avatarUrl} alt={user.fullName || 'User'} className="w-full h-full object-cover" />
               ) : (
                 <span>{(user?.fullName || user?.email || 'U').charAt(0).toUpperCase()}</span>
               )}
-            </div>
+            </button>
 
             {/* User Info (when expanded) */}
             {isExpanded && (
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-xs text-slate-200 truncate">
+              <button
+                type="button"
+                onClick={onOpenProfile}
+                className="flex-1 min-w-0 text-left group transition cursor-pointer"
+                title="Nhấn để xem & chỉnh sửa thông tin cá nhân"
+              >
+                <div className="font-semibold text-xs text-slate-200 group-hover:text-emerald-300 truncate">
                   {user?.fullName || 'Người dùng'}
                 </div>
-                <button
-                  type="button"
-                  onClick={onUpdatePhone}
-                  className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-emerald-300 transition truncate mt-0.5"
-                  title="Nhấn để cập nhật số điện thoại nhận lời mời"
-                >
+                <div className="flex items-center gap-1 text-[11px] text-slate-400 group-hover:text-emerald-400 transition truncate mt-0.5">
                   <Phone size={11} className={user?.phone ? 'text-emerald-400' : 'text-amber-400'} />
                   <span className="truncate">
-                    {user?.phone ? user.phone : 'Thêm SĐT nhận mời'}
+                    {user?.phone ? user.phone : 'Chỉnh sửa hồ sơ'}
                   </span>
-                </button>
-              </div>
+                </div>
+              </button>
             )}
 
             {/* Logout button */}

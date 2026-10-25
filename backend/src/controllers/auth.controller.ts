@@ -174,8 +174,11 @@ export const verifyRegistration = async (req: Request, res: Response) => {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
-        role: user.role,
+        phone: user.phone,
         avatarUrl: user.avatarUrl,
+        role: user.role,
+        status: user.status,
+        deletedAt: user.deletedAt,
       },
       defaultTreeId,
       message: 'Xác thực email thành công! Tài khoản của bạn đã được khởi tạo.',
@@ -286,8 +289,11 @@ export const completeRegistration = async (req: Request, res: Response) => {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
+        phone: user.phone,
         avatarUrl: user.avatarUrl,
         role: user.role,
+        status: user.status,
+        deletedAt: user.deletedAt,
       },
       defaultTreeId,
     });
@@ -316,6 +322,10 @@ export const login = async (req: Request, res: Response) => {
 
     if (!user) {
       return res.status(401).json({ error: 'Tài khoản hoặc mật khẩu không chính xác.' });
+    }
+
+    if (user.status === 'BLOCKED') {
+      return res.status(403).json({ error: 'Tài khoản của bạn đã bị khóa bởi quản trị viên.' });
     }
 
     const isMatch = bcrypt.compareSync(password, user.passwordHash);
@@ -350,6 +360,8 @@ export const login = async (req: Request, res: Response) => {
         phone: user.phone,
         avatarUrl: user.avatarUrl,
         role: user.role,
+        status: user.status,
+        deletedAt: user.deletedAt,
       },
       defaultTreeId,
     });
@@ -462,6 +474,8 @@ export const getMe = async (req: AuthRequest, res: Response) => {
         phone: true,
         avatarUrl: true,
         role: true,
+        status: true,
+        deletedAt: true,
         createdAt: true,
         trees: {
           select: {
@@ -507,6 +521,10 @@ export const magicLogin = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Tài khoản chưa được khởi tạo. Vui lòng đăng ký.' });
     }
 
+    if (user.status === 'BLOCKED') {
+      return res.status(403).json({ error: 'Tài khoản của bạn đã bị khóa bởi quản trị viên.' });
+    }
+
     const secret = process.env.JWT_SECRET || 'family_tree_secret_key';
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
@@ -524,6 +542,8 @@ export const magicLogin = async (req: Request, res: Response) => {
         phone: user.phone,
         avatarUrl: user.avatarUrl,
         role: user.role,
+        status: user.status,
+        deletedAt: user.deletedAt,
       },
       defaultTreeId,
     });
@@ -585,3 +605,189 @@ export const updatePhone = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ error: error?.message || 'Lỗi máy chủ.' });
   }
 };
+
+/**
+ * Cập nhật thông tin cá nhân (Profile Dashboard)
+ */
+export const updateProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Chưa đăng nhập.' });
+    }
+
+    const { fullName, phone, avatarUrl, currentPassword, newPassword } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
+    }
+
+    const updateData: any = {};
+
+    if (fullName && typeof fullName === 'string' && fullName.trim()) {
+      updateData.fullName = fullName.trim();
+    }
+
+    if (avatarUrl !== undefined) {
+      updateData.avatarUrl = avatarUrl && typeof avatarUrl === 'string' ? avatarUrl.trim() : null;
+    }
+
+    if (phone !== undefined) {
+      const cleanPhone = phone && typeof phone === 'string' ? phone.trim().replace(/\s+/g, '') : null;
+      if (cleanPhone) {
+        // Kiểm tra xem số điện thoại đã tồn tại ở tài khoản khác chưa
+        const existing = await prisma.user.findFirst({
+          where: {
+            phone: cleanPhone,
+            NOT: { id: userId },
+          },
+        });
+        if (existing) {
+          return res.status(400).json({ error: 'Số điện thoại này đã được sử dụng bởi một tài khoản khác.' });
+        }
+      }
+      updateData.phone = cleanPhone;
+    }
+
+    // Nếu đổi mật khẩu
+    if (newPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({ error: 'Vui lòng nhập mật khẩu hiện tại để đổi mật khẩu mới.' });
+      }
+      const isMatch = bcrypt.compareSync(currentPassword, user.passwordHash);
+      if (!isMatch) {
+        return res.status(400).json({ error: 'Mật khẩu hiện tại không chính xác.' });
+      }
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 6 ký tự.' });
+      }
+      updateData.passwordHash = bcrypt.hashSync(newPassword, 10);
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        avatarUrl: true,
+        role: true,
+        status: true,
+        deletedAt: true,
+      },
+    });
+
+    return res.json({
+      message: 'Cập nhật thông tin cá nhân thành công!',
+      user: updatedUser,
+    });
+  } catch (error: any) {
+    console.error('Lỗi updateProfile:', error);
+    return res.status(500).json({ error: error?.message || 'Lỗi máy chủ khi cập nhật thông tin cá nhân.' });
+  }
+};
+
+/**
+ * Đóng / Xóa mềm tài khoản (PENDING_DELETE, ân hạn 30 ngày)
+ */
+export const closeAccount = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Chưa đăng nhập.' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
+    }
+
+    const deletedAt = new Date();
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        status: 'PENDING_DELETE',
+        deletedAt,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: 'Tài khoản của bạn đã được đưa vào trạng thái chờ xóa. Bạn có 30 ngày để đăng nhập và khôi phục lại tài khoản.',
+      deletedAt,
+    });
+  } catch (error: any) {
+    console.error('Lỗi closeAccount:', error);
+    return res.status(500).json({ error: error?.message || 'Lỗi máy chủ khi đóng tài khoản.' });
+  }
+};
+
+/**
+ * Khôi phục tài khoản từ trạng thái PENDING_DELETE về ACTIVE
+ */
+export const restoreAccount = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Chưa đăng nhập.' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
+    }
+
+    const restoredUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        status: 'ACTIVE',
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        avatarUrl: true,
+        role: true,
+        status: true,
+        deletedAt: true,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: 'Khôi phục tài khoản thành công! Chào mừng bạn quay trở lại.',
+      user: restoredUser,
+    });
+  } catch (error: any) {
+    console.error('Lỗi restoreAccount:', error);
+    return res.status(500).json({ error: error?.message || 'Lỗi máy chủ khi khôi phục tài khoản.' });
+  }
+};
+
+/**
+ * Tác vụ chạy nền định kỳ quét và xóa vĩnh viễn (Hard-Delete) các tài khoản PENDING_DELETE quá 30 ngày
+ */
+export const cleanupPendingDeleteAccounts = async () => {
+  try {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const result = await prisma.user.deleteMany({
+      where: {
+        status: 'PENDING_DELETE',
+        deletedAt: {
+          lte: thirtyDaysAgo,
+        },
+      },
+    });
+    if (result.count > 0) {
+      console.log(`[Background Worker] Đã xóa vĩnh viễn ${result.count} tài khoản PENDING_DELETE quá hạn 30 ngày.`);
+    }
+  } catch (err) {
+    console.error('[Background Worker] Lỗi khi dọn dẹp tài khoản chờ xóa:', err);
+  }
+};
+

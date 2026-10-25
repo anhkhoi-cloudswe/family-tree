@@ -251,3 +251,26 @@ export const apiRemoveCollaborator = (treeId: string, collaboratorUserId: string
   request<{ message: string }>(`/invitations/tree/${treeId}/collaborator/${collaboratorUserId}`, {
     method: 'DELETE',
   });
+
+// Profile & Account Management
+export const apiUpdateProfile = (data: {
+  fullName?: string;
+  phone?: string;
+  avatarUrl?: string;
+  currentPassword?: string;
+  newPassword?: string;
+}) =>
+  request<{ message: string; user: User }>('/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+
+export const apiCloseAccount = () =>
+  request<{ success: boolean; message: string; deletedAt: string }>('/auth/close-account', {
+    method: 'POST',
+  });
+
+export const apiRestoreAccount = () =>
+  request<{ success: boolean; message: string; user: User }>('/auth/restore-account', {
+    method: 'POST',
+  });

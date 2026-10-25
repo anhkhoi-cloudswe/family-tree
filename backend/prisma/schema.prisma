@@ -16,6 +16,8 @@ model User {
   fullName            String
   avatarUrl           String?
   role                String             @default("MEMBER")
+  status              String             @default("ACTIVE") // ACTIVE, INACTIVE, BLOCKED, PENDING_DELETE
+  deletedAt           DateTime?          @map("deleted_at")
   isVerified          Boolean            @default(false)
   trees               FamilyTree[]
   collaborations      TreeCollaborator[]

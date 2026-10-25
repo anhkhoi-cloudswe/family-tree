@@ -3,8 +3,10 @@ export interface User {
   email: string;
   fullName: string;
   phone?: string | null;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   role: string;
+  status?: 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'PENDING_DELETE';
+  deletedAt?: string | null;
   trees?: FamilyTree[];
 }
 

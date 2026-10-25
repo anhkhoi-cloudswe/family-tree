@@ -19,6 +19,8 @@ import { FamilyFlashcardModal } from './components/FamilyFlashcardModal';
 import { ShareTreeModal } from './components/ShareTreeModal';
 import { InvitationNotificationModal } from './components/InvitationNotificationModal';
 import { UpdatePhoneModal } from './components/UpdatePhoneModal';
+import { UserProfileModal } from './components/UserProfileModal';
+import { AccountRestoreOverlay } from './components/AccountRestoreOverlay';
 import { FamilyTreeLogo } from './components/FamilyTreeLogo';
 import { ToastProvider, useToast } from './components/Toast';
 import { User, FamilyTree, Person, TreeRole, TreeInvitation } from './types';
@@ -87,6 +89,7 @@ const AppContent: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState<boolean>(false);
   const [showInvitationsModal, setShowInvitationsModal] = useState<boolean>(false);
   const [showUpdatePhoneModal, setShowUpdatePhoneModal] = useState<boolean>(false);
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [pendingInvitations, setPendingInvitations] = useState<TreeInvitation[]>([]);
 
   // Dedicated Admin Dashboard states
@@ -710,6 +713,7 @@ const AppContent: React.FC = () => {
         onOpenInvitations={() => setShowInvitationsModal(true)}
         onOpenShareModal={() => setShowShareModal(true)}
         onUpdatePhone={() => setShowUpdatePhoneModal(true)}
+        onOpenProfile={() => setShowProfileModal(true)}
         onLogout={handleLogout}
       >
         {/* 2-Tier Sticky Navbar */}
@@ -1133,6 +1137,32 @@ const AppContent: React.FC = () => {
         onClose={() => setShowUpdatePhoneModal(false)}
         onSuccess={(updatedUser) => {
           setUser(updatedUser);
+        }}
+      />
+
+      {/* Account Restore Blocking Fullscreen Overlay (Grace period 30 days) */}
+      {user && user.status === 'PENDING_DELETE' && (
+        <AccountRestoreOverlay
+          user={user}
+          onRestored={(restoredUser) => {
+            setUser(restoredUser);
+            toast.success('Khôi phục tài khoản thành công! Bạn có thể tiếp tục sử dụng hệ thống.');
+          }}
+          onLogout={handleLogout}
+        />
+      )}
+
+      {/* User Profile Modal (Edit Name, Phone, Avatar, Password & Soft Delete) */}
+      <UserProfileModal
+        isOpen={showProfileModal}
+        currentUser={user}
+        onClose={() => setShowProfileModal(false)}
+        onUserUpdated={(updatedUser) => {
+          setUser(updatedUser);
+        }}
+        onAccountClosed={() => {
+          setShowProfileModal(false);
+          handleLogout();
         }}
       />
 
