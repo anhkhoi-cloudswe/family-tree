@@ -40,8 +40,8 @@ interface NavbarProps {
   onPanToMe?: () => void;
   onPanToGen1?: () => void;
   onOpenHelp?: () => void;
-  adminActiveTab?: 'USERS' | 'REPORTS' | 'AUDIT' | 'SETTINGS';
-  onAdminTabChange?: (tab: 'USERS' | 'REPORTS' | 'AUDIT' | 'SETTINGS') => void;
+  adminActiveTab?: 'USERS' | 'SUBSCRIPTIONS' | 'REPORTS' | 'AUDIT' | 'SETTINGS';
+  onAdminTabChange?: (tab: 'USERS' | 'SUBSCRIPTIONS' | 'REPORTS' | 'AUDIT' | 'SETTINGS') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -117,47 +117,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <div className="navbar-tier-2-outer" role="toolbar" aria-label="Thanh công cụ phả hệ">
       <div className="navbar-tier-2">
-        {/* 1. LEFT GROUP: [Sơ đồ Cây] / [Danh Sách] + [Dropdown Nhánh Phả Hệ] */}
+        {/* 1. LEFT GROUP: Dropdown Lọc Nhánh Phả Hệ (Bên Nội / Bên Ngoại) */}
         <div className="navbar-left-group">
-          {onBackToBranches && (
-            <button
-              type="button"
-              className="navbar-back-btn"
-              onClick={onBackToBranches}
-              title="Quay lại danh sách các chi nhánh gia phả"
-            >
-              <Layers size={14} className="text-emerald-400" />
-              <span className="hidden md:inline">Tất Cả Nhánh</span>
-            </button>
-          )}
-
-          {/* Main View Mode Segmented Tabs */}
-          <div className="tier2-mainview-tabs" role="tablist" aria-label="Chế độ sơ đồ hoặc danh sách">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mainView === 'TREE'}
-              className={`mainview-tab-btn ${mainView === 'TREE' ? 'active' : ''}`}
-              onClick={() => onMainViewChange('TREE')}
-              title="Xem Sơ đồ Cây Gia Phả"
-            >
-              <TreePine size={14} />
-              <span className="hidden sm:inline">Sơ đồ Cây</span>
-              <span className="sm:hidden">Cây</span>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mainView === 'LIST'}
-              className={`mainview-tab-btn ${mainView === 'LIST' ? 'active' : ''}`}
-              onClick={() => onMainViewChange('LIST')}
-              title="Xem Danh Sách Thành Viên"
-            >
-              <Users size={14} />
-              <span className="hidden sm:inline">Danh Sách</span>
-              <span className="sm:hidden">DS</span>
-            </button>
-          </div>
 
           {/* Branch Filter Dropdown (Đồng bộ gọn gàng cho cả Desktop & Mobile) */}
           <div className="branch-dropdown-wrapper" ref={dropdownRef}>

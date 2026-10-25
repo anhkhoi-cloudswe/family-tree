@@ -8,12 +8,18 @@ import {
   getTreeCollaborators,
   updateCollaboratorRole,
   removeCollaborator,
+  getInviteLinkInfo,
+  joinTreeViaLink,
 } from '../controllers/invitation.controller';
 import { authenticateToken } from '../middlewares/auth.middleware';
 
 const router = Router();
 
 router.use(authenticateToken);
+
+// Thông tin tóm tắt & tham gia qua đường link (?inviteTree=...)
+router.get('/link-info/:treeId', getInviteLinkInfo);
+router.post('/join-link/:treeId', joinTreeViaLink);
 
 // Gửi lời mời chia sẻ cây (cả / và /send)
 router.post('/', sendInvitation);

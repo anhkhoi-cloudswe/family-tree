@@ -587,26 +587,20 @@ export const Layout: React.FC<LayoutProps> = ({
                 className="flex-1 min-w-0 text-left group transition cursor-pointer"
                 title="Nhấn để xem & chỉnh sửa thông tin cá nhân"
               >
-                <div className="font-semibold text-xs text-slate-200 group-hover:text-emerald-300 truncate">
+                <div className="font-semibold text-xs text-slate-100 group-hover:text-emerald-300 truncate">
                   {user?.fullName || 'Người dùng'}
                 </div>
-                <div className="flex items-center justify-between gap-1 mt-0.5">
-                  <div className="flex items-center gap-1 text-[11px] text-slate-400 group-hover:text-emerald-400 transition truncate">
-                    <Phone size={11} className={user?.phone ? 'text-emerald-400' : 'text-amber-400'} />
-                    <span className="truncate">
-                      {user?.phone ? user.phone : 'Chỉnh sửa hồ sơ'}
-                    </span>
-                  </div>
+                <div className="mt-1 flex items-center gap-1.5">
                   {isPro ? (
                     <span
                       onClick={(e) => {
                         e.stopPropagation();
                         onOpenSubscription?.();
                       }}
-                      className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-0.5 hover:bg-amber-500/30 transition flex-shrink-0"
-                      title="Gói PRO VIP"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition cursor-pointer"
+                      title="Tài khoản gói PRO"
                     >
-                      <Crown size={9} />
+                      <Crown size={10} className="text-amber-400" />
                       <span>PRO</span>
                     </span>
                   ) : (
@@ -615,10 +609,11 @@ export const Layout: React.FC<LayoutProps> = ({
                         e.stopPropagation();
                         onOpenSubscription?.();
                       }}
-                      className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-800 text-slate-400 hover:text-amber-300 border border-slate-700 hover:border-amber-500/40 transition flex-shrink-0"
-                      title="Nâng cấp gói PRO"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:border-emerald-500/50 hover:text-emerald-300 transition cursor-pointer"
+                      title="Gói Miễn Phí (Tối đa 5 nhánh) - Nhấn để nâng cấp PRO"
                     >
-                      FREE
+                      <span>FREE</span>
+                      <span className="text-[9px] text-emerald-400 font-bold">↑ PRO</span>
                     </span>
                   )}
                 </div>

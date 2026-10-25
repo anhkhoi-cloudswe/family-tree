@@ -1,10 +1,11 @@
 import { Response } from 'express';
 import { prisma } from '../prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { broadcastUserUpdate } from '../services/websocket.service';
 
 export const getAdminStats = async (req: AuthRequest, res: Response) => {
   try {
-    const [totalUsers, totalAdmins, totalMembers, totalTrees, totalPersons, totalLiving, totalDeceased, totalRelationships] = await Promise.all([
+    const [totalUsers, totalAdmins, totalMembers, totalTrees, totalPersons, totalLiving, totalDeceased, totalRelationships, totalProUsers] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: 'ADMIN' } }),
       prisma.user.count({ where: { role: 'MEMBER' } }),
@@ -13,6 +14,7 @@ export const getAdminStats = async (req: AuthRequest, res: Response) => {
       prisma.person.count({ where: { isDeceased: false } }),
       prisma.person.count({ where: { isDeceased: true } }),
       prisma.relationship.count(),
+      prisma.user.count({ where: { subscriptionTier: 'PRO' } }),
     ]);
 
     return res.json({
@@ -24,6 +26,7 @@ export const getAdminStats = async (req: AuthRequest, res: Response) => {
       totalLiving,
       totalDeceased,
       totalRelationships,
+      totalProUsers,
     });
   } catch (error: any) {
     console.error('Lỗi lấy thống kê admin:', error);
@@ -39,9 +42,11 @@ export const getAdminUsers = async (req: AuthRequest, res: Response) => {
         email: true,
         fullName: true,
         role: true,
+        subscriptionTier: true,
+        subscriptionExpiresAt: true,
         createdAt: true,
         _count: {
-          select: { trees: true },
+          select: { trees: true, collaborations: true },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -228,5 +233,62 @@ export const getAdminTrees = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     console.error('Lỗi lấy danh sách cây gia phả admin:', error);
     return res.status(500).json({ error: 'Không thể tải danh sách gia phả.' });
+  }
+};
+
+/**
+ * Quản trị viên cập nhật gói hội viên (PRO / FREE) và hạn dùng cho bất kỳ người dùng nào
+ */
+export const updateAdminUserSubscription = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { tier, durationDays, expiresAt } = req.body;
+
+    if (!['FREE', 'PRO'].includes(tier)) {
+      return res.status(400).json({ error: 'Gói không hợp lệ (phải là FREE hoặc PRO).' });
+    }
+
+    let calculatedExpiresAt: Date | null = null;
+    if (tier === 'PRO') {
+      if (expiresAt) {
+        calculatedExpiresAt = new Date(expiresAt);
+      } else if (durationDays) {
+        calculatedExpiresAt = new Date();
+        calculatedExpiresAt.setDate(calculatedExpiresAt.getDate() + Number(durationDays));
+      } else {
+        // Mặc định 30 ngày nếu không chỉ định
+        calculatedExpiresAt = new Date();
+        calculatedExpiresAt.setDate(calculatedExpiresAt.getDate() + 30);
+      }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id },
+      data: {
+        subscriptionTier: tier,
+        subscriptionExpiresAt: calculatedExpiresAt,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        subscriptionTier: true,
+        subscriptionExpiresAt: true,
+      },
+    });
+
+    broadcastUserUpdate(id, { action: 'SUBSCRIPTION_UPDATED', tier });
+
+    return res.json({
+      message:
+        tier === 'PRO'
+          ? `Đã kích hoạt gói PRO cho tài khoản ${updated.fullName || updated.email} thành công!`
+          : `Đã chuyển tài khoản ${updated.fullName || updated.email} về gói FREE thành công!`,
+      user: updated,
+    });
+  } catch (error: any) {
+    console.error('Lỗi cập nhật subscription admin:', error);
+    return res.status(500).json({ error: error?.message || 'Không thể cập nhật gói hội viên.' });
   }
 };

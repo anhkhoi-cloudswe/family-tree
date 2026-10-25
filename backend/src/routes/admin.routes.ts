@@ -8,6 +8,7 @@ import {
   updateAdminUser,
   deleteAdminUser,
   getAdminTrees,
+  updateAdminUserSubscription,
 } from '../controllers/admin.controller';
 
 const router = Router();
@@ -21,6 +22,8 @@ router.get('/users', getAdminUsers);
 router.post('/users', createAdminUser);
 router.put('/users/:id', updateAdminUser);
 router.patch('/users/:id/role', updateAdminUserRole);
+router.put('/users/:id/subscription', updateAdminUserSubscription);
+router.patch('/users/:id/subscription', updateAdminUserSubscription);
 router.delete('/users/:id', deleteAdminUser);
 router.get('/trees', getAdminTrees);
 

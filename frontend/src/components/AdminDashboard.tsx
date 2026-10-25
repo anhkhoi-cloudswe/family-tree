@@ -25,6 +25,8 @@ import {
   Clock,
   KeyRound,
   UserCheck,
+  Zap,
+  Sparkles,
 } from 'lucide-react';
 import {
   apiGetAdminStats,
@@ -32,13 +34,14 @@ import {
   apiCreateAdminUser,
   apiUpdateAdminUser,
   apiDeleteAdminUser,
+  apiUpdateAdminUserSubscription,
   AdminStats,
   AdminUserItem,
 } from '../services/api';
 import { getSupabaseConfig, saveSupabaseConfig, isSupabaseConfigured } from '../services/supabase';
 import { useToast } from './Toast';
 
-export type AdminTab = 'USERS' | 'REPORTS' | 'AUDIT' | 'SETTINGS';
+export type AdminTab = 'USERS' | 'SUBSCRIPTIONS' | 'REPORTS' | 'AUDIT' | 'SETTINGS';
 
 interface AdminDashboardProps {
   activeTab: AdminTab;
@@ -88,6 +91,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // User Delete Modal
   const [deletingUser, setDeletingUser] = useState<AdminUserItem | null>(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
+
+  // User Subscription Admin Control
+  const [subscribingUser, setSubscribingUser] = useState<AdminUserItem | null>(null);
+  const [subTier, setSubTier] = useState<'FREE' | 'PRO'>('PRO');
+  const [subDuration, setSubDuration] = useState<number>(30); // 30, 90, 365, 36500
+  const [isSubmittingSub, setIsSubmittingSub] = useState(false);
+  const [subTierFilter, setSubTierFilter] = useState<'ALL' | 'PRO' | 'FREE'>('ALL');
+  const [subSearchTerm, setSubSearchTerm] = useState('');
 
   // Settings State
   const [supabaseUrl, setSupabaseUrl] = useState('');
@@ -238,6 +249,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setIsSavedConfig(false), 3000);
   };
 
+  // Update user subscription tier (Admin control)
+  const handleUpdateSubscription = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subscribingUser) return;
+    try {
+      setIsSubmittingSub(true);
+      const res = await apiUpdateAdminUserSubscription(subscribingUser.id, {
+        tier: subTier,
+        durationDays: subTier === 'PRO' ? subDuration : undefined,
+      });
+      toast.success(res.message || 'Đã cập nhật gói dịch vụ thành công!');
+      setSubscribingUser(null);
+      await loadAllData();
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi khi cập nhật gói dịch vụ.');
+    } finally {
+      setIsSubmittingSub(false);
+    }
+  };
+
   // Export Executive System Report to CSV
   const handleExportSystemReport = () => {
     try {
@@ -352,6 +383,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <button
           type="button"
           role="tab"
+          aria-selected={activeTab === 'SUBSCRIPTIONS'}
+          className={`admin-tab-btn ${activeTab === 'SUBSCRIPTIONS' ? 'active' : ''}`}
+          onClick={() => onTabChange('SUBSCRIPTIONS')}
+        >
+          <Crown size={17} color="#fbbf24" />
+          <span>Quản Lý Gói PRO ({users.filter((u) => u.subscriptionTier === 'PRO').length})</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
           aria-selected={activeTab === 'REPORTS'}
           className={`admin-tab-btn ${activeTab === 'REPORTS' ? 'active' : ''}`}
           onClick={() => onTabChange('REPORTS')}
@@ -440,6 +482,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <tr>
                   <th>NGƯỜI DÙNG</th>
                   <th>VAI TRÒ</th>
+                  <th>GÓI HỘI VIÊN</th>
                   <th>SỐ DÒNG HỌ</th>
                   <th>NGÀY ĐĂNG KÝ</th>
                   <th style={{ textAlign: 'right' }}>THAO TÁC</th>
@@ -448,7 +491,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <tbody>
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="admin-empty-td">
+                    <td colSpan={6} className="admin-empty-td">
                       Không tìm thấy tài khoản nào phù hợp với tìm kiếm.
                     </td>
                   </tr>
@@ -477,6 +520,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         )}
                       </td>
                       <td>
+                        {u.subscriptionTier === 'PRO' ? (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                              <Crown size={12} className="text-amber-400" />
+                              PRO
+                            </span>
+                            {u.subscriptionExpiresAt && (
+                              <span className="text-[10px] text-slate-400">
+                                ({new Date(u.subscriptionExpiresAt).toLocaleDateString('vi-VN')})
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                            FREE (5 nhánh)
+                          </span>
+                        )}
+                      </td>
+                      <td>
                         <span className="tree-count-badge">
                           {u._count?.trees || 0} Cây
                         </span>
@@ -488,6 +550,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </td>
                       <td>
                         <div className="admin-actions-cell">
+                          <button
+                            type="button"
+                            className="btn-action-edit"
+                            style={{ borderColor: 'rgba(245, 158, 11, 0.4)', color: '#fbbf24' }}
+                            title="Quản lý và kích hoạt gói PRO cho tài khoản này"
+                            onClick={() => {
+                              setSubscribingUser(u);
+                              setSubTier('PRO');
+                              setSubDuration(30);
+                            }}
+                          >
+                            <Crown size={14} />
+                            <span>Gói PRO</span>
+                          </button>
                           <button
                             type="button"
                             className="btn-action-edit"
@@ -518,6 +594,215 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ================= TAB 1.5: SUBSCRIPTIONS ================= */}
+      {activeTab === 'SUBSCRIPTIONS' && (
+        <div className="space-y-4">
+          {/* Subscriptions Overview Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-amber-500/30 flex items-center justify-between">
+              <div>
+                <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+                  Tài Khoản PRO
+                </div>
+                <div className="text-2xl font-black text-white mt-1">
+                  {users.filter((u) => u.subscriptionTier === 'PRO').length}
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Không giới hạn nhánh cây</div>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                <Crown size={22} />
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+              <div>
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Tài Khoản Miễn Phí (FREE)
+                </div>
+                <div className="text-2xl font-black text-white mt-1">
+                  {users.filter((u) => u.subscriptionTier !== 'PRO').length}
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Tối đa 5 nhánh phả hệ</div>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center font-bold">
+                <Users size={22} />
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 flex items-center justify-between">
+              <div>
+                <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
+                  Cổng Thanh Toán PayOS
+                </div>
+                <div className="text-base font-bold text-emerald-300 mt-1 flex items-center gap-1.5">
+                  <CheckCircle2 size={16} />
+                  <span>Sẵn Sàng VietQR</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Hỗ trợ Napas247 tự động</div>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                <Zap size={22} />
+              </div>
+            </div>
+          </div>
+
+          {/* Subscriptions Management Table */}
+          <div className="admin-card-glass">
+            <div className="admin-table-toolbar">
+              <div className="admin-search-wrap">
+                <Search size={16} className="search-icon" />
+                <input
+                  type="text"
+                  placeholder="Tìm tài khoản theo email hoặc họ tên..."
+                  value={subSearchTerm}
+                  onChange={(e) => setSubSearchTerm(e.target.value)}
+                  className="admin-input-search"
+                />
+              </div>
+
+              <div className="admin-filter-group">
+                <button
+                  type="button"
+                  className={`admin-filter-btn ${subTierFilter === 'ALL' ? 'active' : ''}`}
+                  onClick={() => setSubTierFilter('ALL')}
+                >
+                  Tất Cả ({users.length})
+                </button>
+                <button
+                  type="button"
+                  className={`admin-filter-btn ${subTierFilter === 'PRO' ? 'active' : ''}`}
+                  onClick={() => setSubTierFilter('PRO')}
+                >
+                  👑 Gói PRO ({users.filter((u) => u.subscriptionTier === 'PRO').length})
+                </button>
+                <button
+                  type="button"
+                  className={`admin-filter-btn ${subTierFilter === 'FREE' ? 'active' : ''}`}
+                  onClick={() => setSubTierFilter('FREE')}
+                >
+                  Gói FREE ({users.filter((u) => u.subscriptionTier !== 'PRO').length})
+                </button>
+              </div>
+            </div>
+
+            <div className="admin-table-scroll">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>NGƯỜI DÙNG</th>
+                    <th>GÓI HIỆN TẠI</th>
+                    <th>THỜI HẠN / HẾT HẠN</th>
+                    <th>SỐ NHÁNH CÂY</th>
+                    <th style={{ textAlign: 'right' }}>THAO TÁC ADMIN</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users
+                    .filter((u) => {
+                      const matchesSearch =
+                        u.email.toLowerCase().includes(subSearchTerm.toLowerCase()) ||
+                        (u.fullName || '').toLowerCase().includes(subSearchTerm.toLowerCase());
+                      const matchesTier =
+                        subTierFilter === 'ALL' ||
+                        (subTierFilter === 'PRO' && u.subscriptionTier === 'PRO') ||
+                        (subTierFilter === 'FREE' && u.subscriptionTier !== 'PRO');
+                      return matchesSearch && matchesTier;
+                    })
+                    .map((u) => (
+                      <tr key={u.id}>
+                        <td>
+                          <div className="user-cell-wrap">
+                            <div className={`user-avatar-initials-badge ${u.subscriptionTier === 'PRO' ? 'is-admin' : ''}`}>
+                              {u.fullName ? u.fullName.slice(0, 2).toUpperCase() : u.email.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="user-cell-name">{u.fullName || 'Chưa cập nhật họ tên'}</div>
+                              <div className="user-cell-email">{u.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          {u.subscriptionTier === 'PRO' ? (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 inline-flex items-center gap-1.5 shadow-sm">
+                              <Crown size={13} className="text-amber-400" />
+                              <span>PRO</span>
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                              Miễn Phí (5 Nhánh)
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          {u.subscriptionTier === 'PRO' ? (
+                            u.subscriptionExpiresAt ? (
+                              <div className="text-xs">
+                                <div className="text-slate-200 font-semibold">
+                                  {new Date(u.subscriptionExpiresAt).toLocaleDateString('vi-VN')}
+                                </div>
+                                <div className="text-[10px] text-slate-400">
+                                  {Math.ceil(
+                                    (new Date(u.subscriptionExpiresAt).getTime() - Date.now()) /
+                                      (1000 * 60 * 60 * 24)
+                                  ) > 0
+                                    ? `Còn ${Math.ceil(
+                                        (new Date(u.subscriptionExpiresAt).getTime() - Date.now()) /
+                                          (1000 * 60 * 60 * 24)
+                                      )} ngày`
+                                    : 'Đã hết hạn'}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-xs font-semibold text-emerald-400">Vĩnh viễn</span>
+                            )
+                          ) : (
+                            <span className="text-xs text-slate-500">Mặc định</span>
+                          )}
+                        </td>
+                        <td>
+                          <span className="tree-count-badge">
+                            {u._count?.trees || 0} nhánh
+                          </span>
+                        </td>
+                        <td>
+                          <div className="admin-actions-cell">
+                            <button
+                              type="button"
+                              className="btn-action-edit"
+                              style={{ borderColor: 'rgba(245, 158, 11, 0.4)', color: '#fbbf24' }}
+                              onClick={() => {
+                                setSubscribingUser(u);
+                                setSubTier(u.subscriptionTier === 'PRO' ? 'PRO' : 'PRO');
+                                setSubDuration(30);
+                              }}
+                            >
+                              <Crown size={14} />
+                              <span>{u.subscriptionTier === 'PRO' ? 'Gia Hạn / Đổi Gói' : 'Cấp PRO'}</span>
+                            </button>
+                            {u.subscriptionTier === 'PRO' && (
+                              <button
+                                type="button"
+                                className="btn-action-delete"
+                                title="Hạ về gói Miễn Phí"
+                                onClick={() => {
+                                  setSubscribingUser(u);
+                                  setSubTier('FREE');
+                                }}
+                              >
+                                <span>Về FREE</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -942,6 +1227,119 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 {isDeletingUser ? 'Đang Xóa...' : 'Xác Nhận Xóa'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL QUẢN LÝ GÓI HỘI VIÊN PRO (ADMIN) ================= */}
+      {subscribingUser && (
+        <div className="admin-modal-overlay" onClick={() => setSubscribingUser(null)}>
+          <div className="admin-submodal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold">
+                <Crown size={18} />
+              </div>
+              <div>
+                <h3 className="submodal-title" style={{ margin: 0 }}>
+                  Quản Lý Gói Hội Viên
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {subscribingUser.fullName || subscribingUser.email}
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleUpdateSubscription} className="space-y-4">
+              <div className="submodal-field">
+                <label>Chọn Gói Hội Viên Cho Người Dùng</label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setSubTier('PRO')}
+                    className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${
+                      subTier === 'PRO'
+                        ? 'border-amber-500 bg-amber-500/15 text-amber-300 font-bold'
+                        : 'border-slate-800 bg-slate-950/60 text-slate-400'
+                    }`}
+                  >
+                    <Crown size={16} className="text-amber-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-xs">Gói PRO</div>
+                      <div className="text-[10px] opacity-75">Không giới hạn nhánh</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSubTier('FREE')}
+                    className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${
+                      subTier === 'FREE'
+                        ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300 font-bold'
+                        : 'border-slate-800 bg-slate-950/60 text-slate-400'
+                    }`}
+                  >
+                    <Users size={16} className="text-emerald-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-xs">Gói Miễn Phí</div>
+                      <div className="text-[10px] opacity-75">Tối đa 5 nhánh</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {subTier === 'PRO' && (
+                <div className="submodal-field">
+                  <label>Thời Hạn Kích Hoạt Gói PRO</label>
+                  <select
+                    value={subDuration}
+                    onChange={(e) => setSubDuration(Number(e.target.value))}
+                    className="submodal-select"
+                  >
+                    <option value={30}>30 Ngày (1 Tháng)</option>
+                    <option value={90}>90 Ngày (3 Tháng)</option>
+                    <option value={365}>365 Ngày (1 Năm)</option>
+                    <option value={36500}>Vĩnh Viễn (Trọn Đời)</option>
+                  </select>
+                </div>
+              )}
+
+              <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300">
+                {subTier === 'PRO' ? (
+                  <div className="space-y-1">
+                    <div className="font-semibold text-amber-300 flex items-center gap-1.5">
+                      <Sparkles size={13} />
+                      <span>Quyền lợi PRO được áp dụng ngay:</span>
+                    </div>
+                    <p className="text-slate-400 text-[10px]">
+                      Tài khoản sẽ được mở khóa không giới hạn số lượng nhánh, tự động mở khóa các nhánh đang bị khóa và kích hoạt huy hiệu PRO.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-slate-400 text-[10px]">
+                    Tài khoản sẽ trở về gói Miễn Phí (tối đa 5 nhánh). Nếu người dùng sở hữu nhiều hơn 5 nhánh, các nhánh vượt sẽ bị tạm khóa theo quy định.
+                  </p>
+                )}
+              </div>
+
+              <div className="submodal-actions">
+                <button
+                  type="button"
+                  className="btn-ghost-secondary"
+                  onClick={() => setSubscribingUser(null)}
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingSub}
+                  className="admin-btn-primary"
+                  style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
+                >
+                  <Crown size={15} />
+                  <span>{isSubmittingSub ? 'Đang Lưu...' : 'Xác Nhận Cập Nhật Gói'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

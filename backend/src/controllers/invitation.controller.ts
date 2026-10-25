@@ -569,3 +569,113 @@ export const cancelInvitation = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ error: error?.message || 'Lỗi máy chủ.' });
   }
 };
+
+/**
+ * Lấy thông tin tóm tắt của cây khi người nhận bấm vào đường link mời (?inviteTree=...)
+ */
+export const getInviteLinkInfo = async (req: AuthRequest, res: Response) => {
+  try {
+    const { treeId } = req.params;
+    const tree = await prisma.familyTree.findUnique({
+      where: { id: treeId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        branchName: true,
+        owner: {
+          select: { id: true, fullName: true, email: true },
+        },
+        _count: {
+          select: { members: true },
+        },
+      },
+    });
+
+    if (!tree) {
+      return res.status(404).json({ error: 'Cây gia phả này không tồn tại hoặc đã bị xóa.' });
+    }
+
+    return res.json({
+      treeId: tree.id,
+      treeName: tree.name,
+      description: tree.description,
+      branchName: tree.branchName,
+      ownerName: tree.owner?.fullName || 'Chủ nhánh',
+      membersCount: tree._count.members,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Lỗi máy chủ.' });
+  }
+};
+
+/**
+ * Tham gia cây gia phả qua đường link mời (Mặc định vai trò VIEWER)
+ */
+export const joinTreeViaLink = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { treeId } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Chưa đăng nhập.' });
+    }
+
+    const tree = await prisma.familyTree.findUnique({
+      where: { id: treeId },
+      select: { id: true, name: true, ownerId: true },
+    });
+
+    if (!tree) {
+      return res.status(404).json({ error: 'Cây gia phả không tồn tại.' });
+    }
+
+    if (tree.ownerId === userId) {
+      return res.json({ message: 'Bạn là Chủ nhánh của cây gia phả này.', treeId });
+    }
+
+    const existing = await prisma.treeCollaborator.findUnique({
+      where: { treeId_userId: { treeId, userId } },
+    });
+    if (existing) {
+      return res.json({ message: 'Bạn đã là thành viên của cây gia phả này rồi.', treeId });
+    }
+
+    // Kiểm tra giới hạn 5 nhánh cho gói FREE
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { subscriptionTier: true, subscriptionExpiresAt: true },
+    });
+    const isPro = user?.subscriptionTier === 'PRO' && (!user.subscriptionExpiresAt || new Date(user.subscriptionExpiresAt) > new Date());
+    if (!isPro) {
+      const ownedCount = await prisma.familyTree.count({ where: { ownerId: userId } });
+      const joinedCount = await prisma.treeCollaborator.count({ where: { userId } });
+      if (ownedCount + joinedCount >= 5) {
+        return res.status(403).json({
+          error: 'Bạn đã đạt giới hạn 5 nhánh cây của gói Miễn Phí. Vui lòng nâng cấp PRO để tham gia thêm nhánh này!',
+          isLimitReached: true,
+        });
+      }
+    }
+
+    // Thêm vào TreeCollaborator với vai trò VIEWER
+    await prisma.treeCollaborator.create({
+      data: {
+        treeId,
+        userId,
+        role: 'VIEWER',
+      },
+    });
+
+    broadcastTreeUpdate(treeId, { action: 'COLLABORATOR_JOINED', userId });
+    broadcastUserUpdate(userId, { action: 'TREE_JOINED', treeId });
+
+    return res.json({
+      message: `Chào mừng bạn đã tham gia cây gia phả "${tree.name}"!`,
+      treeId,
+    });
+  } catch (err: any) {
+    console.error('Lỗi tham gia qua link:', err);
+    return res.status(500).json({ error: err.message || 'Lỗi máy chủ.' });
+  }
+};

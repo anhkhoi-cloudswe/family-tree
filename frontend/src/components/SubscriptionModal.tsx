@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Crown,
@@ -7,14 +7,18 @@ import {
   Zap,
   Lock,
   Layers,
-  FileSpreadsheet,
-  Download,
-  ShieldCheck,
   Clock,
   RotateCcw,
+  CreditCard,
+  ExternalLink,
 } from 'lucide-react';
 import { SubscriptionStatus } from '../types';
-import { apiUpgradeSubscription, apiSimulateSubscriptionExpiry } from '../services/api';
+import {
+  apiUpgradeSubscription,
+  apiSimulateSubscriptionExpiry,
+  apiCreatePayOSPayment,
+  apiGetPayOSStatus,
+} from '../services/api';
 import { useToast } from './Toast';
 
 interface SubscriptionModalProps {
@@ -32,17 +36,45 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 }) => {
   const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>('YEARLY');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [payOsConfigured, setPayOsConfigured] = useState<boolean | null>(null);
   const toast = useToast();
+
+  useEffect(() => {
+    if (isOpen) {
+      apiGetPayOSStatus()
+        .then((res) => setPayOsConfigured(res.isConfigured))
+        .catch(() => setPayOsConfigured(false));
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const isPro = status?.tier === 'PRO';
 
-  const handleUpgrade = async (durationDays: number) => {
+  const handlePayOSPayment = async () => {
+    try {
+      setIsSubmitting(true);
+      const res = await apiCreatePayOSPayment(billingCycle);
+      if (res.checkoutUrl) {
+        toast.info('Đang chuyển hướng tới cổng thanh toán VietQR PayOS...');
+        window.location.href = res.checkoutUrl;
+      } else {
+        toast.info(
+          res.error || 'Cổng PayOS chưa được kích hoạt khóa API. Vui lòng thử nút kích hoạt thử nghiệm bên dưới!'
+        );
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Không thể tạo phiên thanh toán PayOS. Vui lòng thử lại!');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDirectUpgrade = async (durationDays: number) => {
     try {
       setIsSubmitting(true);
       const res = await apiUpgradeSubscription(durationDays);
-      toast.success(res.message || 'Chúc mừng bạn đã nâng cấp thành công gói PRO VIP!');
+      toast.success(res.message || 'Chúc mừng bạn đã nâng cấp thành công gói PRO!');
       onRefreshStatus();
       onClose();
     } catch (err: any) {
@@ -82,7 +114,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </h3>
                 {isPro ? (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                    PRO VIP
+                    PRO
                   </span>
                 ) : (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
@@ -201,7 +233,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </div>
             </div>
 
-            {/* PRO VIP Plan */}
+            {/* PRO Plan */}
             <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-500/15 via-slate-950 to-slate-950 border-2 border-amber-500/50 shadow-lg shadow-amber-950/30 flex flex-col justify-between relative overflow-hidden">
               <div className="absolute top-2 right-2 flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 uppercase">
                 <Sparkles size={10} />
@@ -211,7 +243,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               <div>
                 <div className="flex items-center gap-1.5 mb-2">
                   <Crown size={15} className="text-amber-400" />
-                  <span className="font-bold text-sm text-amber-300">Gói PRO VIP</span>
+                  <span className="font-bold text-sm text-amber-300">Gói PRO</span>
                 </div>
 
                 <div className="flex items-baseline gap-1.5 mb-3">
@@ -242,21 +274,35 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   </li>
                   <li className="flex items-center gap-2">
                     <Check size={13} className="text-amber-400 flex-shrink-0" />
-                    <span>Huy hiệu Vương Miện VIP trên hồ sơ</span>
+                    <span>Huy hiệu PRO trên hồ sơ</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="pt-4">
+              <div className="pt-4 space-y-2">
                 <button
                   type="button"
                   disabled={isSubmitting}
-                  onClick={() => handleUpgrade(billingCycle === 'YEARLY' ? 365 : 30)}
+                  onClick={payOsConfigured ? handlePayOSPayment : () => handleDirectUpgrade(billingCycle === 'YEARLY' ? 365 : 30)}
                   className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5 transition"
                 >
-                  <Zap size={14} className="fill-slate-950" />
-                  <span>{isPro ? 'Gia Hạn Gói PRO' : 'Nâng Cấp PRO Ngay'}</span>
+                  {payOsConfigured ? (
+                    <>
+                      <CreditCard size={14} className="text-slate-950" />
+                      <span>Thanh toán PayOS VietQR</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap size={14} className="fill-slate-950" />
+                      <span>{isPro ? 'Gia Hạn Gói PRO' : 'Nâng Cấp PRO Ngay'}</span>
+                    </>
+                  )}
                 </button>
+                {payOsConfigured && (
+                  <div className="text-center text-[10px] text-slate-400 flex items-center justify-center gap-1">
+                    <span>Hỗ trợ quét VietQR Napas247 tự động kích hoạt</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -271,7 +317,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               <button
                 type="button"
                 disabled={isSubmitting}
-                onClick={() => handleUpgrade(30)}
+                onClick={() => handleDirectUpgrade(30)}
                 className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-semibold transition flex items-center gap-1"
               >
                 <Sparkles size={11} />

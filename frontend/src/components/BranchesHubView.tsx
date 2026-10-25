@@ -11,13 +11,12 @@ import {
   Lock,
   Sparkles,
   ArrowRight,
-  Shield,
-  Clock,
-  Calendar,
+  LogOut,
+  Search,
   CheckCircle,
 } from 'lucide-react';
 import { FamilyTree, TreeRole, User, SubscriptionStatus } from '../types';
-import { formatDateVN } from '../utils/dateHelper';
+import { ConfirmDialogModal } from './ConfirmDialogModal';
 
 interface BranchesHubViewProps {
   trees: FamilyTree[];
@@ -29,6 +28,7 @@ interface BranchesHubViewProps {
   onOpenRenameTree: (tree: FamilyTree) => void;
   onOpenShareTree: (tree: FamilyTree) => void;
   onDeleteTree: (treeId: string, treeName: string) => void;
+  onLeaveTree?: (treeId: string, treeName: string) => void;
   onOpenSubscriptionModal: () => void;
 }
 
@@ -42,10 +42,16 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
   onOpenRenameTree,
   onOpenShareTree,
   onDeleteTree,
+  onLeaveTree,
   onOpenSubscriptionModal,
 }) => {
   const [filterTab, setFilterTab] = useState<'ALL' | 'OWNED' | 'JOINED'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState<{
+    type: 'DELETE' | 'LEAVE';
+    treeId: string;
+    treeName: string;
+  } | null>(null);
 
   const isPro = subscriptionStatus?.tier === 'PRO';
   const totalBranches = trees.length;
@@ -94,56 +100,68 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
     }
   };
 
+  const handleConfirmAction = () => {
+    if (!confirmDialog) return;
+    if (confirmDialog.type === 'DELETE') {
+      onDeleteTree(confirmDialog.treeId, confirmDialog.treeName);
+    } else if (confirmDialog.type === 'LEAVE' && onLeaveTree) {
+      onLeaveTree(confirmDialog.treeId, confirmDialog.treeName);
+    }
+    setConfirmDialog(null);
+  };
+
   return (
-    <div className="flex-1 h-full overflow-y-auto bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-8 flex flex-col">
-      <div className="max-w-6xl w-full mx-auto space-y-6">
-        {/* Top Banner / Header (Phong cách danh bạ / chat room của Zalo/Messenger) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-slate-900/80 border border-emerald-500/20 shadow-xl backdrop-blur-md">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                <Layers size={22} />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  Cây Gia Phả & Chi Nhánh Của Bạn
-                </h1>
-                <p className="text-xs text-slate-400">
-                  Chọn nhánh để xem sơ đồ gia phả chi tiết, hoặc tạo thêm chi nhánh dòng họ
-                </p>
-              </div>
+    <div className="flex-1 h-full overflow-y-auto bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-6 lg:p-8 flex flex-col">
+      <div className="max-w-6xl w-full mx-auto space-y-5">
+        {/* Top Header - Tinh gọn, nhất quán, không lan man */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-emerald-500/20 shadow-xl backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 flex-shrink-0">
+              <Layers size={22} />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+                Chi Nhánh Gia Phả
+              </h1>
+              <p className="text-xs text-slate-400">
+                Chọn nhánh để vào xem sơ đồ, hoặc tạo thêm chi nhánh độc lập
+              </p>
             </div>
           </div>
 
-          {/* Subscription Progress & Actions */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Subscription Mini Pill */}
+          {/* Right Actions: Subscription Pill & Create Branch */}
+          <div className="flex items-center gap-2.5 flex-wrap">
             <div
               onClick={onOpenSubscriptionModal}
-              className="cursor-pointer p-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 transition flex items-center gap-3"
-              title="Xem thông tin và nâng cấp gói hội viên"
+              className="cursor-pointer px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 transition flex items-center gap-2"
+              title="Nhấn để xem thông tin gói hội viên"
             >
-              <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold">
-                <Crown size={15} />
+              <Crown size={14} className={isPro ? 'text-amber-400' : 'text-slate-400'} />
+              <div className="text-xs font-semibold text-slate-200">
+                {isPro ? (
+                  <span className="text-amber-300 font-bold">Gói PRO</span>
+                ) : (
+                  <span>
+                    Gói Miễn Phí{' '}
+                    <strong className="text-emerald-400">
+                      ({totalBranches}/{maxFree})
+                    </strong>
+                  </span>
+                )}
               </div>
-              <div className="text-left pr-1">
-                <div className="text-[10px] text-slate-400">
-                  {isPro ? 'Gói PRO VIP' : `Gói Miễn Phí (${totalBranches}/${maxFree} nhánh)`}
-                </div>
-                <div className="text-xs font-bold text-amber-300 flex items-center gap-1">
-                  <span>{isPro ? 'Không giới hạn nhánh' : 'Nâng cấp PRO'}</span>
-                  <Sparkles size={11} />
-                </div>
-              </div>
+              {!isPro && (
+                <span className="text-[10px] text-amber-400 font-bold bg-amber-500/15 px-1.5 py-0.5 rounded">
+                  Nâng cấp
+                </span>
+              )}
             </div>
 
-            {/* Create Branch Button */}
             <button
               type="button"
               onClick={onOpenCreateTree}
-              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/50 flex items-center gap-2 transition"
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-950/40 flex items-center gap-1.5 transition cursor-pointer"
             >
-              <Plus size={16} />
+              <Plus size={15} />
               <span>Tạo Nhánh Mới</span>
             </button>
           </div>
@@ -151,14 +169,14 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
 
         {/* Filter Tabs & Search Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 p-1 bg-slate-950/70 border border-slate-800 rounded-2xl max-w-fit text-xs font-semibold">
+          <div className="flex items-center gap-1 p-1 bg-slate-950/80 border border-slate-800 rounded-xl text-xs font-medium">
             <button
               type="button"
               onClick={() => setFilterTab('ALL')}
-              className={`px-3.5 py-1.5 rounded-xl transition ${
+              className={`px-3 py-1.5 rounded-lg transition ${
                 filterTab === 'ALL'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Tất Cả ({trees.length})
@@ -166,51 +184,55 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
             <button
               type="button"
               onClick={() => setFilterTab('OWNED')}
-              className={`px-3.5 py-1.5 rounded-xl transition ${
+              className={`px-3 py-1.5 rounded-lg transition ${
                 filterTab === 'OWNED'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              Cây Của Tôi ({ownedTrees.length})
+              Của Tôi ({ownedTrees.length})
             </button>
             <button
               type="button"
               onClick={() => setFilterTab('JOINED')}
-              className={`px-3.5 py-1.5 rounded-xl transition ${
+              className={`px-3 py-1.5 rounded-lg transition ${
                 filterTab === 'JOINED'
-                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-teal-500/20 text-teal-300 font-bold border border-teal-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              Được Mời Tham Gia ({joinedTrees.length})
+              Được Mời ({joinedTrees.length})
             </button>
           </div>
 
           <div className="relative w-full sm:w-64">
             <input
               type="text"
-              placeholder="Tìm kiếm nhánh gia phả..."
+              placeholder="Tìm nhánh theo tên..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none transition"
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none transition"
+            />
+            <Search
+              size={13}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
             />
           </div>
         </div>
 
         {/* Branch Cards Grid */}
         {displayedTrees.length === 0 ? (
-          <div className="py-16 text-center rounded-3xl bg-slate-900/40 border border-slate-800 space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-slate-800/60 text-slate-500 flex items-center justify-center mx-auto">
-              <Layers size={24} />
+          <div className="py-14 text-center rounded-2xl bg-slate-900/40 border border-slate-800/80 space-y-2.5">
+            <div className="w-10 h-10 rounded-xl bg-slate-800/60 text-slate-500 flex items-center justify-center mx-auto">
+              <Layers size={20} />
             </div>
             <div className="text-sm font-semibold text-slate-300">
-              Không tìm thấy cây gia phả nào
+              Không tìm thấy nhánh gia phả nào
             </div>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               {searchQuery
                 ? 'Không có kết quả khớp với từ khóa tìm kiếm.'
-                : 'Bạn chưa có nhánh cây gia phả nào trong mục này.'}
+                : 'Chưa có nhánh nào trong mục này.'}
             </p>
           </div>
         ) : (
@@ -223,99 +245,98 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
               return (
                 <div
                   key={tree.id}
-                  className={`group relative rounded-3xl transition-all duration-200 flex flex-col justify-between overflow-hidden border ${
+                  className={`group relative rounded-2xl transition-all duration-200 flex flex-col justify-between overflow-hidden border ${
                     isLocked
-                      ? 'bg-slate-950/40 border-slate-800/80 opacity-75'
+                      ? 'bg-slate-950/40 border-slate-800/80 opacity-70'
                       : isCurrentActive
                       ? 'bg-gradient-to-b from-slate-900/90 to-slate-950 border-emerald-500/60 ring-1 ring-emerald-500/30 shadow-xl shadow-emerald-950/40'
-                      : 'bg-slate-900/70 hover:bg-slate-900/90 border-slate-800 hover:border-emerald-500/30 shadow-lg'
+                      : 'bg-slate-900/80 hover:bg-slate-900 border-slate-800 hover:border-emerald-500/40 shadow-lg'
                   }`}
                 >
-                  {/* Lock Overlay if branch locked due to free tier limit */}
+                  {/* Lock Overlay for 6th+ branch on Free tier */}
                   {isLocked && (
                     <div
                       onClick={onOpenSubscriptionModal}
-                      className="absolute inset-0 z-20 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center cursor-pointer space-y-2 hover:bg-slate-950/70 transition"
+                      className="absolute inset-0 z-20 bg-slate-950/85 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center cursor-pointer space-y-2 hover:bg-slate-950/75 transition"
                     >
-                      <div className="w-10 h-10 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 flex items-center justify-center">
-                        <Lock size={18} />
+                      <div className="w-9 h-9 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 flex items-center justify-center">
+                        <Lock size={16} />
                       </div>
                       <div className="font-bold text-xs text-white">
-                        Tạm khóa do vượt quá 5 nhánh miễn phí
+                        Khóa do vượt 5 nhánh miễn phí
                       </div>
-                      <p className="text-[11px] text-slate-400 max-w-[220px]">
-                        Nâng cấp gói PRO để mở khóa toàn bộ cây gia phả
-                      </p>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           onOpenSubscriptionModal();
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/20 flex items-center gap-1.5"
+                        className="px-3 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/20 flex items-center gap-1"
                       >
-                        <Crown size={13} />
-                        <span>Mở Khóa Ngay</span>
+                        <Crown size={12} />
+                        <span>Mở Khóa PRO</span>
                       </button>
                     </div>
                   )}
 
-                  {/* Top Card Info */}
+                  {/* Card Main Info */}
                   <div
                     onClick={() => !isLocked && onSelectTree(tree.id)}
-                    className={`p-5 space-y-3 cursor-pointer ${isLocked ? 'pointer-events-none' : ''}`}
+                    className={`p-4 space-y-2.5 cursor-pointer ${
+                      isLocked ? 'pointer-events-none' : ''
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-300 font-black text-sm flex-shrink-0">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-300 font-bold text-xs flex-shrink-0">
                           {tree.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-bold text-sm sm:text-base text-white truncate group-hover:text-emerald-300 transition">
+                          <h3
+                            className="font-bold text-sm text-white truncate group-hover:text-emerald-300 transition"
+                            title={tree.name}
+                          >
                             {tree.name}
                           </h3>
                           <div className="text-[11px] text-slate-400 truncate">
-                            {tree.owner ? `Chủ nhánh: ${tree.owner.fullName}` : 'Chủ nhánh'}
+                            {isOwner
+                              ? 'Nhánh của bạn'
+                              : tree.owner
+                              ? `Chủ nhánh: ${tree.owner.fullName}`
+                              : 'Được mời tham gia'}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <div className="flex-shrink-0">
                         {renderRoleBadge(tree.userRole || 'OWNER')}
                       </div>
                     </div>
 
-                    {tree.description && (
-                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                        {tree.description}
-                      </p>
-                    )}
-
-                    {/* Stats pills */}
-                    <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-400 font-medium">
-                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300">
+                    {/* Member Count Pill */}
+                    <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400">
+                      <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-slate-300">
                         <Users size={12} className="text-emerald-400" />
                         <span>{tree.membersCount || 0} thành viên</span>
                       </span>
-                      {tree.createdAt && (
-                        <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-400">
-                          <Calendar size={12} className="text-teal-400" />
-                          <span>Tạo: {formatDateVN(tree.createdAt)}</span>
+                      {tree.branchName && (
+                        <span className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-slate-400 truncate max-w-[140px]">
+                          {tree.branchName}
                         </span>
                       )}
                     </div>
                   </div>
 
                   {/* Card Bottom Actions */}
-                  <div className="px-5 py-3 border-t border-slate-800/80 bg-slate-950/40 flex items-center justify-between gap-2">
-                    {/* View details button */}
+                  <div className="px-4 py-2.5 border-t border-slate-800/80 bg-slate-950/50 flex items-center justify-between gap-2">
+                    {/* View Button */}
                     <button
                       type="button"
                       disabled={isLocked}
                       onClick={() => !isLocked && onSelectTree(tree.id)}
-                      className={`text-xs font-semibold flex items-center gap-1.5 transition ${
+                      className={`text-xs font-semibold flex items-center gap-1 transition ${
                         isCurrentActive
-                          ? 'text-emerald-400'
+                          ? 'text-emerald-400 font-bold'
                           : 'text-slate-300 hover:text-white'
                       }`}
                     >
@@ -323,37 +344,63 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
                       <ArrowRight size={13} />
                     </button>
 
-                    {/* Action buttons (Rename, Share, Delete) */}
+                    {/* Action Tool Buttons */}
                     <div className="flex items-center gap-1">
                       {isOwner && (
                         <button
                           type="button"
                           onClick={() => onOpenRenameTree(tree)}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
-                          title="Đổi tên nhánh cây"
+                          title="Đổi tên nhánh"
                         >
-                          <Edit3 size={14} />
+                          <Edit3 size={13} />
                         </button>
                       )}
-
-                      <button
-                        type="button"
-                        onClick={() => onOpenShareTree(tree)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition"
-                        title="Chia sẻ / Mời người thân"
-                      >
-                        <Share2 size={14} />
-                      </button>
 
                       {isOwner && (
                         <button
                           type="button"
-                          onClick={() => onDeleteTree(tree.id, tree.name)}
+                          onClick={() => onOpenShareTree(tree)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition"
+                          title="Mời người thân"
+                        >
+                          <Share2 size={13} />
+                        </button>
+                      )}
+
+                      {isOwner ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setConfirmDialog({
+                              type: 'DELETE',
+                              treeId: tree.id,
+                              treeName: tree.name,
+                            })
+                          }
                           className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
                           title="Xóa nhánh cây"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={13} />
                         </button>
+                      ) : (
+                        onLeaveTree && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setConfirmDialog({
+                                type: 'LEAVE',
+                                treeId: tree.id,
+                                treeName: tree.name,
+                              })
+                            }
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition flex items-center gap-1 text-[11px]"
+                            title="Rời khỏi nhánh gia phả này"
+                          >
+                            <LogOut size={13} />
+                            <span className="hidden sm:inline">Rời</span>
+                          </button>
+                        )
                       )}
                     </div>
                   </div>
@@ -363,6 +410,26 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Branded Custom Confirmation Dialog (Replaces native window.confirm) */}
+      <ConfirmDialogModal
+        isOpen={Boolean(confirmDialog)}
+        type="DANGER"
+        title={
+          confirmDialog?.type === 'DELETE'
+            ? 'Xác Nhận Xóa Nhánh Gia Phả'
+            : 'Xác Nhận Rời Khỏi Nhánh'
+        }
+        message={
+          confirmDialog?.type === 'DELETE'
+            ? `Bạn có chắc chắn muốn xóa nhánh "${confirmDialog?.treeName}"?\nToàn bộ dữ liệu thành viên và sơ đồ của nhánh này sẽ bị xóa vĩnh viễn.`
+            : `Bạn có chắc chắn muốn rời khỏi nhánh "${confirmDialog?.treeName}"?\nBạn sẽ không còn quyền truy cập vào nhánh này trừ khi được mời lại.`
+        }
+        confirmText={confirmDialog?.type === 'DELETE' ? 'Xóa Vĩnh Viễn' : 'Rời Khỏi Nhánh'}
+        cancelText="Hủy bỏ"
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmDialog(null)}
+      />
     </div>
   );
 };

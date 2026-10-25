@@ -180,8 +180,10 @@ export interface AdminUserItem {
   email: string;
   fullName: string;
   role: string;
+  subscriptionTier?: 'FREE' | 'PRO';
+  subscriptionExpiresAt?: string | null;
   createdAt: string;
-  _count: { trees: number };
+  _count: { trees: number; collaborations?: number };
 }
 
 export interface AdminTreeItem {
@@ -333,4 +335,49 @@ export const apiUpgradeSubscription = (durationDays: number = 30) =>
 export const apiSimulateSubscriptionExpiry = () =>
   request<{ message: string; subscription: any }>('/subscription/simulate-expiry', {
     method: 'POST',
+  });
+
+// PayOS Gateway
+export const apiGetPayOSStatus = () =>
+  request<{ isConfigured: boolean }>('/subscription/payos-status');
+
+export const apiCreatePayOSPayment = (plan: 'MONTHLY' | 'YEARLY') =>
+  request<{ isConfigured: boolean; checkoutUrl?: string; orderCode?: number; amount?: number; error?: string }>(
+    '/subscription/payos-create',
+    {
+      method: 'POST',
+      body: JSON.stringify({ plan }),
+    }
+  );
+
+export const apiCheckPaymentStatus = (orderCode: number) =>
+  request<{ isPaid: boolean }>(`/subscription/payos-check/${orderCode}`);
+
+// Invite Link & Collaborator Self-Leave
+export const apiGetInviteLinkInfo = (treeId: string) =>
+  request<{
+    treeId: string;
+    treeName: string;
+    description?: string;
+    branchName?: string;
+    ownerName: string;
+    membersCount: number;
+  }>(`/invitations/link-info/${treeId}`);
+
+export const apiJoinTreeViaLink = (treeId: string) =>
+  request<{ message: string; treeId: string }>(`/invitations/join-link/${treeId}`, {
+    method: 'POST',
+  });
+
+export const apiLeaveTree = (treeId: string, currentUserId: string) =>
+  apiRemoveCollaborator(treeId, currentUserId);
+
+// Admin Subscription Management
+export const apiUpdateAdminUserSubscription = (
+  userId: string,
+  data: { tier: 'FREE' | 'PRO'; durationDays?: number; expiresAt?: string | null }
+) =>
+  request<{ message: string; user: any }>(`/admin/users/${userId}/subscription`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
   });

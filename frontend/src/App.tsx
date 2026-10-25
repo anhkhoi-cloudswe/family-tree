@@ -18,6 +18,7 @@ import { QuickOnboardingModal } from './components/QuickOnboardingModal';
 import { FamilyFlashcardModal } from './components/FamilyFlashcardModal';
 import { ShareTreeModal } from './components/ShareTreeModal';
 import { InvitationNotificationModal } from './components/InvitationNotificationModal';
+import { InviteLinkJoinModal, InviteLinkInfo } from './components/InviteLinkJoinModal';
 import { UpdatePhoneModal } from './components/UpdatePhoneModal';
 import { UserProfileModal } from './components/UserProfileModal';
 import { AccountRestoreOverlay } from './components/AccountRestoreOverlay';
@@ -48,6 +49,8 @@ import {
   apiVerifyRegistration,
   apiCompleteRegistration,
   apiGetPendingInvitations,
+  apiGetInviteLinkInfo,
+  apiLeaveTree,
   getStoredToken,
   setStoredToken,
   removeStoredToken,
@@ -102,6 +105,8 @@ const AppContent: React.FC = () => {
   const [renamingTree, setRenamingTree] = useState<FamilyTree | null>(null);
   const [showCreateTreeModal, setShowCreateTreeModal] = useState<boolean>(false);
   const [showInvitationsModal, setShowInvitationsModal] = useState<boolean>(false);
+  const [showInviteLinkModal, setShowInviteLinkModal] = useState<boolean>(false);
+  const [inviteLinkInfo, setInviteLinkInfo] = useState<InviteLinkInfo | null>(null);
   const [showUpdatePhoneModal, setShowUpdatePhoneModal] = useState<boolean>(false);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [pendingInvitations, setPendingInvitations] = useState<TreeInvitation[]>([]);
@@ -166,6 +171,11 @@ const AppContent: React.FC = () => {
     try {
       const list = await apiGetPendingInvitations();
       setPendingInvitations(list || []);
+      // Tự động nhắc người dùng nếu có lời mời gia phả đang chờ phản hồi
+      if (list && list.length > 0 && !sessionStorage.getItem('famlykin_invites_prompted')) {
+        setShowInvitationsModal(true);
+        sessionStorage.setItem('famlykin_invites_prompted', 'true');
+      }
     } catch (err) {
       console.warn('Lỗi kiểm tra lời mời gia phả:', err);
     }
@@ -190,12 +200,32 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
+  // Kiểm tra liên kết mời trực tiếp (?inviteTree=...)
+  const checkDirectInviteLink = useCallback(async () => {
+    const pendingTreeId =
+      sessionStorage.getItem('famlykin_pending_invite_tree') ||
+      new URLSearchParams(window.location.search).get('inviteTree');
+    if (!pendingTreeId) return;
+
+    try {
+      const info = await apiGetInviteLinkInfo(pendingTreeId);
+      if (info && info.treeId) {
+        setInviteLinkInfo(info);
+        setShowInviteLinkModal(true);
+      }
+    } catch (err: any) {
+      console.warn('Không thể nạp thông tin liên kết mời:', err);
+      sessionStorage.removeItem('famlykin_pending_invite_tree');
+    }
+  }, []);
+
   useEffect(() => {
     if (user) {
       loadPendingInvitations();
       refreshTreesAndSubscription();
+      checkDirectInviteLink();
     }
-  }, [user, loadPendingInvitations, refreshTreesAndSubscription]);
+  }, [user, loadPendingInvitations, refreshTreesAndSubscription, checkDirectInviteLink]);
 
   // 1. WebSocket: Tự động đồng bộ cây gia phả theo thời gian thực mà không cần tải lại trang
   useEffect(() => {
@@ -232,9 +262,24 @@ const AppContent: React.FC = () => {
   // Initialize Auth
   useEffect(() => {
     const initAuth = async () => {
-      // 0. Kiểm tra nếu URL hiện tại chứa verify_token hoặc reset_token từ Cloudflare email
+      // 0. Lưu link mời (inviteTree) và kiểm tra trạng thái thanh toán PayOS từ URL
       const searchParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const inviteTreeParam = searchParams.get('inviteTree') || hashParams.get('inviteTree');
+      if (inviteTreeParam) {
+        sessionStorage.setItem('famlykin_pending_invite_tree', inviteTreeParam);
+      }
+
+      const paymentParam = searchParams.get('payment');
+      if (paymentParam === 'success') {
+        toast.success('Thanh toán PayOS thành công! Gói PRO của bạn đã được kích hoạt.');
+        window.history.replaceState(null, '', window.location.pathname);
+      } else if (paymentParam === 'cancel') {
+        toast.info('Giao dịch thanh toán PayOS đã bị hủy.');
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+
+      // Kiểm tra nếu URL hiện tại chứa verify_token hoặc reset_token từ Cloudflare email
       const verifyToken = searchParams.get('verify_token') || hashParams.get('verify_token');
       const resetToken = searchParams.get('reset_token') || hashParams.get('reset_token');
 
@@ -602,13 +647,6 @@ const AppContent: React.FC = () => {
   };
 
   const handleDeleteTree = async (treeId: string, treeName: string) => {
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn xóa nhánh cây "${treeName}"? Toàn bộ thành viên và dữ liệu của nhánh này sẽ bị xóa vĩnh viễn.`
-      )
-    ) {
-      return;
-    }
     try {
       setIsLoading(true);
       await apiDeleteTree(treeId);
@@ -622,6 +660,26 @@ const AppContent: React.FC = () => {
       }
     } catch (err: any) {
       toast.error(err.message || 'Lỗi khi xóa nhánh cây gia phả');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLeaveTree = async (treeId: string, treeName: string) => {
+    if (!user?.id) return;
+    try {
+      setIsLoading(true);
+      await apiLeaveTree(treeId, user.id);
+      toast.success(`Bạn đã rời khỏi nhánh "${treeName}" thành công.`);
+      await refreshTreesAndSubscription();
+      if (tree?.id === treeId) {
+        setTree(null);
+        setMePerson(null);
+        localStorage.removeItem('fam3_current_tree_id');
+        setMainView('BRANCHES');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi khi rời khỏi nhánh cây');
     } finally {
       setIsLoading(false);
     }
@@ -927,6 +985,7 @@ const AppContent: React.FC = () => {
               setShowShareModal(true);
             }}
             onDeleteTree={handleDeleteTree}
+            onLeaveTree={handleLeaveTree}
             onOpenSubscriptionModal={() => setShowSubscriptionModal(true)}
           />
         ) : tree ? (
@@ -1341,6 +1400,28 @@ const AppContent: React.FC = () => {
           await loadTreeData(treeId);
           await loadPendingInvitations();
         }}
+      />
+
+      {/* Direct Invite Link Join Modal */}
+      <InviteLinkJoinModal
+        isOpen={showInviteLinkModal}
+        inviteInfo={inviteLinkInfo}
+        onClose={() => {
+          setShowInviteLinkModal(false);
+          setInviteLinkInfo(null);
+          sessionStorage.removeItem('famlykin_pending_invite_tree');
+          window.history.replaceState(null, '', window.location.pathname);
+        }}
+        onJoined={async (treeId) => {
+          setShowInviteLinkModal(false);
+          setInviteLinkInfo(null);
+          sessionStorage.removeItem('famlykin_pending_invite_tree');
+          window.history.replaceState(null, '', window.location.pathname);
+          await refreshTreesAndSubscription();
+          await loadTreeData(treeId, user);
+          setMainView('TREE');
+        }}
+        onOpenSubscriptionModal={() => setShowSubscriptionModal(true)}
       />
 
       {/* Update Phone Modal */}
