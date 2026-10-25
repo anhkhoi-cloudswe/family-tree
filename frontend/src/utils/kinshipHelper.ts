@@ -77,7 +77,14 @@ export function getKinshipToMe(
   visitedIds: Set<string> = new Set()
 ): string {
   if (!me) {
-    return target.generation === 1 ? 'Thủy Tổ' : `Thế hệ ${target.generation}`;
+    if (target.nickname === 'Tôi' || target.nickname === 'Tôi (Khởi tạo)') {
+      return 'Chủ nhánh';
+    }
+    if (target.generation === 1) return 'Thủy Tổ';
+    if (target.nickname && !target.nickname.toLowerCase().includes('tôi')) {
+      return target.nickname;
+    }
+    return `Thế hệ ${target.generation}`;
   }
 
   // 1. Bản thân

@@ -12,7 +12,11 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  UserCheck,
+  Copy,
+  Check,
+  Link,
+  ShieldCheck,
+  MessageSquare,
 } from 'lucide-react';
 import { FamilyTree, TreeRole, TreeCollaborator, TreeInvitation, User } from '../types';
 import {
@@ -51,8 +55,12 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
   const [totalOwnersCount, setTotalOwnersCount] = useState<number>(1);
   const [isUpdatingRole, setIsUpdatingRole] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   const toast = useToast();
+
+  const isOwner = currentUserRole === 'OWNER';
+  const inviteLink = `${window.location.origin}/?inviteTree=${tree.id}`;
 
   const loadCollaborators = async () => {
     try {
@@ -75,14 +83,36 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
       setPhone('');
       setMessage('');
       setRole('VIEWER');
+      setIsCopied(false);
+      // Nếu là người xem bên ngoài, vẫn có thể để tab INVITE để copy link
     }
   }, [isOpen, tree.id]);
 
   if (!isOpen) return null;
 
-  const isOwner = currentUserRole === 'OWNER';
   const phoneValidation = phone ? validateVietnamesePhone(phone) : null;
   const isMaxOwnersReached = totalOwnersCount >= 2;
+
+  const handleCopyLink = () => {
+    try {
+      navigator.clipboard.writeText(inviteLink);
+      setIsCopied(true);
+      toast.success('Đã sao chép liên kết mời tham gia cây gia phả!');
+      setTimeout(() => setIsCopied(false), 3000);
+    } catch {
+      toast.error('Không thể tự động sao chép. Vui lòng chọn và copy thủ công.');
+    }
+  };
+
+  const handleCopyMessage = () => {
+    try {
+      const text = `Kính mời bạn tham gia xem và đóng góp thông tin cho Cây Gia Phả "${tree.name}": ${inviteLink}`;
+      navigator.clipboard.writeText(text);
+      toast.success('Đã sao chép tin nhắn mời kèm liên kết!');
+    } catch {
+      toast.error('Không thể tự động sao chép tin nhắn.');
+    }
+  };
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,7 +196,8 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-[520px] bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      {/* Cố định chiều cao đồng nhất h-[520px] giúp 2 tab không bị co giãn chênh lệch làm giật layout */}
+      <div className="relative w-full max-w-[500px] h-[520px] max-h-[92vh] bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         {/* Modal Header */}
         <div className="h-14 px-4 sm:px-5 border-b border-emerald-500/20 bg-slate-950/70 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5">
@@ -215,172 +246,277 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
             }`}
           >
             <Users size={13} />
-            <span>Thành Viên ({collaborators.length + pendingInvitations.length})</span>
+            <span>Thành Viên Đã Chia Sẻ ({collaborators.length + pendingInvitations.length})</span>
           </button>
         </div>
 
-        {/* Modal Tab Content */}
+        {/* Modal Tab Content - Chiều cao co dãn flex-1 đồng bộ và thanh cuộn mượt */}
         <div className="p-4 sm:p-5 overflow-y-auto flex-1 text-xs">
           {activeTab === 'INVITE' ? (
-            <form onSubmit={handleSendInvite} className="space-y-3.5">
-              {!isOwner && (
-                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center gap-2">
-                  <AlertCircle size={14} className="flex-shrink-0" />
-                  <span>Chỉ Chủ nhánh mới có quyền gửi lời mời và phân quyền.</span>
-                </div>
-              )}
-
-              {/* Phone Input with validation badge */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[11px] font-semibold text-slate-300">
-                    Số điện thoại người thân <span className="text-rose-400">*</span>
-                  </label>
-                  {phone && phoneValidation?.isValid && (
-                    <span className="text-[10px] text-emerald-400 flex items-center gap-1">
-                      <CheckCircle size={10} /> Chuẩn số VN
-                    </span>
-                  )}
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                    <Phone size={14} />
+            isOwner ? (
+              /* TAB 1: DÀNH CHO CHỦ NHÁNH (OWNER) */
+              <div className="space-y-3.5">
+                {/* 1. Hộp Sao Chép Liên Kết Nhanh */}
+                <div className="p-2.5 rounded-xl bg-slate-950/80 border border-emerald-500/30 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] text-slate-400 font-medium flex items-center gap-1 mb-0.5">
+                      <Link size={11} className="text-emerald-400" />
+                      <span>Liên kết mời nhanh (Zalo, Messenger, SMS):</span>
+                    </div>
+                    <div className="text-[11px] text-emerald-300 font-mono truncate select-all">
+                      {inviteLink}
+                    </div>
                   </div>
-                  <input
-                    type="tel"
-                    required
-                    disabled={!isOwner}
-                    placeholder="Ví dụ: 0912345678"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition disabled:opacity-50"
-                  />
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-semibold flex items-center gap-1 transition"
+                      title="Sao chép link"
+                    >
+                      {isCopied ? <Check size={12} /> : <Copy size={12} />}
+                      <span>{isCopied ? 'Đã chép' : 'Sao chép'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCopyMessage}
+                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                      title="Chép tin nhắn mời kèm link"
+                    >
+                      <MessageSquare size={13} />
+                    </button>
+                  </div>
                 </div>
-                {phone && !phoneValidation?.isValid && phone.length >= 10 && (
-                  <p className="text-[10px] text-rose-400 mt-1">
-                    * Cần 10 số đúng chuẩn đầu mạng VN (03, 05, 07, 08, 09)
-                  </p>
-                )}
-              </div>
 
-              {/* Minimalist Role Picker (3 cards) */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-[11px] font-semibold text-slate-300">
-                    Vai trò & Phân quyền <span className="text-rose-400">*</span>
-                  </label>
-                  <span className="text-[10px] text-slate-400">
-                    Chủ nhánh: {totalOwnersCount}/2
+                {/* Phân cách */}
+                <div className="relative flex items-center justify-center">
+                  <div className="w-full border-t border-slate-800" />
+                  <span className="absolute px-2.5 bg-slate-900 text-[10px] text-slate-500 uppercase tracking-wider">
+                    Hoặc mời trực tiếp qua Số Điện Thoại
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {/* VIEWER */}
-                  <div
-                    onClick={() => isOwner && setRole('VIEWER')}
-                    className={`cursor-pointer p-2.5 rounded-xl border transition flex flex-col gap-1 ${
-                      role === 'VIEWER'
-                        ? 'bg-emerald-500/15 border-emerald-400 ring-1 ring-emerald-500/40 text-emerald-300'
-                        : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
-                    } ${!isOwner ? 'opacity-50 pointer-events-none' : ''}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 font-bold text-xs">
-                        <Eye size={13} className="text-teal-400" />
-                        <span>Chỉ Xem</span>
-                      </div>
-                      {role === 'VIEWER' && <CheckCircle size={13} className="text-emerald-400" />}
+                {/* Form mời đích danh qua SĐT */}
+                <form onSubmit={handleSendInvite} className="space-y-3">
+                  {/* Phone Input with validation badge */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-semibold text-slate-300">
+                        Số điện thoại người thân <span className="text-rose-400">*</span>
+                      </label>
+                      {phone && phoneValidation?.isValid && (
+                        <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+                          <CheckCircle size={10} /> Chuẩn số VN
+                        </span>
+                      )}
                     </div>
-                    <span className="text-[10px] text-slate-400 leading-tight">
-                      Xem cây & tra cứu
-                    </span>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                        <Phone size={14} />
+                      </div>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="Ví dụ: 0912345678"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full pl-8 pr-3 py-2 bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                      />
+                    </div>
+                    {phone && !phoneValidation?.isValid && phone.length >= 10 && (
+                      <p className="text-[10px] text-rose-400 mt-1">
+                        * Cần 10 số đúng chuẩn đầu mạng VN (03, 05, 07, 08, 09)
+                      </p>
+                    )}
                   </div>
 
-                  {/* EDITOR */}
-                  <div
-                    onClick={() => isOwner && setRole('EDITOR')}
-                    className={`cursor-pointer p-2.5 rounded-xl border transition flex flex-col gap-1 ${
-                      role === 'EDITOR'
-                        ? 'bg-emerald-500/15 border-emerald-400 ring-1 ring-emerald-500/40 text-emerald-300'
-                        : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
-                    } ${!isOwner ? 'opacity-50 pointer-events-none' : ''}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 font-bold text-xs">
-                        <Edit3 size={13} className="text-emerald-400" />
-                        <span>Chỉnh Sửa</span>
-                      </div>
-                      {role === 'EDITOR' && <CheckCircle size={13} className="text-emerald-400" />}
+                  {/* Phân quyền truy cập: Các thẻ ghi chú ngắn gọn đúng 1 dòng không xuống hàng */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-semibold text-slate-300">
+                        Phân quyền truy cập <span className="text-rose-400">*</span>
+                      </label>
+                      <span className="text-[10px] text-slate-400">
+                        Chủ nhánh: {totalOwnersCount}/2
+                      </span>
                     </div>
-                    <span className="text-[10px] text-slate-400 leading-tight">
-                      Thêm & sửa thành viên
-                    </span>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {/* VIEWER */}
+                      <div
+                        onClick={() => setRole('VIEWER')}
+                        className={`cursor-pointer p-2.5 rounded-xl border transition flex flex-col gap-1 overflow-hidden ${
+                          role === 'VIEWER'
+                            ? 'bg-emerald-500/15 border-emerald-400 ring-1 ring-emerald-500/40 text-emerald-300'
+                            : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 font-bold text-xs truncate">
+                            <Eye size={13} className="text-teal-400 flex-shrink-0" />
+                            <span>Chỉ Xem (Viewer)</span>
+                          </div>
+                          {role === 'VIEWER' && <CheckCircle size={13} className="text-emerald-400 flex-shrink-0" />}
+                        </div>
+                        <span className="text-[10px] text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis block">
+                          Xem phả hệ & tra cứu họ hàng
+                        </span>
+                      </div>
+
+                      {/* EDITOR */}
+                      <div
+                        onClick={() => setRole('EDITOR')}
+                        className={`cursor-pointer p-2.5 rounded-xl border transition flex flex-col gap-1 overflow-hidden ${
+                          role === 'EDITOR'
+                            ? 'bg-emerald-500/15 border-emerald-400 ring-1 ring-emerald-500/40 text-emerald-300'
+                            : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 font-bold text-xs truncate">
+                            <Edit3 size={13} className="text-emerald-400 flex-shrink-0" />
+                            <span>Chỉnh Sửa (Editor)</span>
+                          </div>
+                          {role === 'EDITOR' && <CheckCircle size={13} className="text-emerald-400 flex-shrink-0" />}
+                        </div>
+                        <span className="text-[10px] text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis block">
+                          Thêm & sửa thông tin thành viên
+                        </span>
+                      </div>
+
+                      {/* OWNER */}
+                      <div
+                        onClick={() => {
+                          if (isMaxOwnersReached) {
+                            toast.info('Cây đã có tối đa 2 Chủ nhánh.');
+                            return;
+                          }
+                          setRole('OWNER');
+                        }}
+                        className={`cursor-pointer p-2.5 rounded-xl border transition flex flex-col gap-1 overflow-hidden ${
+                          role === 'OWNER'
+                            ? 'bg-amber-500/15 border-amber-400 ring-1 ring-amber-500/40 text-amber-300'
+                            : isMaxOwnersReached
+                            ? 'bg-slate-950/30 border-slate-800/60 text-slate-500 opacity-60 cursor-not-allowed'
+                            : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                        title={isMaxOwnersReached ? 'Đã đủ 2 Chủ nhánh' : 'Đồng chủ nhánh cây gia phả'}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 font-bold text-xs truncate">
+                            <Crown size={13} className="text-amber-400 flex-shrink-0" />
+                            <span>Chủ Nhánh (Owner)</span>
+                          </div>
+                          {role === 'OWNER' && <CheckCircle size={13} className="text-amber-400 flex-shrink-0" />}
+                        </div>
+                        <span className="text-[10px] text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis block">
+                          Toàn quyền & phân vai trò
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* OWNER (Max 2) */}
-                  <div
-                    onClick={() => {
-                      if (!isOwner) return;
-                      if (isMaxOwnersReached) {
-                        toast.info('Cây đã có tối đa 2 Chủ nhánh.');
-                        return;
-                      }
-                      setRole('OWNER');
-                    }}
-                    className={`cursor-pointer p-2.5 rounded-xl border transition flex flex-col gap-1 ${
-                      role === 'OWNER'
-                        ? 'bg-amber-500/15 border-amber-400 ring-1 ring-amber-500/40 text-amber-300'
-                        : isMaxOwnersReached
-                        ? 'bg-slate-950/30 border-slate-800/60 text-slate-500 opacity-60 cursor-not-allowed'
-                        : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
-                    } ${!isOwner ? 'opacity-50 pointer-events-none' : ''}`}
-                    title={isMaxOwnersReached ? 'Đã đủ 2 Chủ nhánh' : 'Đồng chủ nhánh cây gia phả'}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 font-bold text-xs">
-                        <Crown size={13} className="text-amber-400" />
-                        <span>Chủ Nhánh</span>
-                      </div>
-                      {role === 'OWNER' && <CheckCircle size={13} className="text-amber-400" />}
+                  {/* Note (Optional) */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                      Tin nhắn đính kèm (Tùy chọn)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ví dụ: Cháu mời bác vào xem và cùng bổ sung thông tin gia phả ạ..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                    />
+                  </div>
+
+                  {/* Submit button */}
+                  <div className="pt-1">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs shadow-md shadow-emerald-950/50 flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Send size={14} />
+                      <span>{isSubmitting ? 'Đang gửi lời mời...' : 'Gửi Lời Mời Ngay'}</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              /* TAB 1: DÀNH CHO THÀNH VIÊN ĐƯỢC MỜI (VIEWER / EDITOR) - Không hiện thông báo lỗi từ chối, hiển thị rõ vai trò & liên kết chia sẻ */
+              <div className="space-y-4 py-2">
+                {/* 1. Hiển thị vai trò của người đang xem */}
+                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-300 flex-shrink-0">
+                      {currentUserRole === 'EDITOR' ? <Edit3 size={18} /> : <Eye size={18} />}
                     </div>
-                    <span className="text-[10px] text-slate-400 leading-tight">
-                      Toàn quyền & phân role
+                    <div>
+                      <div className="text-[10px] text-slate-400 font-medium">Vai trò của bạn trong cây gia phả:</div>
+                      <div className="text-sm font-bold text-white flex items-center gap-2 mt-0.5">
+                        <span>{currentUserRole === 'EDITOR' ? 'Chỉnh Sửa (Editor)' : 'Chỉ Xem (Viewer)'}</span>
+                        <span className="px-2 py-0.5 rounded-md text-[9px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          {currentUserRole === 'EDITOR' ? 'Được phép cập nhật' : 'Quyền xem phả hệ'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <ShieldCheck size={18} className="text-teal-400 flex-shrink-0 mr-1" />
+                </div>
+
+                {/* 2. Lời giải thích nhẹ nhàng, thân thiện (không báo lỗi hay cấm đoán) */}
+                <p className="text-xs text-slate-400 leading-relaxed bg-slate-950/40 p-3 rounded-xl border border-slate-800/80">
+                  Bạn đang tham gia xem cây gia phả này. Bạn có thể sao chép liên kết chia sẻ bên dưới để gửi tin nhắn cho người thân trong dòng họ, hoặc xem danh sách tất cả các thành viên đã tham gia.
+                </p>
+
+                {/* 3. Khung Sao chép liên kết chia sẻ */}
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-emerald-500/30 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+                      <Link size={13} className="text-emerald-400" />
+                      <span>Liên kết chia sẻ cây gia phả</span>
                     </span>
+                  </div>
+                  <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-emerald-300 font-mono truncate select-all">
+                    {inviteLink}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition"
+                    >
+                      {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                      <span>{isCopied ? 'Đã sao chép' : 'Sao chép link'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCopyMessage}
+                      className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 flex items-center justify-center gap-1.5 transition"
+                    >
+                      <MessageSquare size={14} />
+                      <span>Chép tin nhắn mời</span>
+                    </button>
                   </div>
                 </div>
-              </div>
 
-              {/* Note (Optional) */}
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                  Lời nhắn đính kèm (Tùy chọn)
-                </label>
-                <textarea
-                  rows={2}
-                  disabled={!isOwner}
-                  placeholder="Ví dụ: Cháu mời bác vào cùng xem và bổ sung chi nhánh của gia đình mình ạ..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="w-full p-2.5 bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition disabled:opacity-50"
-                />
-              </div>
-
-              {/* Submit button */}
-              <div className="pt-1">
+                {/* 4. Nút chuyển sang xem danh sách thành viên */}
                 <button
-                  type="submit"
-                  disabled={!isOwner || isSubmitting}
-                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs shadow-md shadow-emerald-950/50 flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="button"
+                  onClick={() => setActiveTab('COLLABORATORS')}
+                  className="w-full py-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 transition"
                 >
-                  <Send size={14} />
-                  <span>{isSubmitting ? 'Đang gửi lời mời...' : 'Gửi Lời Mời Ngay'}</span>
+                  <Users size={14} className="text-emerald-400" />
+                  <span>Xem Danh Sách Thành Viên Đã Chia Sẻ ({collaborators.length})</span>
                 </button>
               </div>
-            </form>
+            )
           ) : (
+            /* TAB 2: DANH SÁCH THÀNH VIÊN ĐÃ CHIA SẺ */
             <div className="space-y-3.5">
               {isLoadingList ? (
-                <div className="py-8 text-center text-slate-400 text-xs">
+                <div className="py-12 text-center text-slate-400 text-xs">
                   Đang tải danh sách thành viên...
                 </div>
               ) : (
@@ -391,7 +527,7 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
                       Chủ nhánh phụ trách: <strong className="text-amber-300">{totalOwnersCount}/2</strong> người
                     </span>
                     <span className="text-[10px] text-slate-500">
-                      Chủ nhánh có quyền phân vai trò
+                      Chủ nhánh có quyền điều chỉnh vai trò
                     </span>
                   </div>
 
@@ -422,11 +558,11 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
                   <div className="space-y-2">
                     <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                       <Users size={12} className="text-emerald-400" />
-                      <span>Thành Viên Đã Tham Gia ({collaborators.length})</span>
+                      <span>Thành Viên Đang Cộng Tác ({collaborators.length})</span>
                     </div>
 
                     {collaborators.length === 0 ? (
-                      <p className="text-xs text-slate-500 italic p-3 bg-slate-950/30 rounded-xl border border-slate-800 text-center">
+                      <p className="text-xs text-slate-500 italic p-4 bg-slate-950/30 rounded-xl border border-slate-800 text-center">
                         Chưa có người thân nào tham gia cộng tác trong cây này.
                       </p>
                     ) : (
@@ -469,7 +605,7 @@ export const ShareTreeModal: React.FC<ShareTreeModalProps> = ({
                                   </option>
                                 </select>
                               ) : (
-                                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                                <span className="px-2.5 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
                                   {c.role === 'OWNER' ? 'Chủ nhánh' : c.role === 'EDITOR' ? 'Chỉnh sửa' : 'Chỉ xem'}
                                 </span>
                               )}

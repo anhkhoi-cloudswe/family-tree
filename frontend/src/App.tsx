@@ -53,6 +53,7 @@ import {
   applyEmailVerificationCode,
 } from './services/firebase';
 import { getSupabaseClient } from './services/supabase';
+import { wsClient } from './services/websocket';
 
 const AppContent: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -162,6 +163,29 @@ const AppContent: React.FC = () => {
       loadPendingInvitations();
     }
   }, [user, loadPendingInvitations]);
+
+  // 1. WebSocket: Tự động đồng bộ cây gia phả theo thời gian thực mà không cần tải lại trang
+  useEffect(() => {
+    if (!tree?.id) return;
+    const unsubscribe = wsClient.subscribeToTree(tree.id, () => {
+      loadTreeData(tree.id, user);
+    });
+    return () => unsubscribe();
+  }, [tree?.id, user]);
+
+  // 2. WebSocket: Tự động cập nhật thông báo cá nhân (lời mời mới, quyền hạn cộng tác)
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsubscribe = wsClient.subscribeToUser(user.id, (data) => {
+      loadPendingInvitations();
+      if (data?.action === 'ROLE_UPDATED' || data?.action === 'COLLABORATOR_REMOVED') {
+        if (tree?.id) {
+          loadTreeData(tree.id, user);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [user?.id, tree?.id, loadPendingInvitations]);
 
   // Initialize Auth
   useEffect(() => {
@@ -337,7 +361,9 @@ const AppContent: React.FC = () => {
       try {
         const currentUser = await apiGetMe();
         setUser(currentUser);
-        const savedTreeId = localStorage.getItem('fam3_current_tree_id') || currentUser.trees?.[0]?.id;
+        const urlParams = new URLSearchParams(window.location.search);
+        const inviteParamTreeId = urlParams.get('inviteTree') || urlParams.get('treeId');
+        const savedTreeId = inviteParamTreeId || localStorage.getItem('fam3_current_tree_id') || currentUser.trees?.[0]?.id;
         await loadTreeData(savedTreeId, currentUser);
       } catch (err) {
         console.error('Lỗi khởi tạo phiên đăng nhập:', err);
@@ -445,13 +471,16 @@ const AppContent: React.FC = () => {
           );
         }
 
-        if (!matchedMe) {
-          matchedMe = fullTree.members.find((m) => m.nickname === 'Tôi' || m.nickname === 'Tôi (Khởi tạo)');
-        }
+        const isOwner = !fullTree.userRole || fullTree.userRole === 'OWNER';
 
-        // Nếu chỉ có 1 thành viên hoặc chưa khớp, luôn gán thành viên đầu tiên làm "Tôi"
-        if (!matchedMe && fullTree.members.length > 0) {
-          matchedMe = fullTree.members[0];
+        // CHỈ gán fallback ô 'Tôi' nếu người dùng là Chủ nhánh (Owner) của cây này.
+        // Đối với người được mời (Viewer / Editor), nếu họ chưa được liên kết hay khớp với thành viên nào trong cây,
+        // thì mePerson = null (tuyệt đối KHÔNG gán nhãn "Tôi" của chủ nhánh cho người xem bên ngoài).
+        if (!matchedMe && isOwner) {
+          matchedMe = fullTree.members.find((m) => m.nickname === 'Tôi' || m.nickname === 'Tôi (Khởi tạo)');
+          if (!matchedMe && fullTree.members.length > 0) {
+            matchedMe = fullTree.members[0];
+          }
         }
 
         setMePerson(matchedMe || null);

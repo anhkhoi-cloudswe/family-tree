@@ -794,11 +794,15 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
     }
   };
 
+  // Active Observer for kinship perspective (chosen focus person or authenticated mePerson)
+  const activeObserver = useMemo(() => {
+    return (focusPersonId ? tree.members.find((m) => m.id === focusPersonId) : null) || mePerson;
+  }, [focusPersonId, tree.members, mePerson]);
+
   // Classify members into Paternal (Bên Nội) or Maternal (Bên Ngoại)
   const { paternalMemberIds, maternalMemberIds } = useMemo(() => {
-    const activeObserver = (focusPersonId ? tree.members.find((m) => m.id === focusPersonId) : null) || mePerson;
     return getPaternalMaternalMemberIds(activeObserver, tree.members, tree.relationships);
-  }, [tree.members, tree.relationships, mePerson, focusPersonId]);
+  }, [tree.members, tree.relationships, activeObserver]);
 
   // Group members by Generation and sort with couple grouping and branch separation
   const { sortedGenerations, generationUnitsMap, visibleMembersCount } = useMemo(() => {
@@ -1097,8 +1101,8 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
                 if (genNumber === 1) return true;
                 const p1 = unit.person1;
                 const p2 = unit.person2;
-                const kin1 = getKinshipToMe(mePerson, p1, tree.members, tree.relationships);
-                const kin2 = getKinshipToMe(mePerson, p2, tree.members, tree.relationships);
+                const kin1 = getKinshipToMe(activeObserver, p1, tree.members, tree.relationships);
+                const kin2 = getKinshipToMe(activeObserver, p2, tree.members, tree.relationships);
                 return (kin1.includes('Bố') || kin1.includes('Mẹ')) && (kin2.includes('Bố') || kin2.includes('Mẹ'));
               }
               return false;
@@ -1129,8 +1133,8 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
                       const p1 = unit.person1;
                       const p2 = unit.person2;
 
-                      const kin1 = getKinshipToMe(mePerson, p1, tree.members, tree.relationships);
-                      const kin2 = getKinshipToMe(mePerson, p2, tree.members, tree.relationships);
+                      const kin1 = getKinshipToMe(activeObserver, p1, tree.members, tree.relationships);
+                      const kin2 = getKinshipToMe(activeObserver, p2, tree.members, tree.relationships);
 
                       const isMe1 = Boolean(mePerson && mePerson.id === p1.id);
                       const isMe2 = Boolean(mePerson && mePerson.id === p2.id);
@@ -1213,7 +1217,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
 
                     // Single member
                     const p = unit.person1;
-                    const kin = getKinshipToMe(mePerson, p, tree.members, tree.relationships);
+                    const kin = getKinshipToMe(activeObserver, p, tree.members, tree.relationships);
                     const isMe = Boolean(mePerson && mePerson.id === p.id);
                     const isHighlighted = hoveredPersonId === p.id || highlightedNodeId === p.id;
 

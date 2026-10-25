@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import http from 'http';
 
 import authRoutes from './routes/auth.routes';
 import treeRoutes from './routes/tree.routes';
@@ -14,6 +15,7 @@ import exportRoutes from './routes/export.routes';
 import adminRoutes from './routes/admin.routes';
 import invitationRoutes from './routes/invitation.routes';
 import { cleanupPendingDeleteAccounts } from './controllers/auth.controller';
+import { initWebSocketServer } from './services/websocket.service';
 
 dotenv.config();
 
@@ -93,8 +95,11 @@ const isDirectRun = typeof process !== 'undefined' &&
   Boolean(process.argv && process.argv[1] && (process.argv[1].endsWith('index.ts') || process.argv[1].endsWith('index.js')));
 
 if (isDirectRun && process.env.NODE_ENV !== 'test' && !process.env.CLOUDFLARE_WORKER) {
-  app.listen(PORT, async () => {
-    console.log(`[FamilyTree API] Server is running on http://localhost:${PORT}`);
+  const server = http.createServer(app);
+  initWebSocketServer(server);
+
+  server.listen(PORT, async () => {
+    console.log(`[FamilyTree API] Server with WebSockets is running on http://localhost:${PORT}`);
     try {
       const userCount = await prisma.user.count();
       if (userCount === 0) {

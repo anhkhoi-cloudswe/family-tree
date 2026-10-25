@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { storageService } from '../services/storage.service';
+import { broadcastTreeUpdate } from '../services/websocket.service';
 
 export const createPerson = async (req: AuthRequest, res: Response) => {
   try {
@@ -313,6 +314,8 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    broadcastTreeUpdate(treeId, { action: 'PERSON_CREATED', personId: person.id });
+
     return res.status(201).json(person);
   } catch (error) {
     console.error('Lỗi thêm thành viên:', error);
@@ -387,6 +390,8 @@ export const updatePerson = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    broadcastTreeUpdate(existingPerson.treeId, { action: 'PERSON_UPDATED', personId: person.id });
+
     return res.json(person);
   } catch (error) {
     console.error('Lỗi cập nhật thành viên:', error);
@@ -437,6 +442,7 @@ export const deletePerson = async (req: AuthRequest, res: Response) => {
     });
 
     await prisma.person.delete({ where: { id } });
+    broadcastTreeUpdate(existingPerson.treeId, { action: 'PERSON_DELETED', personId: id });
     return res.json({ message: 'Đã xóa thành viên thành công.' });
   } catch (error) {
     console.error('Lỗi xóa thành viên:', error);
@@ -563,6 +569,8 @@ export const createRelationship = async (req: AuthRequest, res: Response) => {
       }
     }
 
+    broadcastTreeUpdate(treeId, { action: 'RELATIONSHIP_CREATED' });
+
     return res.status(201).json(rel);
   } catch (error) {
     console.error('Lỗi tạo quan hệ:', error);
@@ -573,7 +581,11 @@ export const createRelationship = async (req: AuthRequest, res: Response) => {
 export const deleteRelationship = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    await prisma.relationship.delete({ where: { id } });
+    const rel = await prisma.relationship.findUnique({ where: { id } });
+    if (rel) {
+      await prisma.relationship.delete({ where: { id } });
+      broadcastTreeUpdate(rel.treeId, { action: 'RELATIONSHIP_DELETED', relationshipId: id });
+    }
     return res.json({ message: 'Đã xóa mối quan hệ thành công.' });
   } catch (error) {
     console.error('Lỗi xóa quan hệ:', error);

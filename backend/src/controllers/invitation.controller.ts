@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { prisma } from '../prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { broadcastTreeUpdate, broadcastUserUpdate } from '../services/websocket.service';
 
 /**
  * Kiểm tra xem user có phải là Chủ nhánh (Owner) của cây không
@@ -125,6 +126,8 @@ export const sendInvitation = async (req: AuthRequest, res: Response) => {
           message: message ? message.trim() : existingPending.message,
         },
       });
+      broadcastTreeUpdate(treeId, { action: 'INVITATION_SENT' });
+      broadcastUserUpdate(receiver.id, { action: 'INVITATION_RECEIVED', treeId });
       return res.json({
         message: `Đã cập nhật lời mời gửi tới ${receiver.fullName}.`,
         invitation: updated,
@@ -149,6 +152,8 @@ export const sendInvitation = async (req: AuthRequest, res: Response) => {
     });
 
     const roleName = targetRole === 'OWNER' ? 'Đồng chủ nhánh' : targetRole === 'EDITOR' ? 'Chỉnh sửa' : 'Chỉ xem';
+    broadcastTreeUpdate(treeId, { action: 'INVITATION_SENT' });
+    broadcastUserUpdate(receiver.id, { action: 'INVITATION_RECEIVED', treeId });
     return res.status(201).json({
       message: `Đã gửi lời mời (${roleName}) tới ${receiver.fullName} thành công!`,
       invitation,
@@ -276,6 +281,12 @@ export const acceptInvitation = async (req: AuthRequest, res: Response) => {
       data: { status: 'ACCEPTED' },
     });
 
+    broadcastTreeUpdate(invitation.treeId, { action: 'COLLABORATOR_JOINED', userId });
+    broadcastUserUpdate(userId, { action: 'INVITATION_ACCEPTED', treeId: invitation.treeId });
+    if (invitation.inviterId) {
+      broadcastUserUpdate(invitation.inviterId, { action: 'INVITATION_ACCEPTED', treeId: invitation.treeId });
+    }
+
     return res.json({
       message: `Bạn đã tham gia thành công vào ${invitation.tree.name}!`,
       treeId: invitation.treeId,
@@ -315,6 +326,9 @@ export const declineInvitation = async (req: AuthRequest, res: Response) => {
       where: { id },
       data: { status: 'DECLINED' },
     });
+
+    broadcastTreeUpdate(invitation.treeId, { action: 'INVITATION_DECLINED', userId });
+    broadcastUserUpdate(userId, { action: 'INVITATION_DECLINED', treeId: invitation.treeId });
 
     return res.json({ message: 'Đã từ chối lời mời tham gia cây gia phả.' });
   } catch (error: any) {
@@ -458,6 +472,9 @@ export const updateCollaboratorRole = async (req: AuthRequest, res: Response) =>
     });
 
     const roleLabel = targetRole === 'OWNER' ? 'Chủ nhánh' : targetRole === 'EDITOR' ? 'Chỉnh sửa' : 'Chỉ xem';
+    broadcastTreeUpdate(treeId, { action: 'ROLE_UPDATED', collaboratorUserId, role: targetRole });
+    broadcastUserUpdate(collaboratorUserId, { action: 'ROLE_UPDATED', treeId, role: targetRole });
+
     return res.json({
       message: `Đã cập nhật quyền của ${updated.user.fullName} thành "${roleLabel}".`,
       collaborator: updated,
@@ -504,6 +521,9 @@ export const removeCollaborator = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    broadcastTreeUpdate(treeId, { action: 'COLLABORATOR_REMOVED', collaboratorUserId });
+    broadcastUserUpdate(collaboratorUserId, { action: 'COLLABORATOR_REMOVED', treeId });
+
     return res.json({ message: 'Đã xóa thành viên khỏi cây gia phả thành công.' });
   } catch (error: any) {
     console.error('Lỗi thu hồi quyền chia sẻ:', error);
@@ -539,6 +559,9 @@ export const cancelInvitation = async (req: AuthRequest, res: Response) => {
     await prisma.treeInvitation.delete({
       where: { id },
     });
+
+    broadcastTreeUpdate(invitation.treeId, { action: 'INVITATION_CANCELLED' });
+    broadcastUserUpdate(invitation.receiverId, { action: 'INVITATION_CANCELLED', treeId: invitation.treeId });
 
     return res.json({ message: 'Đã hủy lời mời thành công.' });
   } catch (error: any) {

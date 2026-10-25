@@ -71,6 +71,9 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   // Determine pill style class based on kinship
   const getPillClass = () => {
     if (isMe) return 'me';
+    if (kinshipTitle.includes('Chủ nhánh') || kinshipTitle.includes('Chủ cây')) {
+      return 'parent';
+    }
     if (
       kinshipTitle.includes('Bố') ||
       kinshipTitle.includes('Mẹ') ||
@@ -140,6 +143,11 @@ export const MemberCard: React.FC<MemberCardProps> = ({
     const nickLower = nick.toLowerCase();
     const kinLower = kinshipTitle.trim().toLowerCase();
 
+    // Không hiển thị nickname "Tôi" nếu người này không phải là người đang đăng nhập
+    if (!isMe && (nickLower === 'tôi' || nickLower.includes('tôi ('))) {
+      return null;
+    }
+
     if (nickLower === kinLower || kinLower.includes(nickLower) || nickLower.includes(kinLower)) {
       return null;
     }
@@ -155,7 +163,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
     }
 
     return nick;
-  }, [person.nickname, kinshipTitle]);
+  }, [person.nickname, kinshipTitle, isMe]);
 
   return (
     <div
