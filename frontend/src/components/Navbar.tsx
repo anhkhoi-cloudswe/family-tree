@@ -127,7 +127,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="Xem Sơ đồ Cây Gia Phả"
             >
               <TreePine size={14} />
-              <span>Sơ đồ Cây</span>
+              <span className="hidden sm:inline">Sơ đồ Cây</span>
+              <span className="sm:hidden">Cây</span>
             </button>
             <button
               type="button"
@@ -138,7 +139,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="Xem Danh Sách Thành Viên"
             >
               <Users size={14} />
-              <span>Danh Sách</span>
+              <span className="hidden sm:inline">Danh Sách</span>
+              <span className="sm:hidden">DS</span>
             </button>
           </div>
 
@@ -213,8 +215,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Tìm kiếm người thân trong dòng họ (Ctrl + K)"
           >
             <Search size={14} className="search-icon" />
-            <span className="search-label">Tìm thành viên trong gia đình...</span>
-            <kbd className="search-kbd">Ctrl K</kbd>
+            <span className="search-label hidden sm:inline">Tìm thành viên trong gia đình...</span>
+            <span className="search-label sm:hidden">Tìm kiếm...</span>
+            <kbd className="search-kbd hidden sm:inline-block">Ctrl K</kbd>
           </button>
         </div>
 
@@ -228,7 +231,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Xuất bảng Excel danh bạ gia đình, ngày sinh, SĐT, quê quán"
           >
             <FileSpreadsheet size={15} className="text-emerald-400" />
-            <span className="action-btn-text">{isExportingExcel ? 'Đang xuất...' : 'Xuất Excel'}</span>
+            <span className="action-btn-text hidden sm:inline">{isExportingExcel ? 'Đang xuất...' : 'Xuất Excel'}</span>
           </button>
 
           <button
@@ -239,7 +242,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Tải toàn bộ hình ảnh cây gia phả HD về máy để in ấn hoặc chia sẻ"
           >
             <Download size={15} className="text-sky-400" />
-            <span className="action-btn-text">{isExportingImage ? 'Đang tạo...' : 'Tải Ảnh'}</span>
+            <span className="action-btn-text hidden sm:inline">{isExportingImage ? 'Đang tạo...' : 'Tải Ảnh'}</span>
           </button>
         </div>
       </div>

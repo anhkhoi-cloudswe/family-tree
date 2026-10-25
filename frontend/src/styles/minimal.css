@@ -819,6 +819,42 @@ button, input, select, textarea {
   cursor: not-allowed;
 }
 
+@media (max-width: 768px) {
+  .navbar-tier-2-outer {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .navbar-tier-2-outer::-webkit-scrollbar {
+    display: none;
+  }
+  .navbar-tier-2 {
+    padding: 0 0.65rem;
+    gap: 0.45rem;
+    min-width: 100%;
+    width: max-content;
+  }
+  .navbar-left-group {
+    gap: 0.35rem;
+  }
+  .navbar-center-group {
+    max-width: 120px;
+    margin: 0 0.25rem;
+  }
+  .navbar-search-btn-center {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+  }
+  .navbar-right-group {
+    gap: 0.35rem;
+  }
+  .navbar-action-btn {
+    padding: 0.38rem 0.55rem;
+    font-size: 0.75rem;
+  }
+}
+
 .tier2-picker-wrap {
   flex-shrink: 0;
 }

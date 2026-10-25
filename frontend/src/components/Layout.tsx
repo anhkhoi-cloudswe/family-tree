@@ -22,6 +22,8 @@ import {
   Settings,
   BookOpen,
   LucideIcon,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { User, FamilyTree, TreeRole } from '../types';
 import { FamilyTreeLogo } from './FamilyTreeLogo';
@@ -108,8 +110,28 @@ export const Layout: React.FC<LayoutProps> = ({
     };
   }, [showModeMenu]);
 
-  // Derived sidebar visual state
-  const isExpanded = mode === 'expanded' || (mode === 'hover-expand' && isHovered);
+  const toggleSidebar = () => {
+    if (mode === 'expanded') {
+      setSidebarMode('collapsed');
+    } else {
+      setSidebarMode('expanded');
+    }
+  };
+
+  // Keyboard shortcut: Ctrl + B toggles sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mode]);
+
+  // Derived sidebar visual state: On mobile, drawer is ALWAYS expanded so all text and labels are shown!
+  const isExpanded = Boolean(mobileOpen || mode === 'expanded' || (mode === 'hover-expand' && isHovered));
 
   // Main content margin offset
   // If 'expanded', main margin is w-72 (288px)
@@ -276,14 +298,25 @@ export const Layout: React.FC<LayoutProps> = ({
         `}
       >
         {/* Sidebar Header: Logo & Mode Controller */}
-        <div className={`h-16 px-4 flex items-center border-b border-emerald-500/15 relative ${isExpanded ? 'justify-between' : 'justify-center'}`}>
+        <div className={`h-16 px-3 flex items-center border-b border-emerald-500/15 relative ${isExpanded ? 'justify-between' : 'justify-center'}`}>
           {!isExpanded ? (
-            <div className="flex items-center justify-center" title="Famlykin - Cây Gia Phả Số">
-              <FamilyTreeLogo size={36} />
+            <div className="flex flex-col items-center justify-center group py-1">
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                className="relative p-1.5 rounded-xl hover:bg-emerald-500/20 text-emerald-400 transition cursor-pointer flex items-center justify-center group"
+                title="Nhấn để mở rộng thanh menu (Ctrl + B)"
+                aria-label="Mở rộng menu bên trái"
+              >
+                <FamilyTreeLogo size={36} />
+                <span className="absolute -bottom-1 -right-1 p-0.5 rounded bg-slate-900 border border-emerald-500/40 text-emerald-400 group-hover:scale-110 transition shadow-sm">
+                  <PanelLeftOpen size={12} />
+                </span>
+              </button>
             </div>
           ) : (
             <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3 overflow-hidden">
+              <div className="flex items-center gap-2.5 overflow-hidden">
                 <div className="flex-shrink-0 flex items-center justify-center">
                   <FamilyTreeLogo size={34} />
                 </div>
@@ -297,73 +330,88 @@ export const Layout: React.FC<LayoutProps> = ({
                 </div>
               </div>
 
-              {/* Desktop Mode Toggle Popover */}
-              <div className="hidden lg:block relative" ref={modeMenuRef}>
+              {/* Desktop Mode Toggle & Collapse Controls */}
+              <div className="hidden lg:flex items-center gap-1">
+                {/* 1-Click Collapse Button */}
                 <button
                   type="button"
-                  onClick={() => setShowModeMenu(!showModeMenu)}
-                  className={`p-1.5 rounded-lg text-slate-400 hover:text-emerald-300 hover:bg-slate-800/80 transition ${
-                    showModeMenu ? 'bg-slate-800 text-emerald-300 ring-1 ring-emerald-500/30' : ''
-                  }`}
-                  title="Cấu hình chế độ thanh điều hướng bên trái"
+                  onClick={toggleSidebar}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-300 hover:bg-slate-800/80 transition cursor-pointer"
+                  title="Thu gọn thanh menu (Ctrl + B)"
+                  aria-label="Thu gọn thanh menu"
                 >
-                  <Sliders size={18} />
+                  <PanelLeftClose size={18} />
                 </button>
 
-                {showModeMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-slate-900 border border-emerald-500/30 shadow-2xl p-2 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
-                    <div className="px-2 py-1.5 font-semibold text-slate-300 border-b border-slate-800 mb-1">
-                      Chế độ Sidebar
+                {/* Mode Settings Popover */}
+                <div className="relative" ref={modeMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowModeMenu(!showModeMenu)}
+                    className={`p-1.5 rounded-lg text-slate-400 hover:text-emerald-300 hover:bg-slate-800/80 transition cursor-pointer ${
+                      showModeMenu ? 'bg-slate-800 text-emerald-300 ring-1 ring-emerald-500/30' : ''
+                    }`}
+                    title="Cài đặt chế độ thanh điều hướng"
+                    aria-label="Cài đặt chế độ thanh điều hướng"
+                  >
+                    <Sliders size={18} />
+                  </button>
+
+                  {showModeMenu && (
+                    <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-slate-900 border border-emerald-500/30 shadow-2xl p-2 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
+                      <div className="px-2 py-1.5 font-semibold text-slate-300 border-b border-slate-800 mb-1">
+                        Chế độ Sidebar
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSidebarMode('hover-expand')}
+                        className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between transition ${
+                          mode === 'hover-expand'
+                            ? 'bg-emerald-500/20 text-emerald-300 font-medium'
+                            : 'text-slate-300 hover:bg-slate-800'
+                        }`}
+                      >
+                        <div>
+                          <div>Tự mở khi di chuột</div>
+                          <div className="text-[10px] text-slate-400 font-normal">Mặc định, tối ưu không gian</div>
+                        </div>
+                        {mode === 'hover-expand' && <span className="text-emerald-400 font-bold">✓</span>}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSidebarMode('expanded')}
+                        className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between transition ${
+                          mode === 'expanded'
+                            ? 'bg-emerald-500/20 text-emerald-300 font-medium'
+                            : 'text-slate-300 hover:bg-slate-800'
+                        }`}
+                      >
+                        <div>
+                          <div>Luôn mở rộng (Rộng)</div>
+                          <div className="text-[10px] text-slate-400 font-normal">Cố định 288px</div>
+                        </div>
+                        {mode === 'expanded' && <span className="text-emerald-400 font-bold">✓</span>}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSidebarMode('collapsed')}
+                        className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between transition ${
+                          (mode as string) === 'collapsed'
+                            ? 'bg-emerald-500/20 text-emerald-300 font-medium'
+                            : 'text-slate-300 hover:bg-slate-800'
+                        }`}
+                      >
+                        <div>
+                          <div>Luôn thu gọn (Icon)</div>
+                          <div className="text-[10px] text-slate-400 font-normal">Cố định 80px</div>
+                        </div>
+                        {(mode as string) === 'collapsed' && <span className="text-emerald-400 font-bold">✓</span>}
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setSidebarMode('hover-expand')}
-                      className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between transition ${
-                        mode === 'hover-expand'
-                          ? 'bg-emerald-500/20 text-emerald-300 font-medium'
-                          : 'text-slate-300 hover:bg-slate-800'
-                      }`}
-                    >
-                      <div>
-                        <div>Di chuột để mở rộng</div>
-                        <div className="text-[10px] text-slate-400 font-normal">Mặc định, tối ưu không gian</div>
-                      </div>
-                      {mode === 'hover-expand' && <span className="text-emerald-400 font-bold">✓</span>}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSidebarMode('expanded')}
-                      className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between transition ${
-                        mode === 'expanded'
-                          ? 'bg-emerald-500/20 text-emerald-300 font-medium'
-                          : 'text-slate-300 hover:bg-slate-800'
-                      }`}
-                    >
-                      <div>
-                        <div>Luôn mở rộng (Rộng)</div>
-                        <div className="text-[10px] text-slate-400 font-normal">Cố định 288px</div>
-                      </div>
-                      {mode === 'expanded' && <span className="text-emerald-400 font-bold">✓</span>}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSidebarMode('collapsed')}
-                      className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center justify-between transition ${
-                        (mode as string) === 'collapsed'
-                          ? 'bg-emerald-500/20 text-emerald-300 font-medium'
-                          : 'text-slate-300 hover:bg-slate-800'
-                      }`}
-                    >
-                      <div>
-                        <div>Luôn thu gọn (Icon)</div>
-                        <div className="text-[10px] text-slate-400 font-normal">Cố định 80px</div>
-                      </div>
-                      {(mode as string) === 'collapsed' && <span className="text-emerald-400 font-bold">✓</span>}
-                    </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
               {/* Mobile Close Button */}
@@ -371,6 +419,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 type="button"
                 onClick={() => setMobileOpen(false)}
                 className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                aria-label="Đóng menu"
               >
                 <X size={20} />
               </button>
