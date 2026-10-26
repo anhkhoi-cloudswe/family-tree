@@ -1257,61 +1257,63 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
 
       {/* 3. Floating Quick Controls: Layers, Zoom In, Zoom Out, Căn Vừa */}
       <div className="minimal-controls-vertical" role="toolbar" aria-label="Điều khiển bản đồ gia phả">
-        {/* On mobile, collapse/expand the buttons stack; on desktop always visible */}
-        <div className={`controls-buttons-stack flex flex-col items-end gap-1.5 transition-all duration-200 ${isControlsExpanded ? 'flex' : 'hidden md:flex'}`}>
-          {/* Toggle View Mode: Chi tiết vs Rút gọn */}
-          <button
-            type="button"
-            className="ctrl-btn-vertical"
-            onClick={() => onViewModeChange?.(viewMode === 'DETAILED' ? 'COMPACT' : 'DETAILED')}
-            title={viewMode === 'DETAILED' ? 'Chuyển sang chế độ xem Rút Gọn' : 'Chuyển sang chế độ xem Chi Tiết'}
-            aria-label="Tắt/Mở chi tiết thẻ thành viên"
-          >
-            {viewMode === 'DETAILED' ? <Layers size={18} color="#34d399" /> : <Eye size={18} color="#38bdf8" />}
-          </button>
+        {/* Animated Stack of 4 Canvas Control Tools (Toggled on both Mobile & Laptop) */}
+        {isControlsExpanded && (
+          <div className="controls-buttons-stack anim-entering flex flex-col items-end gap-1.5">
+            {/* Toggle View Mode: Chi tiết vs Rút gọn */}
+            <button
+              type="button"
+              className="ctrl-btn-vertical"
+              onClick={() => onViewModeChange?.(viewMode === 'DETAILED' ? 'COMPACT' : 'DETAILED')}
+              title={viewMode === 'DETAILED' ? 'Chuyển sang chế độ xem Rút Gọn' : 'Chuyển sang chế độ xem Chi Tiết'}
+              aria-label="Tắt/Mở chi tiết thẻ thành viên"
+            >
+              {viewMode === 'DETAILED' ? <Layers size={18} color="#34d399" /> : <Eye size={18} color="#38bdf8" />}
+            </button>
 
-          {/* Phóng to (+) */}
-          <button
-            type="button"
-            className="ctrl-btn-vertical"
-            onClick={zoomIn}
-            title="Phóng to bản đồ (+)"
-            aria-label="Phóng to"
-          >
-            <ZoomIn size={18} />
-          </button>
+            {/* Phóng to (+) */}
+            <button
+              type="button"
+              className="ctrl-btn-vertical"
+              onClick={zoomIn}
+              title="Phóng to bản đồ (+)"
+              aria-label="Phóng to"
+            >
+              <ZoomIn size={18} />
+            </button>
 
-          {/* Thu nhỏ (-) */}
-          <button
-            type="button"
-            className="ctrl-btn-vertical"
-            onClick={zoomOut}
-            title="Thu nhỏ bản đồ (-)"
-            aria-label="Thu nhỏ"
-          >
-            <ZoomOut size={18} />
-          </button>
+            {/* Thu nhỏ (-) */}
+            <button
+              type="button"
+              className="ctrl-btn-vertical"
+              onClick={zoomOut}
+              title="Thu nhỏ bản đồ (-)"
+              aria-label="Thu nhỏ"
+            >
+              <ZoomOut size={18} />
+            </button>
 
-          {/* Nút Căn Vừa Toàn Cảnh (Icon vuông trên mobile, giữ màu xanh lá nổi bật) */}
-          <button
-            type="button"
-            className="ctrl-primary-fit-btn"
-            onClick={fitToScreen}
-            aria-label="Căn vừa toàn bộ cây gia phả vào màn hình"
-            title="Căn vừa toàn bộ cây gia phả vào màn hình"
-          >
-            <Scan size={18} />
-            <span className="ctrl-btn-label hidden md:inline">Căn vừa</span>
-          </button>
-        </div>
+            {/* Nút Căn Vừa Toàn Cảnh (Icon vuông trên mobile, giữ pill trên desktop) */}
+            <button
+              type="button"
+              className="ctrl-primary-fit-btn"
+              onClick={fitToScreen}
+              aria-label="Căn vừa toàn bộ cây gia phả vào màn hình"
+              title="Căn vừa toàn bộ cây gia phả vào màn hình"
+            >
+              <Scan size={18} />
+              <span className="ctrl-btn-label hidden md:inline">Căn vừa</span>
+            </button>
+          </div>
+        )}
 
-        {/* Mobile Collapse/Expand Toggle Button (<768px only) */}
+        {/* Collapse/Expand Toggle Button (Hoạt động mượt mà cho cả Desktop & Mobile) */}
         <button
           type="button"
-          className="ctrl-btn-vertical ctrl-toggle-btn md:hidden"
+          className="ctrl-btn-vertical ctrl-toggle-btn"
           onClick={() => setIsControlsExpanded(!isControlsExpanded)}
-          aria-label={isControlsExpanded ? 'Thu gọn công cụ điều khiển' : 'Mở rộng công cụ điều khiển'}
-          title={isControlsExpanded ? 'Thu gọn công cụ' : 'Mở thanh công cụ'}
+          aria-label={isControlsExpanded ? 'Thu gọn cụm công cụ' : 'Mở rộng cụm công cụ'}
+          title={isControlsExpanded ? 'Thu gọn thanh công cụ' : 'Mở thanh công cụ điều khiển'}
         >
           {isControlsExpanded ? (
             <ChevronDown size={18} className="text-slate-300" />

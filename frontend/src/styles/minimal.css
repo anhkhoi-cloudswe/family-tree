@@ -2021,8 +2021,11 @@ button, input, select, textarea {
 /* =========================================================
    5. VERTICAL FLOATING CONTROLS
    ========================================================= */
+/* =========================================================
+   5. VERTICAL FLOATING CONTROLS (GLASSMORPHIC & COLLAPSIBLE)
+   ========================================================= */
 .minimal-controls-vertical {
-  position: absolute;
+  position: fixed;
   bottom: 2rem;
   right: 2rem;
   display: flex;
@@ -2032,33 +2035,57 @@ button, input, select, textarea {
   z-index: 70;
 }
 
+.controls-buttons-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+  transform-origin: bottom right;
+}
+
+.controls-buttons-stack.anim-entering {
+  animation: controlsSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes controlsSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.93);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .ctrl-btn-vertical {
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  background: rgba(15, 23, 42, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(6, 20, 15, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
   color: #cbd5e1;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(14px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ctrl-btn-vertical:hover {
-  background: rgba(30, 41, 59, 0.95);
-  border-color: rgba(52, 211, 153, 0.5);
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: rgba(52, 211, 153, 0.6) !important;
   color: #34d399;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(16, 185, 129, 0.35) !important;
   transform: translateY(-2px);
 }
 
 .ctrl-btn-vertical:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 
 .ctrl-primary-fit-btn {
@@ -2066,17 +2093,18 @@ button, input, select, textarea {
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.95) 0%, rgba(16, 185, 129, 0.95) 100%);
-  border: 1.5px solid rgba(167, 243, 208, 0.45);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.55) 0%, rgba(5, 150, 105, 0.75) 100%) !important;
+  border: 1px solid rgba(167, 243, 208, 0.5) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
   border-radius: 999px;
   height: 44px;
   padding: 0 1.15rem;
   color: #ffffff;
   font-weight: 700;
   font-size: 0.88rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(16, 185, 129, 0.35);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 18px rgba(16, 185, 129, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(14px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2084,14 +2112,29 @@ button, input, select, textarea {
 }
 
 .ctrl-primary-fit-btn:hover {
-  border-color: rgba(167, 243, 208, 0.7);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 22px rgba(16, 185, 129, 0.5);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.75) 0%, rgba(5, 150, 105, 0.95) 100%) !important;
+  border-color: rgba(167, 243, 208, 0.75) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 24px rgba(16, 185, 129, 0.55) !important;
   transform: translateY(-2px);
-  background: linear-gradient(135deg, rgba(5, 150, 105, 1) 0%, rgba(16, 185, 129, 1) 100%);
 }
 
 .ctrl-primary-fit-btn:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
+}
+
+/* Nút Toggle Collapse/Expand (Hoạt động trên cả Laptop & Mobile) */
+.ctrl-toggle-btn {
+  background: rgba(6, 20, 15, 0.45) !important;
+  border: 1.5px solid rgba(16, 185, 129, 0.4) !important;
+  border-top: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 14px rgba(16, 185, 129, 0.25) !important;
+  color: #34d399;
+}
+
+.ctrl-toggle-btn:hover {
+  border-color: rgba(52, 211, 153, 0.7) !important;
+  background: rgba(16, 185, 129, 0.25) !important;
+  color: #ffffff;
 }
 
 @media (max-width: 768px) {
@@ -2104,14 +2147,7 @@ button, input, select, textarea {
     z-index: 80 !important;
   }
 
-  .ctrl-btn-vertical {
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
-  }
-
-  /* Chuyển nút Căn vừa thành nút icon vuông giống các nút zoom trên mobile */
+  /* Nút Căn vừa thành icon vuông 44px đồng bộ trên mobile */
   .ctrl-primary-fit-btn {
     width: 44px;
     height: 44px;
@@ -2120,24 +2156,10 @@ button, input, select, textarea {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 16px rgba(16, 185, 129, 0.4);
   }
 
   .ctrl-btn-label {
     display: none !important;
-  }
-
-  /* Nút Collapse/Expand Toggle trên mobile */
-  .ctrl-toggle-btn {
-    background: rgba(15, 23, 42, 0.92);
-    border: 1.5px solid rgba(16, 185, 129, 0.4);
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65), 0 0 14px rgba(16, 185, 129, 0.25);
-    color: #34d399;
-  }
-
-  .ctrl-toggle-btn:hover {
-    border-color: rgba(52, 211, 153, 0.7);
-    background: rgba(30, 41, 59, 0.95);
   }
 }
 
@@ -2160,7 +2182,7 @@ button, input, select, textarea {
 }
 
 /* =========================================================
-   BOTTOM FLOATING BRANCH FILTER BAR (GLASSMORPHISM FOR DESKTOP & MOBILE)
+   BOTTOM FLOATING BRANCH FILTER BAR (TRUE GLASSMORPHISM FOR DESKTOP & MOBILE)
    ========================================================= */
 .floating-bottom-branch-bar,
 .mobile-bottom-branch-bar {
@@ -2177,29 +2199,32 @@ button, input, select, textarea {
   align-items: center !important;
 }
 
-/* Glassmorphism Segmented Control */
+/* Hiệu ứng Kính Mờ Thấu Nền (Frosted Glassmorphism nhìn xuyên video nền) */
 .glassmorphic-branch-pill,
 .mobile-branch-pill-container {
   display: flex;
   align-items: center;
   gap: 0.35rem;
   padding: 0.35rem 0.45rem;
-  background: rgba(8, 14, 26, 0.6) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  border: 1px solid rgba(16, 185, 129, 0.28) !important;
+  background: rgba(5, 18, 12, 0.28) !important;
+  backdrop-filter: blur(16px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
   border-radius: 9999px;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(16, 185, 129, 0.15) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), 
+              inset 0 1px 1px rgba(255, 255, 255, 0.2), 
+              0 0 24px rgba(16, 185, 129, 0.15) !important;
 }
 
 .mobile-branch-pill-btn {
-  padding: 0.48rem 1.05rem;
+  padding: 0.48rem 1.15rem;
   border-radius: 9999px;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #cbd5e1;
+  color: rgba(226, 232, 240, 0.85);
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2211,13 +2236,16 @@ button, input, select, textarea {
 
 .mobile-branch-pill-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .mobile-branch-pill-btn.active {
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.9) 0%, rgba(16, 185, 129, 0.9) 100%) !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.5) 0%, rgba(5, 150, 105, 0.72) 100%) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(52, 211, 153, 0.6) !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 14px rgba(16, 185, 129, 0.5) !important;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35) !important;
   font-weight: 700;
 }
 
