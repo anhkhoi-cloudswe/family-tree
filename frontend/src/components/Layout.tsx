@@ -99,6 +99,7 @@ export const Layout: React.FC<LayoutProps> = ({
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
   const [showModeMenu, setShowModeMenu] = useState<boolean>(false);
+  const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState<boolean>(false);
   const modeMenuRef = useRef<HTMLDivElement>(null);
 
   const setSidebarMode = (newMode: SidebarMode) => {
@@ -243,77 +244,101 @@ export const Layout: React.FC<LayoutProps> = ({
 
   return (
     <div className="relative h-full min-h-0 w-full bg-transparent text-slate-100 flex flex-col font-sans overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-200">
-      {/* Mobile Topbar - Redesigned App-like Header */}
+      {/* Mobile Topbar - Redesigned App-like Header with Expandable Search */}
       <header className="lg:hidden sticky top-0 z-40 w-full h-15 bg-slate-950/90 backdrop-blur-xl border-b border-emerald-500/20 px-3 flex items-center justify-between gap-2 shadow-xl">
-        {/* Left: Menu button + Prominent Logo */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            className="p-2 -ml-1 rounded-xl text-slate-300 hover:text-white hover:bg-emerald-500/15 active:scale-95 transition cursor-pointer"
-            aria-label="Mở menu"
-          >
-            <Menu size={22} className="text-emerald-400" />
-          </button>
-          <div
-            className="flex items-center gap-2 cursor-pointer select-none"
-            onClick={() => onSelectNav('TREE')}
-            title="Famlykin - Cây Gia Phả Số"
-          >
-            <div className="flex-shrink-0 drop-shadow-[0_0_10px_rgba(16,185,129,0.35)]">
-              <FamilyTreeLogo size={32} />
-            </div>
-            <span className="font-extrabold text-[16px] tracking-tight bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-200 bg-clip-text text-transparent drop-shadow-sm">
-              Famlykin
-            </span>
-          </div>
-        </div>
-
-        {/* Center: Search Button Pill */}
-        {onOpenPersonPicker && (
-          <div className="flex-1 max-w-[210px] min-w-0 mx-1">
+        {isMobileSearchExpanded ? (
+          <div className="flex-1 flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-200">
             <button
               type="button"
-              onClick={onOpenPersonPicker}
-              className="w-full h-9 px-2.5 rounded-full bg-slate-900/90 hover:bg-slate-850 active:bg-slate-800 border border-emerald-500/25 flex items-center gap-1.5 text-slate-400 hover:text-emerald-300 text-xs transition shadow-inner group cursor-pointer"
-              title="Tìm kiếm thành viên trong gia đình (Ctrl + K)"
-              aria-label="Tìm kiếm thành viên"
+              className="flex-1 flex items-center gap-2 h-10 px-3.5 rounded-full bg-slate-900 border border-emerald-500/40 text-left cursor-pointer shadow-inner"
+              onClick={() => {
+                onOpenPersonPicker?.();
+                setIsMobileSearchExpanded(false);
+              }}
             >
-              <Search size={14} className="text-emerald-400/90 group-hover:scale-110 transition-transform flex-shrink-0" />
-              <span className="truncate font-medium text-slate-400 group-hover:text-slate-200">Tìm kiếm...</span>
-            </button>
-          </div>
-        )}
-
-        {/* Right: Notifications Bell & Share Button */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {pendingInvitationsCount > 0 && (
-            <button
-              type="button"
-              onClick={onOpenInvitations}
-              className="relative p-2 rounded-xl text-amber-300 hover:bg-amber-500/15 active:scale-95 transition cursor-pointer"
-              title="Lời mời vào cây gia phả"
-              aria-label="Thông báo lời mời"
-            >
-              <Bell size={19} />
-              <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-slate-950 animate-pulse">
-                {pendingInvitationsCount}
+              <Search size={16} className="text-emerald-400 flex-shrink-0" />
+              <span className="text-sm text-slate-300 font-medium truncate">
+                Tìm thành viên trong gia đình...
               </span>
             </button>
-          )}
-
-          {tree && (
             <button
               type="button"
-              onClick={onOpenShareModal}
-              className="p-2 rounded-xl text-emerald-300 hover:bg-emerald-500/15 active:scale-95 transition cursor-pointer flex items-center justify-center"
-              title="Mời người thân"
-              aria-label="Mời người thân vào cây gia phả"
+              onClick={() => setIsMobileSearchExpanded(false)}
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+              aria-label="Đóng tìm kiếm"
             >
-              <Share2 size={19} className="text-emerald-400" />
+              <X size={20} />
             </button>
-          )}
-        </div>
+          </div>
+        ) : (
+          <>
+            {/* Left: Menu button + Prominent Logo */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setMobileOpen(true)}
+                className="p-2 -ml-1 rounded-xl text-slate-300 hover:text-white hover:bg-emerald-500/15 active:scale-95 transition cursor-pointer"
+                aria-label="Mở menu"
+              >
+                <Menu size={22} className="text-emerald-400" />
+              </button>
+              <div
+                className="flex items-center gap-2 cursor-pointer select-none"
+                onClick={() => onSelectNav('TREE')}
+                title="Famlykin - Cây Gia Phả Số"
+              >
+                <div className="flex-shrink-0 drop-shadow-[0_0_10px_rgba(16,185,129,0.35)]">
+                  <FamilyTreeLogo size={32} />
+                </div>
+                <span className="font-extrabold text-[16px] tracking-tight bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-200 bg-clip-text text-transparent drop-shadow-sm">
+                  Famlykin
+                </span>
+              </div>
+            </div>
+
+            {/* Right: Expandable Search Icon Button + Bell + Share */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {onOpenPersonPicker && (
+                <button
+                  type="button"
+                  onClick={() => setIsMobileSearchExpanded(true)}
+                  className="p-2 rounded-xl text-slate-300 hover:text-emerald-300 hover:bg-emerald-500/15 active:scale-95 transition cursor-pointer"
+                  title="Tìm kiếm thành viên (Ctrl + K)"
+                  aria-label="Mở tìm kiếm"
+                >
+                  <Search size={20} className="text-emerald-400" />
+                </button>
+              )}
+
+              {pendingInvitationsCount > 0 && (
+                <button
+                  type="button"
+                  onClick={onOpenInvitations}
+                  className="relative p-2 rounded-xl text-amber-300 hover:bg-amber-500/15 active:scale-95 transition cursor-pointer"
+                  title="Lời mời vào cây gia phả"
+                  aria-label="Thông báo lời mời"
+                >
+                  <Bell size={19} />
+                  <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-slate-950 animate-pulse">
+                    {pendingInvitationsCount}
+                  </span>
+                </button>
+              )}
+
+              {tree && (
+                <button
+                  type="button"
+                  onClick={onOpenShareModal}
+                  className="p-2 rounded-xl text-emerald-300 hover:bg-emerald-500/15 active:scale-95 transition cursor-pointer flex items-center justify-center"
+                  title="Mời người thân"
+                  aria-label="Mời người thân vào cây gia phả"
+                >
+                  <Share2 size={19} className="text-emerald-400" />
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </header>
 
       {/* Mobile Backdrop */}

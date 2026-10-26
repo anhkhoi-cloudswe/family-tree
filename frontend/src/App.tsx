@@ -1024,8 +1024,6 @@ const AppContent: React.FC = () => {
                 setIsExportingImage(false);
                 toast.success('Đã tải hình ảnh cây gia phả HD thành công!');
               }}
-              onExportExcel={handleExportExcel}
-              isExportingExcel={isExportingExcel}
               focusPersonId={focusPersonId}
               onClearFocusPerson={() => setFocusPersonId(null)}
               onOpenAddMember={() => {
