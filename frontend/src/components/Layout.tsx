@@ -242,7 +242,7 @@ export const Layout: React.FC<LayoutProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-transparent text-slate-100 flex flex-col font-sans overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-200">
+    <div className="relative h-full min-h-0 w-full bg-transparent text-slate-100 flex flex-col font-sans overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-200">
       {/* Mobile Topbar - Redesigned App-like Header */}
       <header className="lg:hidden sticky top-0 z-40 w-full h-15 bg-slate-950/90 backdrop-blur-xl border-b border-emerald-500/20 px-3 flex items-center justify-between gap-2 shadow-xl">
         {/* Left: Menu button + Prominent Logo */}
@@ -667,7 +667,7 @@ export const Layout: React.FC<LayoutProps> = ({
       </aside>
 
       {/* Main Content Area: offset margin adapts to sidebar mode */}
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${contentMarginClass}`}>
+      <div className={`flex-1 flex flex-col h-full min-h-0 transition-all duration-300 ${contentMarginClass}`}>
         {/* Optional Desktop Top Header Bar (if headerContent provided) */}
         {headerContent && (
           <header className="sticky top-0 z-30 w-full bg-[#0a111e]/90 backdrop-blur-md border-b border-emerald-500/20 px-4 py-2.5 shadow-md flex items-center justify-between">
