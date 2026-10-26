@@ -144,7 +144,48 @@ export const MemberListView: React.FC<MemberListViewProps> = ({
           )}
         </div>
 
-
+        {/* Branch Filter Pills (Đồng bộ cho cả Mobile & Desktop) */}
+        <div className="list-branch-pills flex items-center gap-1.5 pt-1 overflow-x-auto no-scrollbar" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={branchFilter === 'ALL'}
+            className={`px-3 py-1 rounded-full text-xs transition cursor-pointer ${
+              branchFilter === 'ALL'
+                ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 font-semibold shadow-sm'
+                : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/50'
+            }`}
+            onClick={() => onBranchFilterChange('ALL')}
+          >
+            Cả Hai Bên
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={branchFilter === 'PATERNAL'}
+            className={`px-3 py-1 rounded-full text-xs transition cursor-pointer ${
+              branchFilter === 'PATERNAL'
+                ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 font-semibold shadow-sm'
+                : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/50'
+            }`}
+            onClick={() => onBranchFilterChange('PATERNAL')}
+          >
+            Bên Nội
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={branchFilter === 'MATERNAL'}
+            className={`px-3 py-1 rounded-full text-xs transition cursor-pointer ${
+              branchFilter === 'MATERNAL'
+                ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 font-semibold shadow-sm'
+                : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/50'
+            }`}
+            onClick={() => onBranchFilterChange('MATERNAL')}
+          >
+            Bên Ngoại
+          </button>
+        </div>
       </div>
 
       {/* 2. Main Scrollable Directory List */}

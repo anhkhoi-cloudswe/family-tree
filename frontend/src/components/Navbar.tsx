@@ -115,7 +115,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <div className="navbar-tier-2-outer" role="toolbar" aria-label="Thanh công cụ phả hệ">
+    <div className="navbar-tier-2-outer hidden md:flex" role="toolbar" aria-label="Thanh công cụ phả hệ">
       <div className="navbar-tier-2">
         {/* 1. LEFT GROUP: Dropdown Lọc Nhánh Phả Hệ (Bên Nội / Bên Ngoại) */}
         <div className="navbar-left-group">

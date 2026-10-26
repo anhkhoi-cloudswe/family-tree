@@ -51,6 +51,7 @@ import {
   apiGetPendingInvitations,
   apiGetInviteLinkInfo,
   apiLeaveTree,
+  downloadTreeExcel,
   getStoredToken,
   setStoredToken,
   removeStoredToken,
@@ -119,9 +120,10 @@ const AppContent: React.FC = () => {
   const [viewMode, setViewMode] = useState<'COMPACT' | 'DETAILED'>('DETAILED');
   const [focusPersonId, setFocusPersonId] = useState<string | null>(null);
 
-  // Image Export state
+  // Image & Excel Export state
   const [exportTrigger, setExportTrigger] = useState<number>(0);
   const [isExportingImage, setIsExportingImage] = useState<boolean>(false);
+  const [isExportingExcel, setIsExportingExcel] = useState<boolean>(false);
 
   const toast = useToast();
 
@@ -769,6 +771,19 @@ const AppContent: React.FC = () => {
     setExportTrigger((prev) => prev + 1);
   };
 
+  const handleExportExcel = async () => {
+    if (!tree) return;
+    try {
+      setIsExportingExcel(true);
+      await downloadTreeExcel(tree.id, tree.name);
+      toast.success('Đã xuất file Excel danh bạ dòng họ thành công!');
+    } catch (err: any) {
+      toast.error(err.message || 'Không thể xuất file Excel, vui lòng thử lại');
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
+
   const handleOpenAddRelative = (targetPerson: Person) => {
     setAddMemberTarget(targetPerson);
     setShowAddMemberModal(true);
@@ -915,6 +930,7 @@ const AppContent: React.FC = () => {
         onUpdatePhone={() => setShowUpdatePhoneModal(true)}
         onOpenProfile={() => setShowProfileModal(true)}
         onLogout={handleLogout}
+        onOpenPersonPicker={() => setShowPersonPicker(true)}
       >
         {/* 2-Tier Sticky Navbar: Show when viewing Tree or Member List */}
         {mainView !== 'BRANCHES' && (
@@ -1008,6 +1024,8 @@ const AppContent: React.FC = () => {
                 setIsExportingImage(false);
                 toast.success('Đã tải hình ảnh cây gia phả HD thành công!');
               }}
+              onExportExcel={handleExportExcel}
+              isExportingExcel={isExportingExcel}
               focusPersonId={focusPersonId}
               onClearFocusPerson={() => setFocusPersonId(null)}
               onOpenAddMember={() => {

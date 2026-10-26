@@ -11,6 +11,8 @@ import {
   Compass,
   UserPlus,
   Crown,
+  FileSpreadsheet,
+  Download,
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { Person, Relationship, FamilyTree } from '../types';
@@ -33,6 +35,8 @@ interface TreeCanvasProps {
   onOpenAddMember?: () => void;
   onStartTutorial?: () => void;
   onOpenAdmin?: () => void;
+  onExportExcel?: () => void;
+  isExportingExcel?: boolean;
 }
 
 interface LineConnector {
@@ -68,6 +72,8 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
   onOpenAddMember,
   onStartTutorial,
   onOpenAdmin,
+  onExportExcel,
+  isExportingExcel = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const treeContentRef = useRef<HTMLDivElement>(null);
@@ -1249,8 +1255,34 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
       </div>
 
       {/* 3. Floating Quick Controls (Expandable Speed Dial with Smooth Animation) */}
-      {/* 3. Floating Quick Controls (Streamlined Best Practice: 3 Icons + Căn Vừa Pill) */}
+      {/* 3. Floating Quick Controls (Streamlined Best Practice: Actions + Navigation + Căn Vừa Pill) */}
       <div className="minimal-controls-vertical" role="toolbar" aria-label="Điều khiển bản đồ gia phả">
+        {/* Xuất file Excel */}
+        {onExportExcel && (
+          <button
+            type="button"
+            className="ctrl-btn-vertical"
+            onClick={onExportExcel}
+            disabled={isExportingExcel}
+            title="Xuất file Excel danh bạ gia phả"
+            aria-label="Xuất file Excel"
+          >
+            <FileSpreadsheet size={18} className="text-emerald-400" />
+          </button>
+        )}
+
+        {/* Tải hình ảnh cây HD */}
+        <button
+          type="button"
+          className="ctrl-btn-vertical"
+          onClick={exportTreeImage}
+          disabled={isExporting}
+          title="Tải toàn bộ hình ảnh cây gia phả HD về máy"
+          aria-label="Tải ảnh gia phả HD"
+        >
+          <Download size={18} className="text-sky-400" />
+        </button>
+
         {/* Toggle View Mode: Chi tiết vs Rút gọn */}
         <button
           type="button"
@@ -1296,6 +1328,38 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
           <span className="ctrl-btn-label">Căn vừa</span>
         </button>
       </div>
+
+      {/* 4. Bottom Floating Branch Filter (Pill Tabs - Mobile Only <768px, Thumb-friendly) */}
+      {onBranchFilterChange && (
+        <nav className="mobile-bottom-branch-bar md:hidden" aria-label="Lọc theo nhánh dòng họ">
+          <div className="mobile-branch-pill-container">
+            <button
+              type="button"
+              className={`mobile-branch-pill-btn ${branchFilter === 'ALL' ? 'active' : ''}`}
+              onClick={() => onBranchFilterChange('ALL')}
+              aria-pressed={branchFilter === 'ALL'}
+            >
+              Cả Hai Bên
+            </button>
+            <button
+              type="button"
+              className={`mobile-branch-pill-btn ${branchFilter === 'PATERNAL' ? 'active' : ''}`}
+              onClick={() => onBranchFilterChange('PATERNAL')}
+              aria-pressed={branchFilter === 'PATERNAL'}
+            >
+              Bên Nội
+            </button>
+            <button
+              type="button"
+              className={`mobile-branch-pill-btn ${branchFilter === 'MATERNAL' ? 'active' : ''}`}
+              onClick={() => onBranchFilterChange('MATERNAL')}
+              aria-pressed={branchFilter === 'MATERNAL'}
+            >
+              Bên Ngoại
+            </button>
+          </div>
+        </nav>
+      )}
 
       {/* 5. HD Export Progress Overlay */}
       {isExporting && (
