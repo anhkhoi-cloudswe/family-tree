@@ -14,12 +14,20 @@ import {
   LogOut,
   Search,
   CheckCircle,
+  Clock,
+  Bell,
+  Phone,
+  Check,
+  Ban,
+  MessageSquare,
+  UserCheck,
 } from 'lucide-react';
-import { FamilyTree, TreeRole, User, SubscriptionStatus } from '../types';
+import { FamilyTree, TreeRole, User, SubscriptionStatus, TreeInvitation } from '../types';
 import { ConfirmDialogModal } from './ConfirmDialogModal';
 
 interface BranchesHubViewProps {
   trees: FamilyTree[];
+  pendingInvitations?: TreeInvitation[];
   currentTreeId: string | null;
   currentUser: User | null;
   subscriptionStatus: SubscriptionStatus | null;
@@ -29,11 +37,14 @@ interface BranchesHubViewProps {
   onOpenShareTree: (tree: FamilyTree) => void;
   onDeleteTree: (treeId: string, treeName: string) => void;
   onLeaveTree?: (treeId: string, treeName: string) => void;
+  onAcceptInvitation?: (invitation: TreeInvitation) => void;
+  onDeclineInvitation?: (invitation: TreeInvitation) => void;
   onOpenSubscriptionModal: () => void;
 }
 
 export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
   trees,
+  pendingInvitations = [],
   currentTreeId,
   currentUser,
   subscriptionStatus,
@@ -43,9 +54,11 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
   onOpenShareTree,
   onDeleteTree,
   onLeaveTree,
+  onAcceptInvitation,
+  onDeclineInvitation,
   onOpenSubscriptionModal,
 }) => {
-  const [filterTab, setFilterTab] = useState<'ALL' | 'OWNED' | 'JOINED'>('ALL');
+  const [filterTab, setFilterTab] = useState<'ALL' | 'OWNED' | 'JOINED' | 'PENDING'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmDialog, setConfirmDialog] = useState<{
     type: 'DELETE' | 'LEAVE';
@@ -72,6 +85,13 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
       ? true
       : t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (t.branchName && t.branchName.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const displayedInvitations = pendingInvitations.filter((inv) =>
+    searchQuery.trim() === ''
+      ? true
+      : (inv.tree?.name && inv.tree.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (inv.inviter?.fullName && inv.inviter.fullName.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const renderRoleBadge = (role: TreeRole) => {
@@ -203,12 +223,27 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
             >
               Được Mời ({joinedTrees.length})
             </button>
+            <button
+              type="button"
+              onClick={() => setFilterTab('PENDING')}
+              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                filterTab === 'PENDING'
+                  ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Clock size={12} className={filterTab === 'PENDING' ? 'text-amber-400' : 'text-slate-500'} />
+              <span>Chờ Duyệt ({pendingInvitations.length})</span>
+              {pendingInvitations.length > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              )}
+            </button>
           </div>
 
           <div className="relative w-full sm:w-64">
             <input
               type="text"
-              placeholder="Tìm nhánh theo tên..."
+              placeholder={filterTab === 'PENDING' ? 'Tìm lời mời...' : 'Tìm nhánh theo tên...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none transition"
@@ -220,8 +255,119 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
           </div>
         </div>
 
-        {/* Branch Cards Grid */}
-        {displayedTrees.length === 0 ? (
+        {/* Branch Cards Grid or Pending Invitations Grid */}
+        {filterTab === 'PENDING' ? (
+          displayedInvitations.length === 0 ? (
+            <div className="py-14 text-center rounded-2xl bg-slate-900/40 border border-slate-800/80 space-y-2.5">
+              <div className="w-10 h-10 rounded-xl bg-slate-800/60 text-slate-500 flex items-center justify-center mx-auto">
+                <Bell size={20} />
+              </div>
+              <div className="text-sm font-semibold text-slate-300">
+                Không có lời mời nào đang chờ duyệt
+              </div>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                {searchQuery
+                  ? 'Không tìm thấy lời mời khớp với từ khóa tìm kiếm.'
+                  : 'Khi có người thân gửi lời mời tham gia cây gia phả, lời mời sẽ hiển thị tại đây để bạn xem lại, chấp nhận hoặc xóa.'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {displayedInvitations.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="rounded-2xl bg-slate-900/90 border border-amber-500/30 hover:border-amber-500/50 shadow-xl p-4 flex flex-col justify-between space-y-3.5 transition group"
+                >
+                  <div className="space-y-3">
+                    {/* Header: Inviter info & Role badge */}
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-300 flex-shrink-0">
+                          {inv.inviter?.fullName?.charAt(0) || 'U'}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-xs text-white truncate">
+                            {inv.inviter?.fullName || 'Người thân'}
+                          </div>
+                          <div className="text-[11px] text-slate-400 flex items-center gap-1">
+                            <Phone size={10} className="text-emerald-400 flex-shrink-0" />
+                            <span className="truncate">{inv.inviter?.phone || inv.inviter?.email}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 flex-shrink-0 ${
+                          inv.role === 'EDITOR'
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                            : 'bg-teal-500/20 text-teal-300 border-teal-500/40'
+                        }`}
+                      >
+                        {inv.role === 'EDITOR' ? (
+                          <>
+                            <Edit3 size={10} />
+                            <span>Chỉnh sửa</span>
+                          </>
+                        ) : (
+                          <>
+                            <Eye size={10} />
+                            <span>Chỉ xem</span>
+                          </>
+                        )}
+                      </span>
+                    </div>
+
+                    {/* Tree info */}
+                    <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <div className="text-[11px] text-slate-400">Lời mời tham gia nhánh:</div>
+                      <h4 className="font-bold text-sm text-emerald-300 group-hover:text-emerald-200 transition">
+                        {inv.tree?.name}
+                      </h4>
+                      {inv.tree?.branchName && (
+                        <div className="text-[11px] text-slate-400">
+                          Chi họ: {inv.tree.branchName}
+                        </div>
+                      )}
+                      {inv.message && (
+                        <div className="mt-2 pt-2 border-t border-slate-800/80 text-[11px] text-slate-300 italic flex items-start gap-1.5">
+                          <MessageSquare size={12} className="text-amber-400 mt-0.5 flex-shrink-0" />
+                          <span>"{inv.message}"</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Independent perspective notice */}
+                    <div className="text-[10px] text-slate-400 bg-emerald-950/20 border border-emerald-500/20 rounded-lg p-2 flex items-center gap-1.5">
+                      <UserCheck size={12} className="text-emerald-400 flex-shrink-0" />
+                      <span>Góc nhìn "Tôi" độc lập của riêng bạn khi tham gia.</span>
+                    </div>
+                  </div>
+
+                  {/* Actions: Accept or Delete */}
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onAcceptInvitation?.(inv)}
+                      className="flex-1 py-1.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-950/40 flex items-center justify-center gap-1 transition cursor-pointer"
+                    >
+                      <Check size={13} />
+                      <span>Chấp Nhận</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeclineInvitation?.(inv)}
+                      className="py-1.5 px-3 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-500/40 font-semibold text-xs flex items-center justify-center gap-1 transition cursor-pointer"
+                      title="Xóa lời mời này"
+                    >
+                      <Trash2 size={13} />
+                      <span>Xóa</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : displayedTrees.length === 0 ? (
           <div className="py-14 text-center rounded-2xl bg-slate-900/40 border border-slate-800/80 space-y-2.5">
             <div className="w-10 h-10 rounded-xl bg-slate-800/60 text-slate-500 flex items-center justify-center mx-auto">
               <Layers size={20} />

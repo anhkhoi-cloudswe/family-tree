@@ -11,6 +11,8 @@ import {
   Shield,
   Eye,
   Edit3,
+  Clock,
+  Trash2,
 } from 'lucide-react';
 import { TreeInvitation, Person } from '../types';
 import { apiAcceptInvitation, apiDeclineInvitation } from '../services/api';
@@ -71,6 +73,11 @@ export const InvitationNotificationModal: React.FC<InvitationNotificationModalPr
     } finally {
       setProcessingId(null);
     }
+  };
+
+  const handleLater = () => {
+    toast.info('Lời mời đã được lưu lại trong mục "Chi Nhánh > Chờ Duyệt (Pending)". Bạn có thể xem lại bất cứ lúc nào.');
+    onClose();
   };
 
   return (
@@ -179,26 +186,38 @@ export const InvitationNotificationModal: React.FC<InvitationNotificationModalPr
                   </span>
                 </div>
 
-                {/* Actions: Accept or Decline */}
-                <div className="flex items-center gap-2 pt-1">
+                {/* Actions: Accept Now, Later, or Delete */}
+                <div className="flex items-center gap-2 pt-1 flex-wrap sm:flex-nowrap">
                   <button
                     type="button"
                     disabled={processingId === inv.id}
                     onClick={() => handleAccept(inv)}
-                    className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs shadow-md shadow-emerald-950/40 flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                    className="flex-1 min-w-[125px] py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs shadow-md shadow-emerald-950/40 flex items-center justify-center gap-1.5 transition disabled:opacity-50"
                   >
                     <Check size={14} />
-                    <span>{processingId === inv.id ? 'Đang xử lý...' : 'Chấp Nhận Tham Gia'}</span>
+                    <span>{processingId === inv.id ? 'Đang xử lý...' : 'Chấp Nhận Ngay'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={processingId === inv.id}
+                    onClick={handleLater}
+                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 flex items-center justify-center gap-1.5 transition"
+                    title="Lưu lại trong mục Chờ Duyệt (Pending) để quyết định sau"
+                  >
+                    <Clock size={14} />
+                    <span>Để Sau</span>
                   </button>
 
                   <button
                     type="button"
                     disabled={processingId === inv.id}
                     onClick={() => handleDecline(inv)}
-                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/40 font-semibold text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                    className="py-2 px-3 rounded-xl bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-500/40 font-semibold text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                    title="Xóa lời mời này"
                   >
-                    <Ban size={14} />
-                    <span>Từ Chối</span>
+                    <Trash2 size={14} />
+                    <span>Xóa Lời Mời</span>
                   </button>
                 </div>
               </div>

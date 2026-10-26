@@ -665,11 +665,10 @@ export const Layout: React.FC<LayoutProps> = ({
                         e.stopPropagation();
                         onOpenSubscription?.();
                       }}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:border-emerald-500/50 hover:text-emerald-300 transition cursor-pointer"
-                      title="Gói Miễn Phí (Tối đa 5 nhánh) - Nhấn để nâng cấp PRO"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700 hover:border-emerald-500/50 hover:text-emerald-300 transition cursor-pointer"
+                      title="Gói Miễn Phí (Tối đa 5 nhánh) - Nhấn để xem nâng cấp"
                     >
                       <span>FREE</span>
-                      <span className="text-[9px] text-emerald-400 font-bold">↑ PRO</span>
                     </span>
                   )}
                 </div>

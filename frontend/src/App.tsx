@@ -49,6 +49,8 @@ import {
   apiVerifyRegistration,
   apiCompleteRegistration,
   apiGetPendingInvitations,
+  apiAcceptInvitation,
+  apiDeclineInvitation,
   apiGetInviteLinkInfo,
   apiLeaveTree,
   downloadTreeExcel,
@@ -987,6 +989,7 @@ const AppContent: React.FC = () => {
         ) : mainView === 'BRANCHES' ? (
           <BranchesHubView
             trees={allTrees}
+            pendingInvitations={pendingInvitations}
             currentTreeId={tree?.id || null}
             currentUser={user}
             subscriptionStatus={subscriptionStatus}
@@ -1002,6 +1005,30 @@ const AppContent: React.FC = () => {
             }}
             onDeleteTree={handleDeleteTree}
             onLeaveTree={handleLeaveTree}
+            onAcceptInvitation={async (inv) => {
+              try {
+                const res = await apiAcceptInvitation(inv.id);
+                toast.success(res.message || `Đã tham gia cây gia phả "${inv.tree.name}"!`);
+                await refreshTreesAndSubscription();
+                await loadPendingInvitations();
+                await loadTreeData(inv.treeId);
+                setMainView('TREE');
+              } catch (err: any) {
+                toast.error(err.message || 'Không thể chấp nhận lời mời');
+              }
+            }}
+            onDeclineInvitation={async (inv) => {
+              if (!window.confirm(`Bạn có chắc chắn muốn xóa lời mời vào cây gia phả "${inv.tree.name}"?`)) {
+                return;
+              }
+              try {
+                const res = await apiDeclineInvitation(inv.id);
+                toast.info(res.message || 'Đã xóa lời mời');
+                await loadPendingInvitations();
+              } catch (err: any) {
+                toast.error(err.message || 'Lỗi khi xóa lời mời');
+              }
+            }}
             onOpenSubscriptionModal={() => setShowSubscriptionModal(true)}
           />
         ) : tree ? (

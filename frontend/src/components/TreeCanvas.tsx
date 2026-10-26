@@ -211,10 +211,14 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
   const zoomOut = () => zoomAroundPoint(0.85);
 
 
-  // Dedicated Non-Passive Wheel & Pinch-To-Zoom listener on Canvas container.
-  // CRITICAL: Calling e.preventDefault() in a non-passive listener stops the browser
-  // from zooming the entire page (which would blow up the navbar, sidebar, etc.).
-  // ONLY the tree canvas elements inside .canvas-plane zoom in/out!
+  const scaleRef = useRef(scale);
+  useEffect(() => {
+    scaleRef.current = scale;
+  }, [scale]);
+
+  // Dedicated Non-Passive Wheel, Touchpad Pan & Pinch-To-Zoom listener on Canvas container.
+  // - 2 ngón tay vuốt trên Touchpad Laptop: Di chuyển (pan) canvas mượt mà 2D
+  // - Chụm/mở 2 ngón (Pinch) hoặc giữ phím Ctrl + cuộn chuột: Thu phóng (Zoom) quanh con trỏ
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -222,14 +226,17 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
     const onNativeWheel = (e: WheelEvent) => {
       e.preventDefault();
 
-      if (e.ctrlKey) {
-        // Trackpad pinch-to-zoom (produces smooth fractional deltaY)
+      if (e.ctrlKey || e.metaKey) {
+        // Trackpad pinch-to-zoom hoặc Ctrl + Wheel (produces smooth fractional deltaY)
         const zoomFactor = Math.exp(-e.deltaY * 0.012);
         zoomAroundPoint(zoomFactor, e.clientX, e.clientY);
       } else {
-        // Standard mouse wheel
-        const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
-        zoomAroundPoint(factor, e.clientX, e.clientY);
+        // Thao tác 2 ngón trên Touchpad Laptop (hoặc cuộn chuột thông thường): Di chuyển (Pan) canvas
+        setPosition((prevPos) => {
+          const newX = prevPos.x - e.deltaX;
+          const newY = prevPos.y - e.deltaY;
+          return clampPosition(newX, newY, scaleRef.current);
+        });
       }
     };
 
@@ -246,7 +253,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
       container.removeEventListener('gesturestart', preventGesture as any);
       container.removeEventListener('gesturechange', preventGesture as any);
     };
-  }, [zoomAroundPoint]);
+  }, [zoomAroundPoint, clampPosition]);
 
   // Fit to screen function: centers and scales tree to perfectly fit screen
   // On Mobile (<768px): Uses Smart Focus centered on mePerson/immediate family
