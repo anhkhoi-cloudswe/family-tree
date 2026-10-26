@@ -41,4 +41,4 @@ RUN mkdir -p /app/uploads
 EXPOSE 5000
 
 # Khởi tạo schema nếu chưa có và chạy server
-CMD ["sh", "-c", "npx prisma db push && npm run start"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npm run start"]
