@@ -775,11 +775,21 @@ const AppContent: React.FC = () => {
 
   const handleExportExcel = async () => {
     if (!tree) return;
+    if (subscriptionStatus?.tier !== 'PRO' && user?.role !== 'ADMIN') {
+      toast.info(
+        'Tính năng Xuất báo cáo & file Excel danh bạ gia đình dành riêng cho Gói PRO. Nâng cấp ngay để mở khóa!'
+      );
+      setShowSubscriptionModal(true);
+      return;
+    }
     try {
       setIsExportingExcel(true);
       await downloadTreeExcel(tree.id, tree.name);
       toast.success('Đã xuất file Excel danh bạ dòng họ thành công!');
     } catch (err: any) {
+      if (err.requiresPro) {
+        setShowSubscriptionModal(true);
+      }
       toast.error(err.message || 'Không thể xuất file Excel, vui lòng thử lại');
     } finally {
       setIsExportingExcel(false);
@@ -1090,6 +1100,8 @@ const AppContent: React.FC = () => {
               }}
               onStartTutorial={() => setShowTour(true)}
               onOpenAdmin={user?.role === 'ADMIN' ? () => setShowAdminModal(true) : undefined}
+              onExportExcel={handleExportExcel}
+              isExportingExcel={isExportingExcel}
             />
           ) : (
             <MemberListView

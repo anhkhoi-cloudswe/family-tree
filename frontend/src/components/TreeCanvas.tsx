@@ -13,6 +13,8 @@ import {
   Crown,
   Sliders,
   ChevronDown,
+  FileSpreadsheet,
+  Download,
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { Person, Relationship, FamilyTree } from '../types';
@@ -1329,9 +1331,35 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
 
       {/* 3. Floating Quick Controls: Layers, Zoom In, Zoom Out, Căn Vừa */}
       <div className="minimal-controls-vertical" role="toolbar" aria-label="Điều khiển bản đồ gia phả">
-        {/* Animated Stack of 4 Canvas Control Tools (Toggled on both Mobile & Laptop) */}
+        {/* Animated Stack of Canvas Control Tools (Toggled on both Mobile & Laptop) */}
         {isControlsExpanded && (
           <div className="controls-buttons-stack anim-entering flex flex-col items-end gap-1.5">
+            {/* Xuất file Excel */}
+            {onExportExcel && (
+              <button
+                type="button"
+                className="ctrl-btn-vertical"
+                onClick={onExportExcel}
+                disabled={isExportingExcel}
+                title="Xuất file Excel danh bạ gia phả"
+                aria-label="Xuất file Excel"
+              >
+                <FileSpreadsheet size={18} className="text-emerald-400" />
+              </button>
+            )}
+
+            {/* Tải hình ảnh cây gia phả HD */}
+            <button
+              type="button"
+              className="ctrl-btn-vertical"
+              onClick={exportTreeImage}
+              disabled={isExporting}
+              title="Tải toàn bộ hình ảnh cây gia phả HD về máy"
+              aria-label="Tải ảnh gia phả HD"
+            >
+              <Download size={18} className="text-sky-400" />
+            </button>
+
             {/* Toggle View Mode: Chi tiết vs Rút gọn */}
             <button
               type="button"
