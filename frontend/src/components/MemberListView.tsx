@@ -327,15 +327,15 @@ export const MemberListView: React.FC<MemberListViewProps> = ({
 
                         {/* Meta Rows: Birth/Death, Lunar Memorial, Address */}
                         <div className="list-meta-rows">
-                          {/* Birth & Death Dates (DD/MM/YYYY) */}
-                          {(member.birthDate || member.deathDate || member.lunarDeathDay) && (
-                            <div className="list-meta-item">
-                              <Calendar size={13} className="meta-icon" />
-                              <span>
-                                {member.birthDate && (
-                                  <span>Sinh: {formatDateVN(member.birthDate)}</span>
-                                )}
-                                {member.isDeceased && (() => {
+                        {/* Meta Rows: Birth / Memorial Dates */}
+                        {((!member.isDeceased && member.birthDate) || (member.isDeceased && (member.lunarDeathDay || member.deathDate || member.birthDate))) && (
+                          <div className="list-meta-item">
+                            <Calendar size={13} className="meta-icon" />
+                            <span>
+                              {!member.isDeceased ? (
+                                member.birthDate && <span>Sinh: {formatDateVN(member.birthDate)}</span>
+                              ) : (
+                                (() => {
                                   const effectiveLunar =
                                     member.lunarDeathDay ||
                                     calculateLunarDeathDayFromSolar(member.deathDate);
@@ -346,34 +346,38 @@ export const MemberListView: React.FC<MemberListViewProps> = ({
                                     ? getSolarAnniversaryForYear(cleanLunar)
                                     : null;
 
-                                  return (
-                                    <>
-                                      {member.birthDate && (effectiveLunar || member.deathDate) && ' • '}
-                                      {cleanLunar ? (
-                                        <>
-                                          <strong className="lunar-death-highlight">
-                                            Giỗ Âm: {cleanLunar} Âm lịch
-                                          </strong>
-                                          {anniversary && (
-                                            <>
-                                              {' -> '}
-                                              <strong className="solar-death-highlight">
-                                                Giỗ Dương: {anniversary.dateStr}
-                                              </strong>
-                                            </>
-                                          )}
-                                        </>
-                                      ) : member.deathDate ? (
-                                        <strong className="solar-death-highlight">
-                                          Giỗ Dương: {formatDateVN(member.deathDate)}
+                                  if (cleanLunar) {
+                                    return (
+                                      <>
+                                        <strong className="lunar-death-highlight">
+                                          Giỗ Âm: {cleanLunar} Âm lịch
                                         </strong>
-                                      ) : null}
-                                    </>
-                                  );
-                                })()}
-                              </span>
-                            </div>
-                          )}
+                                        {anniversary && (
+                                          <>
+                                            {' -> '}
+                                            <strong className="solar-death-highlight">
+                                              Giỗ Dương: {anniversary.dateStr}
+                                            </strong>
+                                          </>
+                                        )}
+                                      </>
+                                    );
+                                  }
+
+                                  if (member.deathDate) {
+                                    return (
+                                      <strong className="solar-death-highlight">
+                                        Giỗ Dương: {formatDateVN(member.deathDate)}
+                                      </strong>
+                                    );
+                                  }
+
+                                  return null;
+                                })()
+                              )}
+                            </span>
+                          </div>
+                        )}
 
                           {/* Address / Hometown */}
                           {member.address && (

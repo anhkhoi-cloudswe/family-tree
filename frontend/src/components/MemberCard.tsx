@@ -117,7 +117,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
     if (bDate && dDate) {
       return `${bDate} - ${dDate}`;
     }
-    if (bDate) {
+    if (bDate && !person.isDeceased) {
       return `Sinh: ${bDate}`;
     }
     if (dDate) {
