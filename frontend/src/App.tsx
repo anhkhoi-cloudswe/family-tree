@@ -937,11 +937,6 @@ const AppContent: React.FC = () => {
             setMainView('TREE');
             setAdminActiveTab('REPORTS');
           }
-          else if (key === 'ADMIN_AUDIT') {
-            setMainView('TREE');
-            setAdminActiveTab('AUDIT');
-          }
-          else if (key === 'TOUR') setShowTour(true);
           else if (key === 'ADMIN') setShowAdminModal(true);
         }}
         onAdminTabSelect={(tab) => {

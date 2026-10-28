@@ -50,7 +50,7 @@ import {
 import { getSupabaseConfig, saveSupabaseConfig, isSupabaseConfigured } from '../services/supabase';
 import { useToast } from './Toast';
 
-export type AdminTab = 'USERS' | 'SUBSCRIPTIONS' | 'REPORTS' | 'AUDIT' | 'SETTINGS';
+export type AdminTab = 'USERS' | 'SUBSCRIPTIONS' | 'REPORTS';
 
 interface AdminDashboardProps {
   activeTab: AdminTab;
@@ -463,17 +463,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <BarChart3 size={17} />
           <span>Báo Cáo & Thống Kê Hệ Thống</span>
         </button>
-
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'AUDIT'}
-          className={`admin-tab-btn ${activeTab === 'AUDIT' ? 'active' : ''}`}
-          onClick={() => onTabChange('AUDIT')}
-        >
-          <ShieldCheck size={17} />
-          <span>Nhật Ký & Bảo Mật</span>
-        </button>
       </div>
 
       {/* ================= TAB 1: USERS ================= */}
@@ -869,7 +858,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Tổng Doanh Thu Hệ Thống
                 </div>
                 <div className="text-2xl font-black text-emerald-300 mt-1 whitespace-nowrap">
-                  {(revenueReports?.totalRevenue || 399000).toLocaleString('vi-VN')}đ
+                  {(revenueReports?.totalRevenue ?? 0).toLocaleString('vi-VN')}đ
                 </div>
                 <div className="text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">
                   Cổng SePay VietQR Napas
@@ -886,10 +875,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Hội Viên PRO Kích Hoạt
                 </div>
                 <div className="text-2xl font-black text-amber-300 mt-1 whitespace-nowrap">
-                  {revenueReports?.totalSubscribers || users.filter((u) => u.subscriptionTier === 'PRO').length} Tài Khoản
+                  {revenueReports?.totalSubscribers ?? users.filter((u) => u.subscriptionTier === 'PRO').length} Tài Khoản
                 </div>
                 <div className="text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">
-                  Tỷ lệ chuyển đổi: {revenueReports?.conversionRate || 25}%
+                  Tỷ lệ chuyển đổi: {revenueReports?.conversionRate ?? 0}%
                 </div>
               </div>
               <div className="w-11 h-11 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold shadow-inner">
@@ -903,10 +892,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Gói 1 Năm (Tiết Kiệm 35%)
                 </div>
                 <div className="text-2xl font-black text-white mt-1 whitespace-nowrap">
-                  {revenueReports?.yearlyCount || 1} Đơn Hàng
+                  {revenueReports?.yearlyCount ?? 0} Đơn Hàng
                 </div>
                 <div className="text-[11px] text-emerald-400 mt-0.5 whitespace-nowrap">
-                  {((revenueReports?.yearlyCount || 1) * 399000).toLocaleString('vi-VN')}đ
+                  {((revenueReports?.yearlyCount ?? 0) * 399000).toLocaleString('vi-VN')}đ
                 </div>
               </div>
               <div className="w-11 h-11 rounded-xl bg-slate-800 text-amber-400 flex items-center justify-center font-bold">
@@ -920,10 +909,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Gói 1 Tháng Tiêu Chuẩn
                 </div>
                 <div className="text-2xl font-black text-white mt-1 whitespace-nowrap">
-                  {revenueReports?.monthlyCount || 0} Đơn Hàng
+                  {revenueReports?.monthlyCount ?? 0} Đơn Hàng
                 </div>
                 <div className="text-[11px] text-emerald-400 mt-0.5 whitespace-nowrap">
-                  {((revenueReports?.monthlyCount || 0) * 49000).toLocaleString('vi-VN')}đ
+                  {((revenueReports?.monthlyCount ?? 0) * 49000).toLocaleString('vi-VN')}đ
                 </div>
               </div>
               <div className="w-11 h-11 rounded-xl bg-slate-800 text-sky-400 flex items-center justify-center font-bold">
@@ -945,7 +934,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </h4>
                   </div>
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
-                    Tự Động Cập Nhật
+                    Dữ Liệu Thật
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mb-4 whitespace-nowrap">
@@ -960,37 +949,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="absolute inset-x-3 top-24 border-b border-dashed border-white/10 pointer-events-none" />
                 <div className="absolute inset-x-3 top-40 border-b border-dashed border-white/10 pointer-events-none" />
 
-                {(
-                  revenueReports?.monthlyData || [
-                    { month: 'Tháng 5', revenue: 49000, transactionsCount: 1 },
-                    { month: 'Tháng 6', revenue: 98000, transactionsCount: 2 },
-                    { month: 'Tháng 7', revenue: 147000, transactionsCount: 3 },
-                    { month: 'Tháng 8', revenue: 196000, transactionsCount: 4 },
-                    { month: 'Tháng 9', revenue: 245000, transactionsCount: 5 },
-                    { month: 'Tháng 10', revenue: revenueReports?.totalRevenue || 399000, transactionsCount: 6 },
-                  ]
-                ).map((item, idx, arr) => {
-                  const maxRev = Math.max(...arr.map((m) => m.revenue), 400000);
-                  const barHeightPercent = Math.max(12, Math.round((item.revenue / maxRev) * 100));
+                {(revenueReports?.monthlyData || []).map((item, idx, arr) => {
+                  const maxRev = Math.max(...arr.map((m) => m.revenue), 1);
+                  const barHeightPercent = item.revenue > 0 ? Math.max(12, Math.round((item.revenue / maxRev) * 100)) : 4;
                   const isCurrent = idx === arr.length - 1;
 
                   return (
                     <div key={item.month} className="flex-1 flex flex-col items-center h-full justify-end group relative">
                       {/* Top tooltip */}
                       <span className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-4 text-[10px] font-bold text-emerald-300 bg-slate-900 px-1.5 py-0.5 rounded shadow pointer-events-none whitespace-nowrap z-10 border border-emerald-500/40">
-                        {item.revenue.toLocaleString('vi-VN')}đ
+                        {item.revenue.toLocaleString('vi-VN')}đ ({item.transactionsCount} đơn)
                       </span>
 
                       {/* Bar Value on top */}
                       <span className="text-[10px] font-bold text-slate-300 mb-1 whitespace-nowrap">
-                        {Math.round(item.revenue / 1000)}k
+                        {item.revenue > 0 ? `${Math.round(item.revenue / 1000)}k` : '0đ'}
                       </span>
 
                       {/* Bar */}
                       <div
                         style={{ height: `${barHeightPercent}%` }}
                         className={`w-full max-w-[42px] rounded-t-lg transition-all duration-500 group-hover:scale-y-105 shadow-lg ${
-                          isCurrent
+                          item.revenue === 0
+                            ? 'bg-slate-800/80 border-t border-slate-700'
+                            : isCurrent
                             ? 'bg-gradient-to-t from-emerald-600 to-emerald-300 shadow-emerald-500/30'
                             : 'bg-gradient-to-t from-emerald-900/80 to-emerald-500/80 group-hover:from-emerald-700 group-hover:to-emerald-400'
                         }`}
@@ -1029,15 +1011,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="w-full h-52 flex items-center justify-around p-3 bg-black/35 rounded-xl border border-white/5">
                 {/* SVG Donut */}
                 {(() => {
-                  const yearly = revenueReports?.yearlyCount ?? 1;
+                  const yearly = revenueReports?.yearlyCount ?? 0;
                   const monthly = revenueReports?.monthlyCount ?? 0;
                   const total = yearly + monthly;
-                  const yearlyPct = total > 0 ? Math.round((yearly / total) * 100) : 100;
-                  const monthlyPct = 100 - yearlyPct;
+                  const yearlyPct = total > 0 ? Math.round((yearly / total) * 100) : 0;
+                  const monthlyPct = total > 0 ? 100 - yearlyPct : 0;
                   const radius = 54;
                   const circumference = 2 * Math.PI * radius; // ~339.29
-                  const yearlyStroke = (yearlyPct / 100) * circumference;
-                  const monthlyStroke = (monthlyPct / 100) * circumference;
+                  const yearlyStroke = total > 0 ? (yearlyPct / 100) * circumference : 0;
+                  const monthlyStroke = total > 0 ? (monthlyPct / 100) * circumference : 0;
 
                   return (
                     <div className="relative flex items-center justify-center">
@@ -1051,30 +1033,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           stroke="rgba(255, 255, 255, 0.08)"
                           strokeWidth="16"
                         />
-                        {/* Monthly slice */}
-                        <circle
-                          cx="70"
-                          cy="70"
-                          r={radius}
-                          fill="transparent"
-                          stroke="#34d399"
-                          strokeWidth="16"
-                          strokeDasharray={`${monthlyStroke} ${circumference}`}
-                          strokeDashoffset="0"
-                          strokeLinecap="round"
-                        />
-                        {/* Yearly slice */}
-                        <circle
-                          cx="70"
-                          cy="70"
-                          r={radius}
-                          fill="transparent"
-                          stroke="#fbbf24"
-                          strokeWidth="16"
-                          strokeDasharray={`${yearlyStroke} ${circumference}`}
-                          strokeDashoffset={-monthlyStroke}
-                          strokeLinecap="round"
-                        />
+                        {total > 0 && monthlyStroke > 0 && (
+                          <circle
+                            cx="70"
+                            cy="70"
+                            r={radius}
+                            fill="transparent"
+                            stroke="#34d399"
+                            strokeWidth="16"
+                            strokeDasharray={`${monthlyStroke} ${circumference}`}
+                            strokeDashoffset="0"
+                            strokeLinecap="round"
+                          />
+                        )}
+                        {total > 0 && yearlyStroke > 0 && (
+                          <circle
+                            cx="70"
+                            cy="70"
+                            r={radius}
+                            fill="transparent"
+                            stroke="#fbbf24"
+                            strokeWidth="16"
+                            strokeDasharray={`${yearlyStroke} ${circumference}`}
+                            strokeDashoffset={-monthlyStroke}
+                            strokeLinecap="round"
+                          />
+                        )}
                       </svg>
                       {/* Center display text */}
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
@@ -1100,7 +1084,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
                     </div>
                     <span className="text-xs font-black text-amber-400 whitespace-nowrap">
-                      {revenueReports?.yearlyCount || 1} ({revenueReports ? Math.round(((revenueReports.yearlyCount || 1) / Math.max(1, (revenueReports.yearlyCount || 1) + (revenueReports.monthlyCount || 0))) * 100) : 100}%)
+                      {revenueReports?.yearlyCount ?? 0} ({(() => {
+                        const t = (revenueReports?.yearlyCount ?? 0) + (revenueReports?.monthlyCount ?? 0);
+                        return t > 0 ? Math.round(((revenueReports?.yearlyCount ?? 0) / t) * 100) : 0;
+                      })()}%)
                     </span>
                   </div>
 
@@ -1113,7 +1100,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
                     </div>
                     <span className="text-xs font-black text-emerald-400 whitespace-nowrap">
-                      {revenueReports?.monthlyCount || 0} ({revenueReports ? Math.round(((revenueReports.monthlyCount || 0) / Math.max(1, (revenueReports.yearlyCount || 1) + (revenueReports.monthlyCount || 0))) * 100) : 0}%)
+                      {revenueReports?.monthlyCount ?? 0} ({(() => {
+                        const t = (revenueReports?.yearlyCount ?? 0) + (revenueReports?.monthlyCount ?? 0);
+                        return t > 0 ? Math.round(((revenueReports?.monthlyCount ?? 0) / t) * 100) : 0;
+                      })()}%)
                     </span>
                   </div>
                 </div>
@@ -1135,6 +1125,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="admin-btn-primary"
+                  onClick={handleExportSystemReport}
+                  title="Tải toàn bộ báo cáo tổng hợp hệ thống dạng CSV/Excel"
+                  style={{ padding: '0.45rem 0.85rem', fontSize: '0.78rem' }}
+                >
+                  <FileSpreadsheet size={15} />
+                  <span className="whitespace-nowrap">Xuất Báo Cáo (.CSV)</span>
+                </button>
                 <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 whitespace-nowrap">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span>SePay Live Active</span>
@@ -1158,86 +1158,74 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {(
-                    (revenueReports?.transactions && revenueReports.transactions.length > 0)
-                      ? revenueReports.transactions
-                      : [
-                          {
-                            id: 'ord_default_1',
-                            orderCode: 1,
-                            orderNumber: 'PRO #1',
-                            userId: users.find((u) => u.subscriptionTier === 'PRO')?.id || 'usr_1',
-                            userName: users.find((u) => u.subscriptionTier === 'PRO')?.fullName || 'Khoi Nguyen',
-                            userEmail: users.find((u) => u.subscriptionTier === 'PRO')?.email || 'nguyenanhkhoi169@gmail.com',
-                            userPhone: '0337564618',
-                            plan: 'YEARLY' as const,
-                            amount: 399000,
-                            status: 'SUCCESS' as const,
-                            gateway: 'SePay VietQR 24/7',
-                            createdAt: new Date().toISOString(),
-                            paidAt: new Date().toISOString(),
-                          },
-                        ]
-                  ).map((tx) => (
-                    <tr key={tx.id}>
-                      <td className="whitespace-nowrap">
-                        <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-xs inline-flex items-center gap-1 whitespace-nowrap">
-                          <Crown size={12} className="text-amber-400" />
-                          <span>{tx.orderNumber || `PRO #${tx.orderCode}`}</span>
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center font-bold text-xs shrink-0">
-                            {(tx.userName || 'U').charAt(0).toUpperCase()}
-                          </div>
-                          <span className="font-semibold text-slate-100 whitespace-nowrap">
-                            {tx.userName || 'Người dùng'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap text-slate-300 font-mono text-xs">
-                        {maskEmail(tx.userEmail)}
-                      </td>
-                      <td className="whitespace-nowrap text-slate-300 font-mono text-xs">
-                        {maskPhone(tx.userPhone)}
-                      </td>
-                      <td className="whitespace-nowrap">
-                        {tx.plan === 'YEARLY' ? (
-                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap">
-                            Gói 1 Năm (365 Ngày)
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
-                            Gói 1 Tháng (30 Ngày)
-                          </span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap font-bold text-emerald-400">
-                        {tx.amount.toLocaleString('vi-VN')}đ
-                      </td>
-                      <td className="whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
-                          {tx.gateway || 'SePay VietQR 24/7'}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap text-xs text-slate-400">
-                        {new Date(tx.paidAt || tx.createdAt).toLocaleString('vi-VN')}
-                      </td>
-                      <td className="whitespace-nowrap" style={{ textAlign: 'right' }}>
-                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1 whitespace-nowrap">
-                          <CheckCircle2 size={12} className="text-emerald-400" />
-                          <span>Thành Công</span>
-                        </span>
+                  {!revenueReports?.transactions || revenueReports.transactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="admin-empty-td text-center py-8 text-slate-400">
+                        Chưa có giao dịch nâng cấp gói PRO nào được ghi nhận.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    revenueReports.transactions.map((tx) => (
+                      <tr key={tx.id}>
+                        <td className="whitespace-nowrap">
+                          <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-xs inline-flex items-center gap-1 whitespace-nowrap">
+                            <Crown size={12} className="text-amber-400" />
+                            <span>{tx.orderNumber || `PRO #${tx.orderCode}`}</span>
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center font-bold text-xs shrink-0">
+                              {(tx.userName || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <span className="font-semibold text-slate-100 whitespace-nowrap">
+                              {tx.userName || 'Người dùng'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap text-slate-300 font-mono text-xs">
+                          {maskEmail(tx.userEmail)}
+                        </td>
+                        <td className="whitespace-nowrap text-slate-300 font-mono text-xs">
+                          {maskPhone(tx.userPhone)}
+                        </td>
+                        <td className="whitespace-nowrap">
+                          {tx.plan === 'YEARLY' ? (
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap">
+                              Gói 1 Năm (365 Ngày)
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
+                              Gói 1 Tháng (30 Ngày)
+                            </span>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap font-bold text-emerald-400">
+                          {tx.amount.toLocaleString('vi-VN')}đ
+                        </td>
+                        <td className="whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
+                            {tx.gateway || 'SePay VietQR 24/7'}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap text-xs text-slate-400">
+                          {new Date(tx.paidAt || tx.createdAt).toLocaleString('vi-VN')}
+                        </td>
+                        <td className="whitespace-nowrap" style={{ textAlign: 'right' }}>
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1 whitespace-nowrap">
+                            <CheckCircle2 size={12} className="text-emerald-400" />
+                            <span>Thành Công</span>
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* 4. DEMOGRAPHIC & GENERAL METRICS ROW */}
+          {/* 4. TỔNG QUAN PHẢ HỆ HỆ THỐNG */}
           <div className="metrics-cards-row">
             <div className="metric-card metric-users">
               <div className="metric-header">
@@ -1265,9 +1253,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span className="metric-label whitespace-nowrap">TỔNG NHÂN KHẨU PHẢ HỆ</span>
               </div>
               <div className="metric-value whitespace-nowrap">{stats?.totalPersons || 0}</div>
-              <div className="metric-detail whitespace-nowrap">
-                🌱 {stats?.totalLiving || 0} còn sống • 🕯️ {stats?.totalDeceased || 0} đã mất
-              </div>
+              <div className="metric-detail whitespace-nowrap">Số hóa hồ sơ các thế hệ</div>
             </div>
 
             <div className="metric-card metric-rels">
@@ -1277,60 +1263,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
               <div className="metric-value whitespace-nowrap">{stats?.totalRelationships || 0}</div>
               <div className="metric-detail whitespace-nowrap">Quan hệ Cha/Mẹ, Vợ/Chồng, Con cái</div>
-            </div>
-          </div>
-
-          {/* 5. DEMOGRAPHIC BREAKDOWN & EXPORT ACTION CARD */}
-          <div className="infra-health-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
-              <h3 className="infra-title whitespace-nowrap" style={{ margin: 0 }}>
-                <BarChart3 size={20} color="#34d399" />
-                <span>Báo Cáo Phân Tích Nhân Khẩu & Dữ Liệu</span>
-              </h3>
-
-              <button
-                type="button"
-                className="admin-btn-primary"
-                onClick={handleExportSystemReport}
-                title="Tải toàn bộ báo cáo tổng hợp hệ thống dạng CSV/Excel"
-              >
-                <FileSpreadsheet size={16} />
-                <span className="whitespace-nowrap">Xuất Báo Cáo Hệ Thống (.CSV)</span>
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
-              <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                <h4 style={{ color: '#ffffff', fontSize: '0.95rem', margin: '0 0 0.75rem 0', fontWeight: 700 }} className="whitespace-nowrap">
-                  Tỷ Lệ Thành Viên Phả Hệ
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                    <span style={{ color: '#34d399' }} className="whitespace-nowrap">🌱 Còn sống:</span>
-                    <strong style={{ color: '#ffffff' }} className="whitespace-nowrap">{stats?.totalLiving || 0} ({stats?.totalPersons ? Math.round(((stats?.totalLiving || 0) / stats.totalPersons) * 100) : 0}%)</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                    <span style={{ color: '#94a3b8' }} className="whitespace-nowrap">🕯️ Đã mất (Ngày giỗ):</span>
-                    <strong style={{ color: '#ffffff' }} className="whitespace-nowrap">{stats?.totalDeceased || 0} ({stats?.totalPersons ? Math.round(((stats?.totalDeceased || 0) / stats.totalPersons) * 100) : 0}%)</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                <h4 style={{ color: '#ffffff', fontSize: '0.95rem', margin: '0 0 0.75rem 0', fontWeight: 700 }} className="whitespace-nowrap">
-                  Hiệu Suất Dữ Liệu Dòng Họ
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                    <span style={{ color: '#38bdf8' }} className="whitespace-nowrap">Trung bình thành viên / Cây:</span>
-                    <strong style={{ color: '#ffffff' }} className="whitespace-nowrap">{stats?.totalTrees ? Math.round((stats?.totalPersons || 0) / stats.totalTrees) : 0} người</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                    <span style={{ color: '#fbbf24' }} className="whitespace-nowrap">Trung bình quan hệ / Cây:</span>
-                    <strong style={{ color: '#ffffff' }} className="whitespace-nowrap">{stats?.totalTrees ? Math.round((stats?.totalRelationships || 0) / stats.totalTrees) : 0} liên kết</strong>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

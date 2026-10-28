@@ -489,7 +489,10 @@ export const getAdminSubscriptionReports = async (req: AuthRequest, res: Respons
       return res.status(403).json({ error: 'Chỉ Super Admin mới có quyền xem báo cáo doanh thu.' });
     }
 
-    // Lấy toàn bộ người dùng PRO trong hệ thống
+    // 1. Đếm tổng số người dùng thực tế trong hệ thống
+    const totalUsers = await prisma.user.count();
+
+    // 2. Lấy toàn bộ người dùng PRO thực tế trong hệ thống
     const proUsers = await prisma.user.findMany({
       where: { subscriptionTier: 'PRO' },
       select: {
@@ -503,7 +506,7 @@ export const getAdminSubscriptionReports = async (req: AuthRequest, res: Respons
       },
     });
 
-    // Đồng bộ các user PRO đã có sẵn vào danh sách giao dịch
+    // 3. Đồng bộ các user PRO thực tế vào danh sách giao dịch
     for (const pu of proUsers) {
       const existing = subscriptionOrders.find((o) => o.userId === pu.id && o.status === 'SUCCESS');
       if (!existing) {
@@ -513,7 +516,7 @@ export const getAdminSubscriptionReports = async (req: AuthRequest, res: Respons
         const isYearly = daysRemaining > 35;
         const code = orderCounter++;
         subscriptionOrders.push({
-          id: `ord_seed_${pu.id.slice(0, 8)}`,
+          id: `ord_${pu.id.slice(0, 8)}`,
           orderCode: code,
           orderNumber: `PRO #${code}`,
           userId: pu.id,
@@ -523,7 +526,7 @@ export const getAdminSubscriptionReports = async (req: AuthRequest, res: Respons
           plan: isYearly ? 'YEARLY' : 'MONTHLY',
           amount: isYearly ? 399000 : 49000,
           status: 'SUCCESS',
-          gateway: 'SePay VietQR',
+          gateway: 'SePay VietQR 24/7',
           createdAt: pu.createdAt.toISOString(),
           paidAt: pu.createdAt.toISOString(),
         });
@@ -534,25 +537,37 @@ export const getAdminSubscriptionReports = async (req: AuthRequest, res: Respons
     const totalRevenue = successfulTransactions.reduce((acc, t) => acc + t.amount, 0);
     const yearlyCount = successfulTransactions.filter((t) => t.plan === 'YEARLY').length;
     const monthlyCount = successfulTransactions.filter((t) => t.plan === 'MONTHLY').length;
+    const conversionRate = totalUsers > 0 ? Math.round((proUsers.length / totalUsers) * 100) : 0;
 
-    // Phân bổ doanh thu 6 tháng gần nhất cho biểu đồ cột
-    const months = ['Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10'];
-    const monthlyData = months.map((m, idx) => {
-      const weight = [0.1, 0.15, 0.2, 0.25, 0.35, 1.0][idx];
-      const rev = idx === 5 ? totalRevenue : Math.round(totalRevenue * weight);
-      return {
-        month: m,
-        revenue: Math.max(49000 * (idx + 1), rev),
-        transactionsCount: Math.max(1, Math.round(successfulTransactions.length * weight)),
-      };
-    });
+    // 4. Phân bổ doanh thu 6 tháng gần nhất hoàn toàn dựa trên dữ liệu thật (không dùng mock weight)
+    const now = new Date();
+    const monthlyData = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthNum = d.getMonth() + 1;
+      const yearNum = d.getFullYear();
+      const label = `Tháng ${monthNum}`;
+
+      // Lọc các giao dịch thực tế thanh toán trong tháng này
+      const monthTx = successfulTransactions.filter((t) => {
+        const tDate = new Date(t.paidAt || t.createdAt);
+        return tDate.getMonth() + 1 === monthNum && tDate.getFullYear() === yearNum;
+      });
+
+      const monthRevenue = monthTx.reduce((sum, t) => sum + t.amount, 0);
+      monthlyData.push({
+        month: label,
+        revenue: monthRevenue,
+        transactionsCount: monthTx.length,
+      });
+    }
 
     return res.json({
-      totalRevenue: totalRevenue || 399000,
-      totalSubscribers: proUsers.length || 1,
-      yearlyCount: yearlyCount || 1,
-      monthlyCount: monthlyCount || 0,
-      conversionRate: proUsers.length > 0 ? Math.round((proUsers.length / Math.max(1, proUsers.length + 3)) * 100) : 25,
+      totalRevenue,
+      totalSubscribers: proUsers.length,
+      yearlyCount,
+      monthlyCount,
+      conversionRate,
       monthlyData,
       transactions: subscriptionOrders.slice().reverse(),
     });

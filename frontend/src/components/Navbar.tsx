@@ -38,8 +38,8 @@ interface NavbarProps {
   onPanToMe?: () => void;
   onPanToGen1?: () => void;
   onOpenHelp?: () => void;
-  adminActiveTab?: 'USERS' | 'SUBSCRIPTIONS' | 'REPORTS' | 'AUDIT' | 'SETTINGS';
-  onAdminTabChange?: (tab: 'USERS' | 'SUBSCRIPTIONS' | 'REPORTS' | 'AUDIT' | 'SETTINGS') => void;
+  adminActiveTab?: 'USERS' | 'SUBSCRIPTIONS' | 'REPORTS';
+  onAdminTabChange?: (tab: 'USERS' | 'SUBSCRIPTIONS' | 'REPORTS') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({

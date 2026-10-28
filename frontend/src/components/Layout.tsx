@@ -66,7 +66,7 @@ interface LayoutProps {
   onOpenSubscription?: () => void;
   isPro?: boolean;
   onOpenPersonPicker?: () => void;
-  onAdminTabSelect?: (tab: 'USERS' | 'SUBSCRIPTIONS' | 'REPORTS' | 'AUDIT' | 'SETTINGS') => void;
+  onAdminTabSelect?: (tab: 'USERS' | 'SUBSCRIPTIONS' | 'REPORTS') => void;
 }
 
 const STORAGE_KEY = 'sidebar_mode_preference';
@@ -186,17 +186,6 @@ export const Layout: React.FC<LayoutProps> = ({
           label: 'Báo cáo & Thống kê',
           icon: BarChart3,
           onClick: () => onAdminTabSelect?.('REPORTS'),
-        },
-        {
-          key: 'ADMIN_AUDIT',
-          label: 'Nhật ký & Bảo mật',
-          icon: ShieldCheck,
-          onClick: () => onAdminTabSelect?.('AUDIT'),
-        },
-        {
-          key: 'TOUR',
-          label: 'Hướng dẫn',
-          icon: BookOpen,
         },
       ]
     : [

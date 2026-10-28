@@ -31,6 +31,7 @@ import {
 import { User } from '../types';
 import { useToast } from './Toast';
 import { FamilyTreeLogo } from './FamilyTreeLogo';
+import { TermsPolicyModal } from './TermsPolicyModal';
 
 interface AuthModalProps {
   onSuccess: (user: User, defaultTreeId?: string) => void;
@@ -63,6 +64,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsInitialTab, setTermsInitialTab] = useState<'TERMS' | 'PRIVACY'>('TERMS');
 
   // Nếu URL có reset_token thì tự động mở màn hình đặt lại mật khẩu
   useEffect(() => {
@@ -802,6 +805,59 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {authMode === 'LOGIN' ? 'Tiếp tục với Google' : 'Đăng ký bằng Google'}
               </span>
             </button>
+
+            {/* Liên kết Điều khoản dịch vụ & Chính sách bảo mật */}
+            <div
+              style={{
+                marginTop: '1.15rem',
+                textAlign: 'center',
+                fontSize: '0.74rem',
+                color: '#64748b',
+                lineHeight: 1.5,
+              }}
+            >
+              <span>Bằng việc tiếp tục, bạn đồng ý với </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setTermsInitialTab('TERMS');
+                  setShowTermsModal(true);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#34d399',
+                  padding: 0,
+                  fontSize: '0.74rem',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '2px',
+                }}
+              >
+                Điều khoản dịch vụ
+              </button>
+              <span> & </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setTermsInitialTab('PRIVACY');
+                  setShowTermsModal(true);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#34d399',
+                  padding: 0,
+                  fontSize: '0.74rem',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '2px',
+                }}
+              >
+                Chính sách bảo mật
+              </button>
+              <span> của Famlykin.</span>
+            </div>
           </>
         )}
 
@@ -1244,6 +1300,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         )}
       </div>
+
+      <TermsPolicyModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        initialTab={termsInitialTab}
+      />
     </div>
   );
 };
