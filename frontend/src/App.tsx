@@ -904,7 +904,13 @@ const AppContent: React.FC = () => {
       <Layout
         user={user}
         tree={tree}
-        activeNav={mainView}
+        activeNav={
+          user?.role === 'ADMIN'
+            ? mainView === 'BRANCHES'
+              ? 'BRANCHES'
+              : `ADMIN_${adminActiveTab}`
+            : mainView
+        }
         onSelectNav={(key) => {
           if (key === 'BRANCHES') setMainView('BRANCHES');
           else if (key === 'TREE') setMainView('TREE');
@@ -919,8 +925,28 @@ const AppContent: React.FC = () => {
           else if (key === 'SUBSCRIPTION') {
             setShowSubscriptionModal(true);
           }
+          else if (key === 'ADMIN_USERS') {
+            setMainView('TREE');
+            setAdminActiveTab('USERS');
+          }
+          else if (key === 'ADMIN_SUBSCRIPTIONS') {
+            setMainView('TREE');
+            setAdminActiveTab('SUBSCRIPTIONS');
+          }
+          else if (key === 'ADMIN_REPORTS') {
+            setMainView('TREE');
+            setAdminActiveTab('REPORTS');
+          }
+          else if (key === 'ADMIN_AUDIT') {
+            setMainView('TREE');
+            setAdminActiveTab('AUDIT');
+          }
           else if (key === 'TOUR') setShowTour(true);
           else if (key === 'ADMIN') setShowAdminModal(true);
+        }}
+        onAdminTabSelect={(tab) => {
+          setMainView('TREE');
+          setAdminActiveTab(tab);
         }}
         pendingInvitationsCount={pendingInvitations.length}
         onOpenInvitations={() => setShowInvitationsModal(true)}
@@ -985,7 +1011,7 @@ const AppContent: React.FC = () => {
 
         {/* Main Canvas Viewport, Branches Hub, or Embedded Admin Dashboard */}
         <main style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', width: '100%', display: 'flex', flexDirection: 'column' }}>
-        {user?.role === 'ADMIN' ? (
+        {user?.role === 'ADMIN' && mainView !== 'BRANCHES' ? (
           <AdminDashboard
             activeTab={adminActiveTab}
             onTabChange={setAdminActiveTab}

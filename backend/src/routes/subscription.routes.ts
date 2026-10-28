@@ -9,6 +9,8 @@ import {
   handleSePayWebhook,
   checkPaymentStatus,
   getSePayConfig,
+  createSubscriptionOrder,
+  getAdminSubscriptionReports,
 } from '../controllers/subscription.controller';
 import { authenticateToken } from '../middlewares/auth.middleware';
 
@@ -23,6 +25,8 @@ router.use(authenticateToken);
 
 router.get('/status', getSubscriptionStatus);
 router.get('/sepay-config', getSePayConfig);
+router.post('/create-order', createSubscriptionOrder);
+router.get('/admin-reports', getAdminSubscriptionReports);
 router.post('/upgrade', upgradeSubscription);
 router.post('/simulate-expiry', simulateExpiry);
 

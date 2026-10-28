@@ -341,6 +341,49 @@ export const apiSimulateSubscriptionExpiry = () =>
 export const apiGetSePayConfig = () =>
   request<{ bankAccount: string; bankName: string; accountHolder?: string }>('/subscription/sepay-config');
 
+export const apiCreateSubscriptionOrder = (plan: 'MONTHLY' | 'YEARLY') =>
+  request<{
+    orderCode: number;
+    orderNumber: string;
+    transferMemo: string;
+    amount: number;
+    bankAccount: string;
+    bankName: string;
+    accountHolder: string;
+  }>('/subscription/create-order', {
+    method: 'POST',
+    body: JSON.stringify({ plan }),
+  });
+
+export interface SubscriptionTransactionItem {
+  id: string;
+  orderCode: number;
+  orderNumber: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userPhone?: string;
+  plan: 'MONTHLY' | 'YEARLY';
+  amount: number;
+  status: 'SUCCESS' | 'PENDING' | 'EXPIRED';
+  gateway: string;
+  createdAt: string;
+  paidAt?: string;
+}
+
+export interface AdminSubscriptionReports {
+  totalRevenue: number;
+  totalSubscribers: number;
+  yearlyCount: number;
+  monthlyCount: number;
+  conversionRate: number;
+  monthlyData: { month: string; revenue: number; transactionsCount: number }[];
+  transactions: SubscriptionTransactionItem[];
+}
+
+export const apiGetAdminSubscriptionReports = () =>
+  request<AdminSubscriptionReports>('/subscription/admin-reports');
+
 // PayOS Gateway
 export const apiGetPayOSStatus = () =>
   request<{ isConfigured: boolean }>('/subscription/payos-status');

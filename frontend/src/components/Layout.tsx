@@ -26,6 +26,8 @@ import {
   PanelLeftOpen,
   Layers,
   Search,
+  BarChart3,
+  ShieldCheck,
 } from 'lucide-react';
 import { User, FamilyTree, TreeRole } from '../types';
 import { FamilyTreeLogo } from './FamilyTreeLogo';
@@ -64,6 +66,7 @@ interface LayoutProps {
   onOpenSubscription?: () => void;
   isPro?: boolean;
   onOpenPersonPicker?: () => void;
+  onAdminTabSelect?: (tab: 'USERS' | 'SUBSCRIPTIONS' | 'REPORTS' | 'AUDIT' | 'SETTINGS') => void;
 }
 
 const STORAGE_KEY = 'sidebar_mode_preference';
@@ -86,6 +89,7 @@ export const Layout: React.FC<LayoutProps> = ({
   onOpenSubscription,
   isPro = false,
   onOpenPersonPicker,
+  onAdminTabSelect,
 }) => {
   // Sidebar mode state: expanded | collapsed | hover-expand
   const [mode, setMode] = useState<SidebarMode>(() => {
@@ -151,72 +155,104 @@ export const Layout: React.FC<LayoutProps> = ({
   // If 'collapsed' or 'hover-expand', main margin is w-20 (80px) so hover overlay does not shift canvas
   const contentMarginClass = mode === 'expanded' ? 'lg:ml-72' : 'lg:ml-20';
 
-  // Navigation items config
-  const navItems: NavItemConfig[] = [
-    {
-      key: 'BRANCHES',
-      label: 'Tất cả nhánh',
-      icon: Layers,
-      badge: allTreesCount ? `${allTreesCount}` : undefined,
-      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-      onClick: onOpenBranchesHub,
-    },
-    {
-      key: 'TREE',
-      label: 'Sơ đồ cây',
-      icon: LayoutGrid,
-    },
-    {
-      key: 'LIST',
-      label: 'Danh bạ',
-      icon: Users,
-      badge: tree?.members ? `${tree.members.length}` : undefined,
-    },
-    {
-      key: 'LUNAR',
-      label: 'Lịch Giỗ',
-      icon: Calendar,
-      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-    },
-    {
-      key: 'FLASHCARD',
-      label: 'Chơi Trắc Nghiệm',
-      icon: Sparkles,
-      badge: 'Mini App',
-      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-    },
-    {
-      key: 'REMINDER',
-      label: 'Nhắc nhở',
-      icon: Settings,
-    },
-    {
-      key: 'SUBSCRIPTION',
-      label: 'Gói dịch vụ',
-      icon: Crown,
-      badge: isPro ? 'PRO' : 'FREE',
-      badgeColor: isPro
-        ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-        : 'bg-slate-700/50 text-slate-300 border-slate-600/40',
-      onClick: onOpenSubscription,
-    },
-    ...(user?.role === 'ADMIN'
-      ? [
-          {
-            key: 'ADMIN',
-            label: 'Quản trị Hệ thống',
-            icon: Shield,
-            badge: 'Admin',
-            badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
-          },
-        ]
-      : []),
-    {
-      key: 'TOUR',
-      label: 'Hướng dẫn',
-      icon: BookOpen,
-    },
-  ];
+  // Check if current user is Super Admin
+  const isAdmin = user?.role === 'ADMIN';
+
+  // Navigation items config (Tối ưu riêng biệt cho Quản trị viên và Người dùng thông thường)
+  const navItems: NavItemConfig[] = isAdmin
+    ? [
+        {
+          key: 'BRANCHES',
+          label: 'Quản lý hệ thống',
+          icon: Layers,
+          badge: allTreesCount ? `${allTreesCount}` : undefined,
+          badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+          onClick: onOpenBranchesHub,
+        },
+        {
+          key: 'ADMIN_USERS',
+          label: 'Quản lý tài khoản',
+          icon: Users,
+          onClick: () => onAdminTabSelect?.('USERS'),
+        },
+        {
+          key: 'ADMIN_SUBSCRIPTIONS',
+          label: 'Quản lý gói PRO',
+          icon: Crown,
+          onClick: () => onAdminTabSelect?.('SUBSCRIPTIONS'),
+        },
+        {
+          key: 'ADMIN_REPORTS',
+          label: 'Báo cáo & Thống kê',
+          icon: BarChart3,
+          onClick: () => onAdminTabSelect?.('REPORTS'),
+        },
+        {
+          key: 'ADMIN_AUDIT',
+          label: 'Nhật ký & Bảo mật',
+          icon: ShieldCheck,
+          onClick: () => onAdminTabSelect?.('AUDIT'),
+        },
+        {
+          key: 'TOUR',
+          label: 'Hướng dẫn',
+          icon: BookOpen,
+        },
+      ]
+    : [
+        {
+          key: 'BRANCHES',
+          label: 'Tất cả nhánh',
+          icon: Layers,
+          badge: allTreesCount ? `${allTreesCount}` : undefined,
+          badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+          onClick: onOpenBranchesHub,
+        },
+        {
+          key: 'TREE',
+          label: 'Sơ đồ cây',
+          icon: LayoutGrid,
+        },
+        {
+          key: 'LIST',
+          label: 'Danh bạ',
+          icon: Users,
+          badge: tree?.members ? `${tree.members.length}` : undefined,
+        },
+        {
+          key: 'LUNAR',
+          label: 'Lịch Giỗ',
+          icon: Calendar,
+          badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+        },
+        {
+          key: 'FLASHCARD',
+          label: 'Chơi Trắc Nghiệm',
+          icon: Sparkles,
+          badge: 'Mini App',
+          badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+        },
+        {
+          key: 'REMINDER',
+          label: 'Nhắc nhở',
+          icon: Settings,
+        },
+        {
+          key: 'SUBSCRIPTION',
+          label: 'Gói dịch vụ',
+          icon: Crown,
+          badge: isPro ? 'PRO' : 'FREE',
+          badgeColor: isPro
+            ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+            : 'bg-slate-700/50 text-slate-300 border-slate-600/40',
+          onClick: onOpenSubscription,
+        },
+        {
+          key: 'TOUR',
+          label: 'Hướng dẫn',
+          icon: BookOpen,
+        },
+      ];
 
   // Render role badge helper
   const renderRoleBadge = (role?: TreeRole) => {
@@ -502,8 +538,8 @@ export const Layout: React.FC<LayoutProps> = ({
           )}
         </div>
 
-        {/* Tree Info Pill (When Expanded) - Bỏ dòng chữ Chi/Nhánh: Chi Trưởng theo yêu cầu người dùng */}
-        {isExpanded && tree && (
+        {/* Tree Info Pill (When Expanded) - Ẩn hoàn toàn với Quản trị viên theo yêu cầu */}
+        {isExpanded && tree && !isAdmin && (
           <div className="mx-3 my-2.5 p-2.5 rounded-xl bg-slate-900/80 border border-emerald-500/20 flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-slate-400">Cây gia phả đang xem:</span>
@@ -651,13 +687,21 @@ export const Layout: React.FC<LayoutProps> = ({
                   {user?.fullName || 'Người dùng'}
                 </div>
                 <div className="mt-1 flex items-center gap-1.5">
-                  {isPro ? (
+                  {isAdmin ? (
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 whitespace-nowrap"
+                      title="Quản trị viên Hệ thống"
+                    >
+                      <Shield size={10} className="text-rose-400" />
+                      <span>ADMIN</span>
+                    </span>
+                  ) : isPro ? (
                     <span
                       onClick={(e) => {
                         e.stopPropagation();
                         onOpenSubscription?.();
                       }}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition cursor-pointer whitespace-nowrap"
                       title="Tài khoản gói PRO"
                     >
                       <Crown size={10} className="text-amber-400" />
@@ -669,7 +713,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         e.stopPropagation();
                         onOpenSubscription?.();
                       }}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700 hover:border-emerald-500/50 hover:text-emerald-300 transition cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700 hover:border-emerald-500/50 hover:text-emerald-300 transition cursor-pointer whitespace-nowrap"
                       title="Gói Miễn Phí (Tối đa 5 nhánh) - Nhấn để xem nâng cấp"
                     >
                       <span>FREE</span>

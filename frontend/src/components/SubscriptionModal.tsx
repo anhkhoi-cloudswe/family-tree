@@ -4,22 +4,16 @@ import {
   Crown,
   Check,
   Sparkles,
-  Zap,
-  Lock,
-  Layers,
-  ArrowLeft,
   Copy,
   CheckCircle2,
-  QrCode,
   RefreshCw,
-  AlertCircle,
-  Smartphone,
+  Clock,
+  ArrowLeft,
 } from 'lucide-react';
 import { User, SubscriptionStatus } from '../types';
 import {
   apiGetSubscriptionStatus,
-  apiUpgradeSubscription,
-  apiGetSePayConfig,
+  apiCreateSubscriptionOrder,
 } from '../services/api';
 import { useToast } from './Toast';
 
@@ -41,53 +35,111 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>('YEARLY');
   const [step, setStep] = useState<'PLANS' | 'PAYMENT' | 'SUCCESS'>('PLANS');
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
-  const [isDemoUpgrading, setIsDemoUpgrading] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [qrLoaded, setQrLoaded] = useState(false);
-  const [sepayConfig, setSepayConfig] = useState({
+  
+  // 10-Minute AFK Countdown Timer (600 seconds)
+  const [timeLeft, setTimeLeft] = useState<number>(600);
+
+  // Order Details from Server (e.g. PRO #1)
+  const [orderDetails, setOrderDetails] = useState<{
+    orderCode: number;
+    orderNumber: string; // e.g. "PRO #1"
+    transferMemo: string;
+    amount: number;
+    bankAccount: string;
+    bankName: string;
+    accountHolder: string;
+  }>({
+    orderCode: 1,
+    orderNumber: 'PRO #1',
+    transferMemo: 'PRO #1',
+    amount: 399000,
     bankAccount: '2911121319',
     bankName: 'MBBank',
-    accountHolder: 'TRAN ANH KHOI',
+    accountHolder: 'NGUYEN HOANG ANH KHOI',
   });
 
   const toast = useToast();
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch SePay bank configuration when modal opens
+  // Initialize or reset when modal opens
   useEffect(() => {
     if (isOpen) {
-      apiGetSePayConfig()
-        .then((res) => {
-          if (res && res.bankAccount) {
-            setSepayConfig({
-              bankAccount: res.bankAccount,
-              bankName: res.bankName || 'MBBank',
-              accountHolder: res.accountHolder || 'TRAN ANH KHOI',
-            });
-          }
-        })
-        .catch(() => {
-          // Keep defaults
-        });
       setStep('PLANS');
       setQrLoaded(false);
+      setTimeLeft(600);
     }
   }, [isOpen]);
 
-  // Amount & Transfer Content Memo calculation
-  const isYearly = billingCycle === 'YEARLY';
-  const amount = isYearly ? 399000 : 49000;
-  const amountFormatted = isYearly ? '399.000đ' : '49.000đ';
+  // Handle plan transition into PAYMENT step
+  const handleProceedToPayment = async () => {
+    try {
+      setQrLoaded(false);
+      setTimeLeft(600); // 10 minutes timeout
+      const order = await apiCreateSubscriptionOrder(billingCycle);
+      if (order) {
+        setOrderDetails({
+          orderCode: order.orderCode,
+          orderNumber: order.orderNumber,
+          transferMemo: order.transferMemo || order.orderNumber,
+          amount: order.amount,
+          bankAccount: order.bankAccount || '2911121319',
+          bankName: order.bankName || 'MBBank',
+          accountHolder: 'NGUYEN HOANG ANH KHOI',
+        });
+      }
+      setStep('PAYMENT');
+    } catch (err: any) {
+      // Fallback local code if offline
+      const fallbackAmount = billingCycle === 'YEARLY' ? 399000 : 49000;
+      setOrderDetails({
+        orderCode: 1,
+        orderNumber: 'PRO #1',
+        transferMemo: 'PRO #1',
+        amount: fallbackAmount,
+        bankAccount: '2911121319',
+        bankName: 'MBBank',
+        accountHolder: 'NGUYEN HOANG ANH KHOI',
+      });
+      setStep('PAYMENT');
+    }
+  };
 
-  const cleanPhone = user?.phone ? user.phone.replace(/[^0-9]/g, '') : '';
-  const transferMemo = cleanPhone
-    ? `PRO ${cleanPhone}`
-    : `PRO ${user?.id ? user.id.slice(0, 8) : 'VIP'}`;
-
-  // SePay VietQR Image URL
-  const qrUrl = `https://qr.sepay.vn/img?acc=${sepayConfig.bankAccount}&bank=${sepayConfig.bankName}&amount=${amount}&des=${encodeURIComponent(
-    transferMemo
+  // SePay VietQR Image URL (Format: bank account, bank name, amount, description)
+  // For QR standard compatibility, passing 'PRO <orderCode>' in QR link
+  const qrUrl = `https://qr.sepay.vn/img?acc=${orderDetails.bankAccount}&bank=${
+    orderDetails.bankName
+  }&amount=${orderDetails.amount}&des=${encodeURIComponent(
+    `PRO ${orderDetails.orderCode}`
   )}`;
+
+  const amountFormatted = orderDetails.amount.toLocaleString('vi-VN') + 'đ';
+
+  // 10-Minute AFK Countdown Timer
+  useEffect(() => {
+    if (!isOpen || step !== 'PAYMENT') {
+      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+      return;
+    }
+
+    countdownTimerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+          toast.info('Phiên giao dịch đã hết hạn 10 phút. Vui lòng bấm nâng cấp lại nếu muốn thanh toán.');
+          onClose();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    };
+  }, [isOpen, step, onClose, toast]);
 
   // Polling for SePay Webhook Auto-Activation while in PAYMENT step
   useEffect(() => {
@@ -124,6 +176,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   const isPro = status?.tier === 'PRO';
 
+  const formatCountdown = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const handleCopy = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(fieldName);
@@ -152,26 +210,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     }
   };
 
-  const handleDemoUpgrade = async () => {
-    try {
-      setIsDemoUpgrading(true);
-      const res = await apiUpgradeSubscription(isYearly ? 365 : 30);
-      setStep('SUCCESS');
-      toast.success(res.message || 'Kích hoạt thử nghiệm thành công!');
-      onRefreshStatus();
-      setTimeout(() => {
-        onClose();
-      }, 2500);
-    } catch (err: any) {
-      toast.error(err.message || 'Lỗi khi kích hoạt dùng thử.');
-    } finally {
-      setIsDemoUpgrading(false);
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-[660px] max-h-[92vh] bg-slate-900 border border-amber-500/30 rounded-3xl shadow-2xl shadow-amber-950/40 overflow-hidden flex flex-col">
+      <div className="relative w-full max-w-[620px] max-h-[92vh] bg-slate-900 border border-amber-500/30 rounded-3xl shadow-2xl shadow-amber-950/40 overflow-hidden flex flex-col">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/80 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5">
@@ -191,7 +232,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             )}
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-base text-white">
+                <h3 className="font-extrabold text-base text-white whitespace-nowrap">
                   {step === 'PAYMENT'
                     ? 'Thanh Toán Quét Mã VietQR'
                     : step === 'SUCCESS'
@@ -199,16 +240,16 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     : 'Gói Hội Viên Gia Phả Số'}
                 </h3>
                 {isPro ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 whitespace-nowrap">
                     PRO
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
                     Miễn Phí (5 Nhánh)
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-400 whitespace-nowrap truncate max-w-[340px] sm:max-w-none">
                 {step === 'PAYMENT'
                   ? 'Quét mã VietQR bằng bất kỳ ứng dụng ngân hàng nào (Kích hoạt tức thì 24/7)'
                   : 'Nâng tầm quản lý dòng họ với không gian lưu trữ không giới hạn'}
@@ -218,50 +259,23 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5 text-xs">
-          {/* STEP 1: PLAN SELECTION */}
+        <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4 text-xs">
+          {/* STEP 1: PLAN SELECTION (Đã giải phóng không gian trên, không hiển thị số nhánh) */}
           {step === 'PLANS' && (
             <>
-              {/* Current Status Bar */}
-              <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-                    <Layers size={16} />
-                  </div>
-                  <div>
-                    <div className="text-[11px] text-slate-400">Số nhánh cây hiện tại của bạn:</div>
-                    <div className="text-sm font-bold text-white">
-                      {status?.totalBranches || 0} / {isPro ? 'Không giới hạn' : '5 nhánh miễn phí'}
-                    </div>
-                  </div>
-                </div>
-
-                {status?.lockedBranchesCount && status.lockedBranchesCount > 0 ? (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 text-[11px] font-semibold">
-                    <Lock size={12} />
-                    <span>{status.lockedBranchesCount} nhánh đang bị khóa</span>
-                  </div>
-                ) : isPro ? (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-semibold">
-                    <Sparkles size={12} />
-                    <span>Đang hoạt động</span>
-                  </div>
-                ) : null}
-              </div>
-
               {/* Pricing Cycle Toggle */}
               <div className="flex items-center justify-center gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 max-w-[260px] mx-auto text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setBillingCycle('MONTHLY')}
-                  className={`flex-1 py-1.5 rounded-lg transition ${
+                  className={`flex-1 py-1.5 rounded-lg transition whitespace-nowrap ${
                     billingCycle === 'MONTHLY'
                       ? 'bg-slate-800 text-white shadow'
                       : 'text-slate-400 hover:text-slate-200'
@@ -272,7 +286,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setBillingCycle('YEARLY')}
-                  className={`flex-1 py-1.5 rounded-lg transition flex items-center justify-center gap-1 ${
+                  className={`flex-1 py-1.5 rounded-lg transition flex items-center justify-center gap-1 whitespace-nowrap ${
                     billingCycle === 'YEARLY'
                       ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white shadow'
                       : 'text-slate-400 hover:text-slate-200'
@@ -286,13 +300,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </div>
 
               {/* Comparison Cards Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-stretch">
                 {/* Free Plan */}
                 <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-bold text-sm text-slate-200">Gói Miễn Phí</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+                      <span className="font-bold text-sm text-slate-200 whitespace-nowrap">Gói Miễn Phí</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 whitespace-nowrap">
                         Mặc định
                       </span>
                     </div>
@@ -321,8 +335,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </ul>
                   </div>
 
+                  {/* Nút Gói Hiện Tại nâng cao ngang bằng với nút Nâng cấp PRO ngay */}
                   <div className="pt-4">
-                    <div className="w-full py-2 rounded-xl bg-slate-800/80 text-center text-slate-400 font-semibold text-xs cursor-default">
+                    <div className="w-full h-11 rounded-xl bg-slate-800/80 text-center text-slate-400 font-semibold text-xs cursor-default flex items-center justify-center whitespace-nowrap">
                       {isPro ? 'Gói Cơ Bản' : 'Gói Hiện Tại'}
                     </div>
                   </div>
@@ -330,7 +345,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                 {/* PRO Plan */}
                 <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-500/15 via-slate-950 to-slate-950 border-2 border-amber-500/50 shadow-lg shadow-amber-950/30 flex flex-col justify-between relative overflow-hidden">
-                  <div className="absolute top-2 right-2 flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 uppercase">
+                  <div className="absolute top-2 right-2 flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 uppercase whitespace-nowrap">
                     <Sparkles size={10} />
                     <span>Khuyên dùng</span>
                   </div>
@@ -338,13 +353,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   <div>
                     <div className="flex items-center gap-1.5 mb-2">
                       <Crown size={15} className="text-amber-400" />
-                      <span className="font-bold text-sm text-amber-300">Gói PRO</span>
+                      <span className="font-bold text-sm text-amber-300 whitespace-nowrap">Gói PRO</span>
                     </div>
 
                     <div className="flex items-baseline gap-1.5 mb-3">
-                      <span className="text-2xl font-black text-white">{amountFormatted}</span>
-                      <span className="text-slate-400 text-[10px]">
-                        / {isYearly ? 'năm (33k/tháng)' : 'tháng'}
+                      <span className="text-2xl font-black text-white whitespace-nowrap">
+                        {billingCycle === 'YEARLY' ? '399.000đ' : '49.000đ'}
+                      </span>
+                      <span className="text-slate-400 text-[10px] whitespace-nowrap">
+                        / {billingCycle === 'YEARLY' ? 'năm (33k/tháng)' : 'tháng'}
                       </span>
                     </div>
 
@@ -372,31 +389,28 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </ul>
                   </div>
 
-                  <div className="pt-4 space-y-2">
+                  {/* Nút Nâng cấp PRO ngay: bỏ icon sét, bỏ text quét VietQR */}
+                  <div className="pt-4">
                     <button
                       type="button"
-                      onClick={() => setStep('PAYMENT')}
-                      className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      onClick={handleProceedToPayment}
+                      className="w-full h-11 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 flex items-center justify-center transition cursor-pointer whitespace-nowrap"
                     >
-                      <Zap size={14} className="fill-slate-950" />
                       <span>{isPro ? 'Gia Hạn Gói PRO' : 'Nâng Cấp PRO Ngay'}</span>
                     </button>
-                    <div className="text-center text-[10px] text-slate-400 flex items-center justify-center gap-1">
-                      <span>Quét VietQR SePay tự động kích hoạt tức thì</span>
-                    </div>
                   </div>
                 </div>
               </div>
             </>
           )}
 
-          {/* STEP 2: SEPAY VIETQR PAYMENT */}
+          {/* STEP 2: SEPAY VIETQR PAYMENT (Đã tối ưu theo hình 2) */}
           {step === 'PAYMENT' && (
-            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                {/* Left: QR Code Card */}
-                <div className="md:col-span-5 flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-lg border border-slate-700/60 text-slate-900">
-                  <div className="relative w-48 h-48 sm:w-52 sm:h-52 flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+            <div className="space-y-3.5 animate-in fade-in zoom-in-95 duration-200">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-center">
+                {/* Left: QR Code Card (Gọn gàng, bỏ text quét bằng app ngân hàng / napas) */}
+                <div className="sm:col-span-5 flex flex-col items-center justify-center bg-white p-3 rounded-2xl shadow-lg border border-slate-700/60 text-slate-900">
+                  <div className="relative w-44 h-44 sm:w-48 sm:h-48 flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
                     {!qrLoaded && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-100 text-slate-500">
                         <RefreshCw size={24} className="animate-spin text-emerald-600" />
@@ -412,40 +426,35 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       onLoad={() => setQrLoaded(true)}
                     />
                   </div>
-
-                  <div className="mt-3 text-center">
-                    <div className="font-bold text-xs text-slate-800 flex items-center justify-center gap-1">
-                      <Smartphone size={13} className="text-emerald-600" />
-                      <span>Quét bằng app Ngân hàng / MoMo</span>
-                    </div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">
-                      Hỗ trợ toàn bộ ngân hàng Napas 24/7
-                    </div>
+                  {/* Countdown Timer Badge */}
+                  <div className="mt-2 flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-semibold">
+                    <Clock size={12} className="text-amber-600" />
+                    <span>Hết hạn: <strong className="font-mono text-amber-700">{formatCountdown(timeLeft)}</strong></span>
                   </div>
                 </div>
 
                 {/* Right: Payment Details */}
-                <div className="md:col-span-7 space-y-2.5">
-                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
+                <div className="sm:col-span-7 space-y-2">
+                  <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                     {/* Bank Name */}
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
-                      <span className="text-slate-400 text-[11px]">Ngân hàng nhận:</span>
-                      <span className="font-bold text-emerald-400 text-xs">
-                        {sepayConfig.bankName} (Quân Đội)
+                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80 text-[11px]">
+                      <span className="text-slate-400 whitespace-nowrap">Ngân hàng nhận:</span>
+                      <span className="font-bold text-emerald-400 whitespace-nowrap">
+                        {orderDetails.bankName} (Quân Đội)
                       </span>
                     </div>
 
                     {/* Account Number */}
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
-                      <span className="text-slate-400 text-[11px]">Số tài khoản:</span>
+                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80 text-[11px]">
+                      <span className="text-slate-400 whitespace-nowrap">Số tài khoản:</span>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-black text-white text-sm tracking-wider">
-                          {sepayConfig.bankAccount}
+                        <span className="font-black text-white text-sm tracking-wider font-mono">
+                          {orderDetails.bankAccount}
                         </span>
                         <button
                           type="button"
-                          onClick={() => handleCopy(sepayConfig.bankAccount, 'Số tài khoản')}
-                          className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                          onClick={() => handleCopy(orderDetails.bankAccount, 'Số tài khoản')}
+                          className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
                           title="Sao chép STK"
                         >
                           {copiedField === 'Số tài khoản' ? (
@@ -457,23 +466,23 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Account Holder */}
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
-                      <span className="text-slate-400 text-[11px]">Chủ tài khoản:</span>
-                      <span className="font-bold text-slate-200 text-xs uppercase">
-                        {sepayConfig.accountHolder}
+                    {/* Account Holder: NGUYEN HOANG ANH KHOI */}
+                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80 text-[11px]">
+                      <span className="text-slate-400 whitespace-nowrap">Chủ tài khoản:</span>
+                      <span className="font-bold text-slate-200 text-xs uppercase tracking-wide whitespace-nowrap">
+                        {orderDetails.accountHolder}
                       </span>
                     </div>
 
                     {/* Amount */}
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
-                      <span className="text-slate-400 text-[11px]">Số tiền thanh toán:</span>
+                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80 text-[11px]">
+                      <span className="text-slate-400 whitespace-nowrap">Số tiền thanh toán:</span>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-black text-amber-300 text-sm">{amountFormatted}</span>
+                        <span className="font-black text-amber-300 text-sm whitespace-nowrap">{amountFormatted}</span>
                         <button
                           type="button"
-                          onClick={() => handleCopy(String(amount), 'Số tiền')}
-                          className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                          onClick={() => handleCopy(String(orderDetails.amount), 'Số tiền')}
+                          className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
                           title="Sao chép số tiền"
                         >
                           {copiedField === 'Số tiền' ? (
@@ -485,17 +494,16 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Transfer Content (MEMO) - Crucial */}
+                    {/* Transfer Content (MEMO): Format chuẩn PRO #1 */}
                     <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-bold text-amber-300 uppercase flex items-center gap-1">
-                          <AlertCircle size={11} />
-                          Nội dung chuyển khoản (bắt buộc):
+                      <div className="flex items-center justify-between mb-1 text-[11px]">
+                        <span className="font-bold text-amber-300 uppercase tracking-tight whitespace-nowrap">
+                          NỘI DUNG CHUYỂN KHOẢN (BẮT BUỘC):
                         </span>
                         <button
                           type="button"
-                          onClick={() => handleCopy(transferMemo, 'Nội dung chuyển khoản')}
-                          className="px-2 py-0.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] flex items-center gap-1 transition"
+                          onClick={() => handleCopy(orderDetails.transferMemo, 'Nội dung chuyển khoản')}
+                          className="px-2 py-0.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] flex items-center gap-1 transition cursor-pointer whitespace-nowrap"
                         >
                           {copiedField === 'Nội dung chuyển khoản' ? (
                             <>
@@ -510,31 +518,28 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                           )}
                         </button>
                       </div>
-                      <div className="font-mono font-black text-base text-white tracking-wide bg-slate-900/90 py-1.5 px-2.5 rounded-lg border border-amber-500/40 text-center select-all">
-                        {transferMemo}
+                      <div className="font-mono font-black text-base text-white tracking-widest bg-slate-900/90 py-1.5 px-2 rounded-lg border border-amber-500/40 text-center select-all">
+                        {orderDetails.transferMemo}
                       </div>
-                      <p className="text-[10px] text-amber-200/80 mt-1.5 text-center leading-relaxed">
-                        ⚠️ Quý khách vui lòng giữ nguyên nội dung này để hệ thống SePay nhận diện và nâng cấp gói PRO ngay sau 3-5 giây.
-                      </p>
                     </div>
                   </div>
 
-                  {/* Pulsing auto-status radar */}
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="relative flex h-2.5 w-2.5">
+                  {/* Hàng trạng thái: Nằm chung 1 hàng, không xuống dòng */}
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-row items-center justify-between gap-2 whitespace-nowrap text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="relative flex h-2 w-2 flex-shrink-0">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                       </span>
-                      <span className="text-[11px] text-emerald-300 font-medium">
-                        Đang chờ tín hiệu chuyển khoản từ ngân hàng...
+                      <span className="text-[11px] text-emerald-300 font-medium truncate">
+                        Đang chờ tín hiệu từ ngân hàng...
                       </span>
                     </div>
                     <button
                       type="button"
                       disabled={isCheckingPayment}
                       onClick={handleManualCheck}
-                      className="text-[11px] text-slate-400 hover:text-emerald-300 underline font-semibold flex items-center gap-1"
+                      className="flex-shrink-0 text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 transition cursor-pointer"
                     >
                       <RefreshCw size={11} className={isCheckingPayment ? 'animate-spin' : ''} />
                       <span>Kiểm tra lại</span>
@@ -543,38 +548,17 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </div>
               </div>
 
-              {/* Bottom Actions */}
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2.5 border-t border-slate-800">
+              {/* Bottom Actions: Nút Tôi Đã Chuyển Khoản căn giữa trang trọng, bỏ các nút thừa */}
+              <div className="pt-2 border-t border-slate-800 flex items-center justify-center">
                 <button
                   type="button"
-                  onClick={() => setStep('PLANS')}
-                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                  disabled={isCheckingPayment}
+                  onClick={handleManualCheck}
+                  className="w-full sm:w-auto min-w-[220px] px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-950/40 flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap"
                 >
-                  <ArrowLeft size={13} />
-                  <span>Đổi gói cước khác</span>
+                  <CheckCircle2 size={14} />
+                  <span>Tôi Đã Chuyển Khoản</span>
                 </button>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    disabled={isCheckingPayment}
-                    onClick={handleManualCheck}
-                    className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-950/40 flex items-center justify-center gap-1.5 transition"
-                  >
-                    <CheckCircle2 size={13} />
-                    <span>Tôi Đã Chuyển Khoản</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={isDemoUpgrading}
-                    onClick={handleDemoUpgrade}
-                    className="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-300/80 hover:text-amber-200 border border-amber-500/30 text-[10px] font-semibold transition"
-                    title="Kích hoạt tức thì để kiểm thử tính năng (Dành cho admin / demo)"
-                  >
-                    {isDemoUpgrading ? 'Đang kích hoạt...' : 'Dùng thử ngay'}
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -598,14 +582,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
               <div className="p-3 bg-slate-950 rounded-2xl border border-emerald-500/30 max-w-sm mx-auto text-emerald-300 text-xs font-semibold flex items-center justify-center gap-2">
                 <Sparkles size={14} />
-                <span>Thời hạn gói: {isYearly ? '1 Năm (365 ngày)' : '1 Tháng (30 ngày)'}</span>
+                <span>Thời hạn gói: {billingCycle === 'YEARLY' ? '1 Năm (365 ngày)' : '1 Tháng (30 ngày)'}</span>
               </div>
 
               <div className="pt-2">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/30 transition"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/30 transition cursor-pointer"
                 >
                   Bắt Đầu Trải Nghiệm Ngay
                 </button>
