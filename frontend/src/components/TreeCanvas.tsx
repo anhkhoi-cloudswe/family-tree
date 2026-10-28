@@ -903,10 +903,72 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
         });
       });
 
-      // Sort units in generation: Paternal left, Maternal right
+      // Helper: Lấy chỉ số vị trí của cha mẹ ở thế hệ trước (gen - 1)
+      const prevGenUnits = unitsMap.get(gen - 1) || [];
+      const getParentPlacementIndex = (unit: GenerationUnit): number => {
+        const p1Parents = tree.relationships
+          .filter((r) => r.type === 'PARENT_CHILD' && r.childId === unit.person1.id && r.parentId)
+          .map((r) => r.parentId as string);
+        const p2Person = unit.person2;
+        const p2Parents = p2Person
+          ? tree.relationships
+              .filter((r) => r.type === 'PARENT_CHILD' && r.childId === p2Person.id && r.parentId)
+              .map((r) => r.parentId as string)
+          : [];
+        const allParentIds = [...new Set([...p1Parents, ...p2Parents])];
+
+        if (allParentIds.length === 0) {
+          return 9999;
+        }
+
+        const indices: number[] = [];
+        prevGenUnits.forEach((pUnit, idx) => {
+          if (
+            allParentIds.includes(pUnit.person1.id) ||
+            (pUnit.person2 && allParentIds.includes(pUnit.person2.id))
+          ) {
+            indices.push(idx);
+          }
+        });
+
+        if (indices.length > 0) {
+          return indices.reduce((sum, i) => sum + i, 0) / indices.length;
+        }
+
+        return 9999;
+      };
+
+      // Sắp xếp các đơn vị trong cùng một thế hệ:
+      // 1. Phân nhánh: Bên Nội trước (trái), Gia đình hạt nhân ở giữa, Bên Ngoại sau (phải)
+      // 2. Theo vị trí của Cha Mẹ ở thế hệ trước (Parent-guided ordering):
+      //    Con của cha mẹ đứng bên trái sẽ luôn nằm bên trái, con của cha mẹ đứng bên phải sẽ nằm bên phải.
+      //    Điều này triệt tiêu hoàn toàn hiện tượng đường nối bị bắt chéo (cross lines / đi chéo),
+      //    giúp các đường phả hệ luôn đi thẳng đứng và phẳng xuống ("phẳng xuống").
+      // 3. Trong cùng cha mẹ (anh chị em ruột): sắp xếp theo ngày sinh hoặc vai vế
       units.sort((a, b) => {
-        const order = { PATERNAL: 1, BOTH: 2, MATERNAL: 3 };
-        return (order[a.branch || 'BOTH'] || 2) - (order[b.branch || 'BOTH'] || 2);
+        const branchOrder = { PATERNAL: 1, BOTH: 2, MATERNAL: 3 };
+        const bA = branchOrder[a.branch || 'BOTH'] || 2;
+        const bB = branchOrder[b.branch || 'BOTH'] || 2;
+        if (bA !== bB) return bA - bB;
+
+        const pA = getParentPlacementIndex(a);
+        const pB = getParentPlacementIndex(b);
+        if (pA !== pB) return pA - pB;
+
+        const dateA = a.person1.birthDate ? new Date(a.person1.birthDate).getTime() : 0;
+        const dateB = b.person1.birthDate ? new Date(b.person1.birthDate).getTime() : 0;
+        if (dateA && dateB && dateA !== dateB) {
+          return dateA - dateB;
+        }
+
+        if (a.person1.relativeOrder?.endsWith('_OLDER') && !b.person1.relativeOrder?.endsWith('_OLDER')) {
+          return -1;
+        }
+        if (!a.person1.relativeOrder?.endsWith('_OLDER') && b.person1.relativeOrder?.endsWith('_OLDER')) {
+          return 1;
+        }
+
+        return 0;
       });
 
       unitsMap.set(gen, units);

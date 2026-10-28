@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { broadcastUserUpdate } from '../services/websocket.service';
@@ -262,3 +262,72 @@ export const checkPaymentStatus = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ error: err.message || 'Lỗi máy chủ.' });
   }
 };
+
+/**
+ * Webhook từ SePay (sepay.vn) khi có biến động số dư chuyển khoản vào tài khoản ngân hàng
+ */
+export const handleSePayWebhook = async (req: Request, res: Response) => {
+  try {
+    const sepayApiKey = process.env.SEPAY_API_KEY;
+    if (sepayApiKey) {
+      const authHeader = req.headers.authorization || '';
+      const token = authHeader.replace(/^Apikey\s+/i, '').trim();
+      if (token !== sepayApiKey) {
+        return res.status(401).json({ error: 'Mã xác thực SePay API Key không khớp.' });
+      }
+    }
+
+    const { transferType, transferAmount, content } = req.body || {};
+
+    if (transferType !== 'in') {
+      return res.json({ success: true, message: 'Bỏ qua giao dịch tiền ra.' });
+    }
+
+    const amount = Number(transferAmount) || 0;
+    if (amount < 49000) {
+      return res.json({ success: true, message: 'Số tiền nhỏ hơn gói PRO tối thiểu (49.000đ).' });
+    }
+
+    const durationDays = amount >= 399000 ? 365 : 30;
+    const contentStr = String(content || '');
+
+    // Tìm kiếm user tương ứng dựa theo phone, ID hoặc email trong nội dung chuyển khoản
+    let targetUser = null;
+    const allUsers = await prisma.user.findMany({
+      select: { id: true, email: true, phone: true },
+    });
+
+    for (const u of allUsers) {
+      if (
+        (u.phone && contentStr.includes(u.phone)) ||
+        (u.id && contentStr.includes(u.id.slice(0, 8))) ||
+        (u.email && contentStr.toLowerCase().includes(u.email.toLowerCase()))
+      ) {
+        targetUser = u;
+        break;
+      }
+    }
+
+    if (targetUser) {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + durationDays);
+
+      await prisma.user.update({
+        where: { id: targetUser.id },
+        data: {
+          subscriptionTier: 'PRO',
+          subscriptionExpiresAt: expiresAt,
+        },
+      });
+
+      broadcastUserUpdate(targetUser.id, { action: 'SUBSCRIPTION_UPDATED', tier: 'PRO' });
+      return res.json({ success: true, message: `Đã kích hoạt PRO ${durationDays} ngày cho người dùng ${targetUser.id}` });
+    }
+
+    return res.json({ success: true, message: 'Không tìm thấy tài khoản người dùng khớp với nội dung chuyển khoản.' });
+  } catch (err: any) {
+    console.error('Lỗi xử lý webhook SePay:', err);
+    return res.status(500).json({ error: err.message || 'Lỗi xử lý webhook SePay.' });
+  }
+};
+

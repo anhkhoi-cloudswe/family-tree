@@ -6,14 +6,16 @@ import {
   getPayOSConfigStatus,
   createPayOSPayment,
   handlePayOSWebhook,
+  handleSePayWebhook,
   checkPaymentStatus,
 } from '../controllers/subscription.controller';
 import { authenticateToken } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// Webhook công khai từ PayOS (Không dùng auth middleware)
+// Webhook công khai từ PayOS & SePay (Không dùng auth middleware)
 router.post('/payos-webhook', handlePayOSWebhook);
+router.post('/sepay-webhook', handleSePayWebhook);
 
 // Các endpoint dưới đây yêu cầu đăng nhập
 router.use(authenticateToken);
