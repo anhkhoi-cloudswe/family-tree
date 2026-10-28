@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   X,
   Camera,
@@ -79,6 +79,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
         burialCoordinates: person.burialCoordinates || '',
         avatarUrl: person.avatarUrl || '',
         biography: person.biography || '',
+        relativeOrder: person.relativeOrder || '',
       });
       setAvatarPreview(person.avatarUrl || '');
       setIsEditing(false);
@@ -135,6 +136,27 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
   const kinshipTitle = tree
     ? getKinshipToMe(mePerson || null, person, tree.members, tree.relationships)
     : 'Người thân';
+
+  // Phân tích relativeOrder dạng: "FATHER_OLDER", "MOTHER_YOUNGER", "ME_OLDER", etc.
+  const parsedRelative = useMemo(() => {
+    const raw = formData.relativeOrder || '';
+    if (!raw) return { target: 'AUTO', order: 'AUTO' };
+    const parts = raw.split('_');
+    if (parts.length >= 2) {
+      const order = parts[parts.length - 1]; // "OLDER" or "YOUNGER"
+      const target = parts.slice(0, parts.length - 1).join('_');
+      return { target, order };
+    }
+    return { target: 'AUTO', order: 'AUTO' };
+  }, [formData.relativeOrder]);
+
+  const handleRelativeOrderChange = (target: string, order: string) => {
+    if (target === 'AUTO' || order === 'AUTO') {
+      setFormData((prev) => ({ ...prev, relativeOrder: '' }));
+    } else {
+      setFormData((prev) => ({ ...prev, relativeOrder: `${target}_${order}` }));
+    }
+  };
 
   // Quyền chỉnh sửa (chỉ OWNER và EDITOR được phép sửa/thêm/xóa thành viên)
   const isCanEdit = !tree?.userRole || tree.userRole === 'OWNER' || tree.userRole === 'EDITOR';
@@ -793,6 +815,51 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                         value={formData.phone || ''}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       />
+                    </div>
+                  </div>
+
+                  {/* So sánh vai vế / thứ bậc cùng thế hệ */}
+                  <div className="form-grid-2">
+                    <div className="form-field">
+                      <label className="form-label-clean" title="Đối tượng người thân trực hệ cùng thế hệ để so sánh thứ bậc">
+                        So sánh cùng thế hệ
+                      </label>
+                      <select
+                        className="form-select-clean"
+                        value={parsedRelative.target}
+                        onChange={(e) => handleRelativeOrderChange(e.target.value, parsedRelative.order === 'AUTO' ? 'OLDER' : parsedRelative.order)}
+                      >
+                        <option value="AUTO">Tự động (Theo năm sinh)</option>
+                        <optgroup label="Thế hệ Cha Mẹ (Đời 2)">
+                          <option value="FATHER">So với Cha (Bên nội)</option>
+                          <option value="MOTHER">So với Mẹ (Bên ngoại)</option>
+                        </optgroup>
+                        <optgroup label="Thế hệ Con Cháu (Đời 3)">
+                          <option value="ME">So với Tôi (Bản thân)</option>
+                        </optgroup>
+                        <optgroup label="Thế hệ Ông Bà (Đời 1)">
+                          <option value="PATERNAL_GF">So với Ông nội</option>
+                          <option value="PATERNAL_GM">So với Bà nội</option>
+                          <option value="MATERNAL_GF">So với Ông ngoại</option>
+                          <option value="MATERNAL_GM">So với Bà ngoại</option>
+                        </optgroup>
+                      </select>
+                    </div>
+
+                    <div className="form-field">
+                      <label className="form-label-clean" title="Thứ bậc lớn hơn hay nhỏ hơn so với người được chọn">
+                        Thứ bậc vai vế
+                      </label>
+                      <select
+                        className="form-select-clean"
+                        value={parsedRelative.order}
+                        disabled={parsedRelative.target === 'AUTO'}
+                        onChange={(e) => handleRelativeOrderChange(parsedRelative.target, e.target.value)}
+                      >
+                        <option value="AUTO">Tự động (Theo năm sinh)</option>
+                        <option value="OLDER">Lớn hơn (Bậc Anh / Chị / Bác)</option>
+                        <option value="YOUNGER">Nhỏ hơn (Bậc Em / Chú / Cô / Cậu / Dì)</option>
+                      </select>
                     </div>
                   </div>
 

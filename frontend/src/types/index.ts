@@ -105,6 +105,7 @@ export interface Person {
   burialCoordinates?: string | null;
   avatarUrl?: string | null;
   biography?: string | null;
+  relativeOrder?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

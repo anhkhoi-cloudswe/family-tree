@@ -13,7 +13,7 @@ import {
 import { FamilyTree, Person } from '../types';
 import { getKinshipToMe, getPaternalMaternalMemberIds } from '../utils/kinshipHelper';
 import { formatDateVN } from '../utils/dateHelper';
-import { getSolarAnniversaryForYear } from '../utils/lunarHelper';
+import { getSolarAnniversaryForYear, calculateLunarDeathDayFromSolar } from '../utils/lunarHelper';
 import { getInitials } from '../utils/formatHelper';
 
 interface MemberListViewProps {
@@ -335,38 +335,42 @@ export const MemberListView: React.FC<MemberListViewProps> = ({
                                 {member.birthDate && (
                                   <span>Sinh: {formatDateVN(member.birthDate)}</span>
                                 )}
-                                {member.isDeceased && (
-                                  <>
-                                    {member.birthDate && (member.deathDate || member.lunarDeathDay) && ' • '}
-                                    {member.deathDate && (
-                                      <span>Mất: {formatDateVN(member.deathDate)}</span>
-                                    )}
-                                    {member.lunarDeathDay && (() => {
-                                      const cleanLunar = member.lunarDeathDay.replace(/\s*Âm\s*lịch/i, '').trim();
-                                      const anniversary = getSolarAnniversaryForYear(member.lunarDeathDay);
-                                      return (
+                                {member.isDeceased && (() => {
+                                  const effectiveLunar =
+                                    member.lunarDeathDay ||
+                                    calculateLunarDeathDayFromSolar(member.deathDate);
+                                  const cleanLunar = effectiveLunar
+                                    ? effectiveLunar.replace(/\s*Âm\s*lịch/i, '').trim()
+                                    : null;
+                                  const anniversary = cleanLunar
+                                    ? getSolarAnniversaryForYear(cleanLunar)
+                                    : null;
+
+                                  return (
+                                    <>
+                                      {member.birthDate && (effectiveLunar || member.deathDate) && ' • '}
+                                      {cleanLunar ? (
                                         <>
-                                          {(member.birthDate || member.deathDate) && ' • '}
-                                          {anniversary && (
-                                            <>
-                                              <span>Giỗ Dương: {anniversary.dateStr}</span>
-                                              {' • '}
-                                            </>
-                                          )}
                                           <strong className="lunar-death-highlight">
                                             Giỗ Âm: {cleanLunar} Âm lịch
                                           </strong>
+                                          {anniversary && (
+                                            <>
+                                              {' -> '}
+                                              <strong className="solar-death-highlight">
+                                                Giỗ Dương: {anniversary.dateStr}
+                                              </strong>
+                                            </>
+                                          )}
                                         </>
-                                      );
-                                    })()}
-                                    {!member.lunarDeathDay && member.deathDate && (
-                                      <>
-                                        {' • '}
-                                        <span>Giỗ Dương: {formatDateVN(member.deathDate)}</span>
-                                      </>
-                                    )}
-                                  </>
-                                )}
+                                      ) : member.deathDate ? (
+                                        <strong className="solar-death-highlight">
+                                          Giỗ Dương: {formatDateVN(member.deathDate)}
+                                        </strong>
+                                      ) : null}
+                                    </>
+                                  );
+                                })()}
                               </span>
                             </div>
                           )}

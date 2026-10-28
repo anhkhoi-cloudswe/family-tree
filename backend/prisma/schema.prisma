@@ -95,6 +95,7 @@ model Person {
   
   avatarUrl         String?
   biography         String?
+  relativeOrder     String?        // Thứ bậc vai vế so với người thân trực hệ (FATHER_OLDER, MOTHER_YOUNGER, etc.)
   
   parentRels        Relationship[] @relation("ChildRelations")
   childRels         Relationship[] @relation("ParentRelations")

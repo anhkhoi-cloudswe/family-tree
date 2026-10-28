@@ -7,15 +7,11 @@ import {
   Zap,
   Lock,
   Layers,
-  Clock,
-  RotateCcw,
   CreditCard,
   ExternalLink,
 } from 'lucide-react';
 import { SubscriptionStatus } from '../types';
 import {
-  apiUpgradeSubscription,
-  apiSimulateSubscriptionExpiry,
   apiCreatePayOSPayment,
   apiGetPayOSStatus,
 } from '../services/api';
@@ -60,39 +56,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         window.location.href = res.checkoutUrl;
       } else {
         toast.info(
-          res.error || 'Cổng PayOS chưa được kích hoạt khóa API. Vui lòng thử nút kích hoạt thử nghiệm bên dưới!'
+          res.error || 'Cổng thanh toán tự động VietQR chưa được kích hoạt khóa API. Vui lòng liên hệ quản trị viên!'
         );
       }
     } catch (err: any) {
-      toast.error(err.message || 'Không thể tạo phiên thanh toán PayOS. Vui lòng thử lại!');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDirectUpgrade = async (durationDays: number) => {
-    try {
-      setIsSubmitting(true);
-      const res = await apiUpgradeSubscription(durationDays);
-      toast.success(res.message || 'Chúc mừng bạn đã nâng cấp thành công gói PRO!');
-      onRefreshStatus();
-      onClose();
-    } catch (err: any) {
-      toast.error(err.message || 'Không thể nâng cấp gói. Vui lòng thử lại!');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSimulateExpiry = async () => {
-    try {
-      setIsSubmitting(true);
-      const res = await apiSimulateSubscriptionExpiry();
-      toast.info(res.message || 'Đã mô phỏng hết hạn gói PRO để kiểm tra tính năng khóa nhánh.');
-      onRefreshStatus();
-      onClose();
-    } catch (err: any) {
-      toast.error(err.message || 'Lỗi khi mô phỏng hết hạn');
+      toast.error(err.message || 'Không thể tạo phiên thanh toán VietQR. Vui lòng thử lại!');
     } finally {
       setIsSubmitting(false);
     }
@@ -283,20 +251,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 <button
                   type="button"
                   disabled={isSubmitting}
-                  onClick={payOsConfigured ? handlePayOSPayment : () => handleDirectUpgrade(billingCycle === 'YEARLY' ? 365 : 30)}
+                  onClick={handlePayOSPayment}
                   className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5 transition"
                 >
-                  {payOsConfigured ? (
-                    <>
-                      <CreditCard size={14} className="text-slate-950" />
-                      <span>Thanh toán PayOS VietQR</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap size={14} className="fill-slate-950" />
-                      <span>{isPro ? 'Gia Hạn Gói PRO' : 'Nâng Cấp PRO Ngay'}</span>
-                    </>
-                  )}
+                  <Zap size={14} className="fill-slate-950" />
+                  <span>{isPro ? 'Gia Hạn Gói PRO' : 'Nâng Cấp PRO Ngay'}</span>
                 </button>
                 {payOsConfigured && (
                   <div className="text-center text-[10px] text-slate-400 flex items-center justify-center gap-1">
@@ -304,34 +263,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-
-          {/* Test / Simulation Controls (For User Feedback & Verification) */}
-          <div className="p-3 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2">
-            <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
-              <Clock size={11} className="text-teal-400" />
-              <span>Chế độ thử nghiệm & kiểm thử tính năng (Dành cho người dùng)</span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={() => handleDirectUpgrade(30)}
-                className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-semibold transition flex items-center gap-1"
-              >
-                <Sparkles size={11} />
-                <span>Kích hoạt thử nghiệm PRO (30 ngày)</span>
-              </button>
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={handleSimulateExpiry}
-                className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-[11px] font-semibold transition flex items-center gap-1"
-              >
-                <RotateCcw size={11} />
-                <span>Mô phỏng hết hạn PRO (Thử nghiệm khóa nhánh)</span>
-              </button>
             </div>
           </div>
         </div>

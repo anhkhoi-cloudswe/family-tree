@@ -22,6 +22,7 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
       burialCoordinates,
       avatarUrl,
       biography,
+      relativeOrder,
       parentId,
       childId,
       spouseId,
@@ -143,6 +144,7 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
         burialCoordinates,
         avatarUrl,
         biography,
+        relativeOrder,
       },
     });
 
@@ -368,6 +370,7 @@ export const updatePerson = async (req: AuthRequest, res: Response) => {
       burialCoordinates,
       avatarUrl,
       biography,
+      relativeOrder,
     } = req.body;
 
     const person = await prisma.person.update({
@@ -387,6 +390,7 @@ export const updatePerson = async (req: AuthRequest, res: Response) => {
         burialCoordinates,
         avatarUrl,
         biography,
+        relativeOrder: relativeOrder !== undefined ? relativeOrder : undefined,
       },
     });
 

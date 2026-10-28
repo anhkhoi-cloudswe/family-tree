@@ -268,7 +268,7 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
                 {searchQuery
                   ? 'Không tìm thấy lời mời khớp với từ khóa tìm kiếm.'
-                  : 'Khi có người thân gửi lời mời tham gia cây gia phả, lời mời sẽ hiển thị tại đây để bạn xem lại, chấp nhận hoặc xóa.'}
+                  : 'Nhận lời mời tham gia cây gia phả tại đây.'}
               </p>
             </div>
           ) : (

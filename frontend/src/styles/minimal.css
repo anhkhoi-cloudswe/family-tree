@@ -4300,6 +4300,10 @@ input:-internal-autofill-selected {
   color: #fbbf24;
 }
 
+.solar-death-highlight {
+  color: #38bdf8;
+}
+
 /* Quick Direct Call Button */
 .list-call-action-wrap {
   margin-top: 0.35rem;

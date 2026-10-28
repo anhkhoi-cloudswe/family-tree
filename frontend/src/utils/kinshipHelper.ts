@@ -11,6 +11,16 @@ import { getYearFromDate } from './dateHelper';
  *    - Chú, Cô, Cậu, Dì, Em, Út, Nhỏ -> nhỏ hơn.
  */
 export function compareAgeOrRank(personA: Person, personB?: Person | null): boolean {
+  // 0. Ưu tiên thứ bậc vai vế được cài đặt rõ ràng (relativeOrder)
+  if (personA.relativeOrder) {
+    if (personA.relativeOrder.endsWith('_OLDER')) return true;
+    if (personA.relativeOrder.endsWith('_YOUNGER')) return false;
+  }
+  if (personB?.relativeOrder) {
+    if (personB.relativeOrder.endsWith('_OLDER')) return false;
+    if (personB.relativeOrder.endsWith('_YOUNGER')) return true;
+  }
+
   if (!personB) {
     const nickA = (personA.nickname || '').toLowerCase();
     return nickA.includes('bác') || nickA.includes('cả') || nickA.includes('anh') || nickA.includes('chị') || nickA.includes('hai');
@@ -214,6 +224,22 @@ export function getKinshipToMe(
   }
   if (isMotherParent) {
     return target.gender === 'MALE' ? 'Ông ngoại' : 'Bà ngoại';
+  }
+
+  // Vai vế so với Ông bà (Ông Bác / Ông Chú / Bà Cô / Bà Bác / Ông Cậu / Bà Dì)
+  if (target.relativeOrder) {
+    if (target.relativeOrder === 'PATERNAL_GF_OLDER' || target.relativeOrder === 'PATERNAL_GM_OLDER') {
+      return target.gender === 'MALE' ? 'Ông Bác' : 'Bà Bác';
+    }
+    if (target.relativeOrder === 'PATERNAL_GF_YOUNGER' || target.relativeOrder === 'PATERNAL_GM_YOUNGER') {
+      return target.gender === 'MALE' ? 'Ông Chú' : 'Bà Cô';
+    }
+    if (target.relativeOrder === 'MATERNAL_GF_OLDER' || target.relativeOrder === 'MATERNAL_GM_OLDER') {
+      return target.gender === 'MALE' ? 'Ông Bác ngoại' : 'Bà Bác ngoại';
+    }
+    if (target.relativeOrder === 'MATERNAL_GF_YOUNGER' || target.relativeOrder === 'MATERNAL_GM_YOUNGER') {
+      return target.gender === 'MALE' ? 'Ông Cậu' : 'Bà Dì';
+    }
   }
 
   // Kiểm tra bạn đời của Ông nội / Bà nội hoặc Ông ngoại / Bà ngoại
@@ -461,6 +487,24 @@ export function getKinshipToMe(
 
     const targetParents = allPersons.filter((p) => targetParentIds.includes(p.id));
 
+    // Ưu tiên 1: Thiết lập trực tiếp trên chính target so với Tôi
+    if (target.relativeOrder === 'ME_OLDER') {
+      return isMale ? 'Anh họ' : 'Chị họ';
+    }
+    if (target.relativeOrder === 'ME_YOUNGER') {
+      return 'Em họ';
+    }
+
+    // Ưu tiên 2: Thiết lập trên cha mẹ của target (cùng thế hệ với Bố/Mẹ)
+    for (const tParent of targetParents) {
+      if (tParent.relativeOrder === 'FATHER_OLDER' || tParent.relativeOrder === 'MOTHER_OLDER') {
+        return isMale ? 'Anh họ' : 'Chị họ';
+      }
+      if (tParent.relativeOrder === 'FATHER_YOUNGER' || tParent.relativeOrder === 'MOTHER_YOUNGER') {
+        return 'Em họ';
+      }
+    }
+
     for (const tParent of targetParents) {
       // Bên Nội: tParent là anh/chị/em ruột của Bố
       if (myFather) {
@@ -480,6 +524,14 @@ export function getKinshipToMe(
           );
 
         if (isFatherSibling) {
+          // Ưu tiên thứ bậc vai vế được thiết lập thủ công
+          if (tParent.relativeOrder === 'FATHER_OLDER') {
+            return isMale ? 'Anh họ' : 'Chị họ';
+          }
+          if (tParent.relativeOrder === 'FATHER_YOUNGER') {
+            return 'Em họ';
+          }
+
           const yearTParent = getYearFromDate(tParent.birthDate);
           const yearMyFather = getYearFromDate(myFather.birthDate);
 
@@ -536,6 +588,14 @@ export function getKinshipToMe(
           );
 
         if (isMotherSibling) {
+          // Ưu tiên thứ bậc vai vế được thiết lập thủ công
+          if (tParent.relativeOrder === 'MOTHER_OLDER') {
+            return isMale ? 'Anh họ' : 'Chị họ';
+          }
+          if (tParent.relativeOrder === 'MOTHER_YOUNGER') {
+            return 'Em họ';
+          }
+
           const yearTParent = getYearFromDate(tParent.birthDate);
           const yearMyMother = getYearFromDate(myMother.birthDate);
 
@@ -572,6 +632,30 @@ export function getKinshipToMe(
 
     return isMale ? 'Anh / Em họ' : 'Chị / Em họ';
   } else if (genDiff === -1) {
+    if (target.relativeOrder === 'FATHER_OLDER') return 'Bác ruột';
+    if (target.relativeOrder === 'FATHER_YOUNGER') return isMale ? 'Chú ruột' : 'Cô ruột';
+    if (target.relativeOrder === 'MOTHER_OLDER') return 'Bác ruột';
+    if (target.relativeOrder === 'MOTHER_YOUNGER') return isMale ? 'Cậu ruột' : 'Dì ruột';
+
+    const targetParentIds = allRels
+      .filter((r) => r.type === 'PARENT_CHILD' && r.childId === target.id && r.parentId)
+      .map((r) => r.parentId as string);
+    const targetParents = allPersons.filter((p) => targetParentIds.includes(p.id));
+    for (const tParent of targetParents) {
+      if (tParent.relativeOrder === 'PATERNAL_GF_OLDER' || tParent.relativeOrder === 'PATERNAL_GM_OLDER') {
+        return 'Bác họ (Nội)';
+      }
+      if (tParent.relativeOrder === 'PATERNAL_GF_YOUNGER' || tParent.relativeOrder === 'PATERNAL_GM_YOUNGER') {
+        return isMale ? 'Chú họ (Nội)' : 'Cô họ (Nội)';
+      }
+      if (tParent.relativeOrder === 'MATERNAL_GF_OLDER' || tParent.relativeOrder === 'MATERNAL_GM_OLDER') {
+        return 'Bác họ (Ngoại)';
+      }
+      if (tParent.relativeOrder === 'MATERNAL_GF_YOUNGER' || tParent.relativeOrder === 'MATERNAL_GM_YOUNGER') {
+        return isMale ? 'Cậu họ (Ngoại)' : 'Dì họ (Ngoại)';
+      }
+    }
+
     return isMale ? 'Bác họ' : 'Cô / Dì họ';
   } else if (genDiff === 1) {
     return isMale ? 'Cháu trai họ' : 'Cháu gái họ';
