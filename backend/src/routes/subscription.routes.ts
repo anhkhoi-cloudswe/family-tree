@@ -8,6 +8,7 @@ import {
   handlePayOSWebhook,
   handleSePayWebhook,
   checkPaymentStatus,
+  getSePayConfig,
 } from '../controllers/subscription.controller';
 import { authenticateToken } from '../middlewares/auth.middleware';
 
@@ -21,6 +22,7 @@ router.post('/sepay-webhook', handleSePayWebhook);
 router.use(authenticateToken);
 
 router.get('/status', getSubscriptionStatus);
+router.get('/sepay-config', getSePayConfig);
 router.post('/upgrade', upgradeSubscription);
 router.post('/simulate-expiry', simulateExpiry);
 

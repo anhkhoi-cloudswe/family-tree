@@ -37,6 +37,7 @@ interface TreeCanvasProps {
   onOpenAdmin?: () => void;
   onExportExcel?: () => void;
   isExportingExcel?: boolean;
+  isPro?: boolean;
 }
 
 interface LineConnector {
@@ -74,6 +75,7 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
   onOpenAdmin,
   onExportExcel,
   isExportingExcel = false,
+  isPro = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const treeContentRef = useRef<HTMLDivElement>(null);
@@ -788,8 +790,9 @@ export const TreeCanvas: React.FC<TreeCanvasProps> = ({
     // Allow React state to flush and display progress overlay
     await new Promise((resolve) => setTimeout(resolve, 80));
     try {
+      const pixelRatio = isPro ? 3.5 : 2.0;
       const dataUrl = await toPng(treeContentRef.current, {
-        pixelRatio: 2.5,
+        pixelRatio,
         backgroundColor: '#fbfbfd',
         cacheBust: true,
       });

@@ -6,6 +6,30 @@ import { AuthRequest } from '../middlewares/auth.middleware';
 export const exportExcel = async (req: AuthRequest, res: Response) => {
   try {
     const { treeId } = req.params;
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Chưa đăng nhập.' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true, subscriptionTier: true, subscriptionExpiresAt: true },
+    });
+
+    const isExpired = Boolean(
+      user?.subscriptionTier === 'PRO' &&
+      user?.subscriptionExpiresAt &&
+      new Date(user.subscriptionExpiresAt) < new Date()
+    );
+
+    const isPro = user?.role === 'ADMIN' || (user?.subscriptionTier === 'PRO' && !isExpired);
+
+    if (!isPro) {
+      return res.status(403).json({
+        error: 'Tính năng Xuất báo cáo & file Excel toàn diện dành riêng cho Gói PRO. Vui lòng nâng cấp gói để tải file!',
+        requiresPro: true,
+      });
+    }
 
     const tree = await prisma.familyTree.findUnique({
       where: { id: treeId },

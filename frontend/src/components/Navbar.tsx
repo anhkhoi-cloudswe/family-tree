@@ -3,6 +3,7 @@ import {
   Search,
   FileSpreadsheet,
   Download,
+  Share2,
 } from 'lucide-react';
 import { User, FamilyTree, Person, TreeRole } from '../types';
 import { downloadTreeExcel } from '../services/api';
@@ -13,6 +14,8 @@ interface NavbarProps {
   tree: FamilyTree | null;
   mePerson?: Person | null;
   userRole?: TreeRole;
+  isPro?: boolean;
+  onOpenSubscription?: () => void;
   pendingInvitationsCount?: number;
   onOpenInvitations?: () => void;
   onOpenShareModal?: () => void;
@@ -42,7 +45,10 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   user,
   tree,
+  isPro = false,
+  onOpenSubscription,
   onOpenPersonPicker,
+  onOpenShareModal,
   onExportImage,
   isExportingImage,
 }) => {
@@ -63,6 +69,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const handleExportExcel = async () => {
     if (!tree) return;
+    if (!isPro) {
+      toast.info(
+        'Tính năng Xuất báo cáo & file Excel danh bạ gia đình dành riêng cho Gói PRO. Nâng cấp ngay để mở khóa!'
+      );
+      onOpenSubscription?.();
+      return;
+    }
     try {
       setIsExportingExcel(true);
       await downloadTreeExcel(tree.id, tree.name);
@@ -98,17 +111,38 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
 
-        {/* 2. Right Group: Xuất Excel & Tải Ảnh */}
+        {/* 2. Right Group: Mời, Xuất Excel & Tải Ảnh */}
         <div className="navbar-right-group flex items-center gap-2">
+          {onOpenShareModal && (
+            <button
+              type="button"
+              className="navbar-action-btn"
+              onClick={onOpenShareModal}
+              title="Mời người thân vào xem hoặc chỉnh sửa cây gia phả"
+            >
+              <Share2 size={15} className="text-emerald-400" />
+              <span className="action-btn-text">Mời</span>
+            </button>
+          )}
+
           <button
             type="button"
             className="navbar-action-btn"
             onClick={handleExportExcel}
             disabled={isExportingExcel}
-            title="Xuất bảng Excel danh bạ gia đình, ngày sinh, SĐT, quê quán"
+            title={
+              isPro
+                ? 'Xuất bảng Excel danh bạ gia đình, ngày sinh, SĐT, quê quán'
+                : 'Tính năng Gói PRO: Xuất bảng Excel danh bạ toàn diện'
+            }
           >
             <FileSpreadsheet size={15} className="text-emerald-400" />
             <span className="action-btn-text">{isExportingExcel ? 'Đang xuất...' : 'Xuất Excel'}</span>
+            {!isPro && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 ml-1 leading-none shadow-sm">
+                PRO
+              </span>
+            )}
           </button>
 
           <button
@@ -116,7 +150,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="navbar-action-btn"
             onClick={onExportImage}
             disabled={isExportingImage}
-            title="Tải toàn bộ hình ảnh cây gia phả HD về máy để in ấn hoặc chia sẻ"
+            title={
+              isPro
+                ? 'Tải toàn bộ hình ảnh cây gia phả Ultra-HD siêu nét về máy'
+                : 'Tải toàn bộ hình ảnh cây gia phả HD tiêu chuẩn về máy'
+            }
           >
             <Download size={15} className="text-sky-400" />
             <span className="action-btn-text">{isExportingImage ? 'Đang tạo...' : 'Tải Ảnh'}</span>

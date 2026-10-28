@@ -331,3 +331,14 @@ export const handleSePayWebhook = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Lấy cấu hình SePay để tạo mã VietQR thanh toán
+ */
+export const getSePayConfig = async (req: AuthRequest, res: Response) => {
+  return res.json({
+    bankAccount: process.env.SEPAY_BANK_ACC || '2911121319',
+    bankName: process.env.SEPAY_BANK_NAME || 'MBBank',
+    accountHolder: 'TRAN ANH KHOI',
+  });
+};
+

@@ -337,6 +337,10 @@ export const apiSimulateSubscriptionExpiry = () =>
     method: 'POST',
   });
 
+// SePay Gateway & Bank Info
+export const apiGetSePayConfig = () =>
+  request<{ bankAccount: string; bankName: string; accountHolder?: string }>('/subscription/sepay-config');
+
 // PayOS Gateway
 export const apiGetPayOSStatus = () =>
   request<{ isConfigured: boolean }>('/subscription/payos-status');

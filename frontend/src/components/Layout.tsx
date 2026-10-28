@@ -191,10 +191,14 @@ export const Layout: React.FC<LayoutProps> = ({
       icon: Settings,
     },
     {
-      key: 'SHARE',
-      label: 'Mời người thân',
-      icon: Share2,
-      onClick: onOpenShareModal,
+      key: 'SUBSCRIPTION',
+      label: 'Gói dịch vụ',
+      icon: Crown,
+      badge: isPro ? 'PRO' : 'FREE',
+      badgeColor: isPro
+        ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+        : 'bg-slate-700/50 text-slate-300 border-slate-600/40',
+      onClick: onOpenSubscription,
     },
     ...(user?.role === 'ADMIN'
       ? [

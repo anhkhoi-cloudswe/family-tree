@@ -916,6 +916,9 @@ const AppContent: React.FC = () => {
             setSharingTree(tree);
             setShowShareModal(true);
           }
+          else if (key === 'SUBSCRIPTION') {
+            setShowSubscriptionModal(true);
+          }
           else if (key === 'TOUR') setShowTour(true);
           else if (key === 'ADMIN') setShowAdminModal(true);
         }}
@@ -939,6 +942,8 @@ const AppContent: React.FC = () => {
           <Navbar
             user={user}
             tree={tree}
+            isPro={subscriptionStatus?.tier === 'PRO'}
+            onOpenSubscription={() => setShowSubscriptionModal(true)}
             mePerson={mePerson}
             userRole={tree?.userRole || 'OWNER'}
             pendingInvitationsCount={pendingInvitations.length}
@@ -1049,8 +1054,13 @@ const AppContent: React.FC = () => {
               exportTrigger={exportTrigger}
               onExportDone={() => {
                 setIsExportingImage(false);
-                toast.success('Đã tải hình ảnh cây gia phả HD thành công!');
+                toast.success(
+                  subscriptionStatus?.tier === 'PRO'
+                    ? 'Đã xuất và tải hình ảnh cây gia phả Ultra-HD 4K siêu nét thành công!'
+                    : 'Đã tải hình ảnh cây gia phả HD tiêu chuẩn thành công!'
+                );
               }}
+              isPro={subscriptionStatus?.tier === 'PRO'}
               focusPersonId={focusPersonId}
               onClearFocusPerson={() => setFocusPersonId(null)}
               onOpenAddMember={() => {
@@ -1426,6 +1436,7 @@ const AppContent: React.FC = () => {
       <SubscriptionModal
         isOpen={showSubscriptionModal}
         status={subscriptionStatus}
+        user={user}
         onClose={() => setShowSubscriptionModal(false)}
         onRefreshStatus={async () => {
           await refreshTreesAndSubscription();
