@@ -71,10 +71,14 @@ jobs:
             DATABASE_URL
             JWT_SECRET
             SEPAY_API_KEY
+            SEPAY_BANK_ACC
+            SEPAY_BANK_NAME
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'family_tree_production_secret_2026' }}
           SEPAY_API_KEY: ${{ secrets.SEPAY_API_KEY }}
+          SEPAY_BANK_ACC: ${{ secrets.SEPAY_BANK_ACC }}
+          SEPAY_BANK_NAME: ${{ secrets.SEPAY_BANK_NAME }}
 
   # =========================================================
   # 3. FRONTEND DEPLOYMENT (Cloudflare Pages)
