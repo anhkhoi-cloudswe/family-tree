@@ -18,6 +18,13 @@ export interface SubscriptionStatus {
   rawTier?: string;
   expiresAt?: string | null;
   isExpired: boolean;
+  // User Subscription State:
+  current_plan?: 'free' | 'pro_monthly' | 'pro_yearly';
+  status?: 'active' | 'expired' | 'cancelled';
+  daysRemaining?: number;
+  canUpgradeToYearly?: boolean;
+  isProActive?: boolean;
+  // Quota:
   totalBranches: number;
   ownedCount: number;
   joinedCount: number;

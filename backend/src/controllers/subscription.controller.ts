@@ -2,9 +2,17 @@ import { Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { broadcastUserUpdate } from '../services/websocket.service';
+import {
+  getUserSubscriptionState,
+  validateSubscriptionCheckout,
+  applySuccessfulSubscription,
+  subscriptionOrders,
+  getNextOrderCode,
+  SubscriptionTransaction,
+} from '../services/billing.service';
 
 /**
- * Kiểm tra trạng thái gói hội viên của người dùng hiện tại
+ * 1. Kiểm tra trạng thái gói hội viên của người dùng hiện tại (User Subscription State)
  */
 export const getSubscriptionStatus = async (req: AuthRequest, res: Response) => {
   try {
@@ -23,14 +31,7 @@ export const getSubscriptionStatus = async (req: AuthRequest, res: Response) => 
 
     if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
 
-    const now = new Date();
-    const isExpired = Boolean(
-      user.subscriptionTier === 'PRO' &&
-      user.subscriptionExpiresAt &&
-      new Date(user.subscriptionExpiresAt) < now
-    );
-
-    const activeTier = isExpired ? 'FREE' : user.subscriptionTier || 'FREE';
+    const state = await getUserSubscriptionState(userId);
 
     // Đếm tổng số nhánh: tự tạo + được mời tham gia
     const ownedCount = await prisma.familyTree.count({ where: { ownerId: userId } });
@@ -38,20 +39,28 @@ export const getSubscriptionStatus = async (req: AuthRequest, res: Response) => 
     const totalBranches = ownedCount + joinedCount;
 
     const maxFreeBranches = 5;
-    const isLimitReached = activeTier !== 'PRO' && totalBranches >= maxFreeBranches;
-    const lockedBranchesCount = activeTier !== 'PRO' ? Math.max(0, totalBranches - maxFreeBranches) : 0;
+    const isLimitReached = !state.isProActive && totalBranches >= maxFreeBranches;
+    const lockedBranchesCount = !state.isProActive ? Math.max(0, totalBranches - maxFreeBranches) : 0;
 
     return res.json({
-      tier: activeTier,
+      tier: state.isProActive ? 'PRO' : 'FREE',
       rawTier: user.subscriptionTier,
-      expiresAt: user.subscriptionExpiresAt,
-      isExpired,
+      expiresAt: state.expires_at,
+      isExpired: state.status === 'expired',
+      // User Subscription State:
+      current_plan: state.current_plan,   // 'free' | 'pro_monthly' | 'pro_yearly'
+      status: state.status,               // 'active' | 'expired' | 'cancelled'
+      expires_at: state.expires_at,
+      daysRemaining: state.daysRemaining,
+      isProActive: state.isProActive,
+      canUpgradeToYearly: state.canUpgradeToYearly,
+      // Quota:
       totalBranches,
       ownedCount,
       joinedCount,
       maxFreeBranches,
       isLimitReached,
-      canCreateMore: activeTier === 'PRO' || totalBranches < maxFreeBranches,
+      canCreateMore: state.isProActive || totalBranches < maxFreeBranches,
       lockedBranchesCount,
     });
   } catch (error: any) {
@@ -166,6 +175,16 @@ export const createPayOSPayment = async (req: AuthRequest, res: Response) => {
     const amount = isYearly ? 399000 : 49000;
     const durationDays = isYearly ? 365 : 30;
 
+    // 2. Kiểm tra trước khi tạo thanh toán (Validation before Checkout & Duplicate Prevention)
+    const checkoutValidation = await validateSubscriptionCheckout(userId, isYearly ? 'YEARLY' : 'MONTHLY');
+    if (!checkoutValidation.allowed) {
+      return res.status(400).json({
+        error: checkoutValidation.message,
+        code: 'DUPLICATE_SUBSCRIPTION_PREVENTED',
+        currentPlan: checkoutValidation.currentPlan,
+      });
+    }
+
     const payOS = getPayOS();
     if (!payOS || !isPayOSConfigured()) {
       return res.status(400).json({
@@ -229,18 +248,15 @@ export const handlePayOSWebhook = async (req: any, res: Response) => {
       const order = pendingPayOSOrders.get(Number(orderCode));
       if (order && !order.isPaid) {
         order.isPaid = true;
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + order.durationDays);
-
-        await prisma.user.update({
-          where: { id: order.userId },
-          data: {
-            subscriptionTier: 'PRO',
-            subscriptionExpiresAt: expiresAt,
-          },
+        // Áp dụng nghiệp vụ thanh toán thành công qua module billing
+        await applySuccessfulSubscription({
+          userId: order.userId,
+          plan: order.plan,
+          amount: order.amount,
+          gateway: 'PayOS Gateway',
+          orderCode: order.orderCode,
+          orderNumber: `PAYOS #${order.orderCode}`,
         });
-
-        broadcastUserUpdate(order.userId, { action: 'SUBSCRIPTION_UPDATED', tier: 'PRO' });
       }
     }
 
@@ -263,28 +279,9 @@ export const checkPaymentStatus = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export interface SubscriptionTransaction {
-  id: string;
-  orderCode: number;
-  orderNumber: string; // e.g. "PRO #1"
-  userId: string;
-  userName: string;
-  userEmail: string;
-  userPhone?: string;
-  plan: 'MONTHLY' | 'YEARLY';
-  amount: number;
-  status: 'SUCCESS' | 'PENDING' | 'EXPIRED';
-  gateway: string;
-  createdAt: string;
-  paidAt?: string;
-}
-
-// In-memory order tracking (synchronized with DB users)
-const subscriptionOrders: SubscriptionTransaction[] = [];
-let orderCounter = 1;
-
 /**
  * Tạo mã đơn hàng giao dịch (Ví dụ: PRO #1, PRO #2) cho phiên thanh toán SePay VietQR
+ * Kèm kiểm tra chống thanh toán trùng lặp (Duplicate Prevention) & Chuyển đổi chu kỳ
  */
 export const createSubscriptionOrder = async (req: AuthRequest, res: Response) => {
   try {
@@ -294,6 +291,16 @@ export const createSubscriptionOrder = async (req: AuthRequest, res: Response) =
     const { plan = 'YEARLY' } = req.body;
     const isYearly = plan === 'YEARLY';
     const amount = isYearly ? 399000 : 49000;
+
+    // 2. Kiểm tra trước khi tạo đơn hàng (Validation before Checkout)
+    const checkoutValidation = await validateSubscriptionCheckout(userId, isYearly ? 'YEARLY' : 'MONTHLY');
+    if (!checkoutValidation.allowed) {
+      return res.status(400).json({
+        error: checkoutValidation.message,
+        code: 'DUPLICATE_SUBSCRIPTION_PREVENTED',
+        currentPlan: checkoutValidation.currentPlan,
+      });
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -324,7 +331,7 @@ export const createSubscriptionOrder = async (req: AuthRequest, res: Response) =
       });
     }
 
-    const currentCode = orderCounter++;
+    const currentCode = getNextOrderCode();
     const orderNumber = `PRO #${currentCode}`;
 
     const newOrder: SubscriptionTransaction = {
@@ -352,6 +359,8 @@ export const createSubscriptionOrder = async (req: AuthRequest, res: Response) =
       bankAccount: process.env.SEPAY_BANK_ACC || '2911121319',
       bankName: process.env.SEPAY_BANK_NAME || 'MBBank',
       accountHolder: 'NGUYEN HOANG ANH KHOI',
+      isCycleConversion: checkoutValidation.isCycleConversion,
+      conversionNote: checkoutValidation.message,
     });
   } catch (err: any) {
     console.error('Lỗi tạo đơn hàng subscription:', err);
@@ -360,7 +369,8 @@ export const createSubscriptionOrder = async (req: AuthRequest, res: Response) =
 };
 
 /**
- * Webhook từ SePay (sepay.vn) khi có biến động số dư chuyển khoản vào tài khoản ngân hàng
+ * 3. Webhook từ SePay (sepay.vn) khi có biến động số dư chuyển khoản vào tài khoản ngân hàng
+ * Xử lý thành công qua applySuccessfulSubscription (cộng dồn thời gian, cập nhật trạng thái, ghi lịch sử)
  */
 export const handleSePayWebhook = async (req: Request, res: Response) => {
   try {
@@ -384,7 +394,7 @@ export const handleSePayWebhook = async (req: Request, res: Response) => {
       return res.json({ success: true, message: 'Số tiền nhỏ hơn gói PRO tối thiểu (49.000đ).' });
     }
 
-    const durationDays = amount >= 399000 ? 365 : 30;
+    const requestedPlan: 'MONTHLY' | 'YEARLY' = amount >= 399000 ? 'YEARLY' : 'MONTHLY';
     const contentStr = String(content || '');
 
     let targetUser: any = null;
@@ -422,42 +432,22 @@ export const handleSePayWebhook = async (req: Request, res: Response) => {
     }
 
     if (targetUser) {
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + durationDays);
-
-      await prisma.user.update({
-        where: { id: targetUser.id },
-        data: {
-          subscriptionTier: 'PRO',
-          subscriptionExpiresAt: expiresAt,
-        },
+      // 3. Áp dụng nghiệp vụ thanh toán thành công
+      const result = await applySuccessfulSubscription({
+        userId: targetUser.id,
+        plan: requestedPlan,
+        amount,
+        gateway: 'SePay VietQR',
+        orderNumber: matchedOrder?.orderNumber,
+        orderCode: matchedOrder?.orderCode,
       });
 
-      if (matchedOrder) {
-        matchedOrder.status = 'SUCCESS';
-        matchedOrder.paidAt = new Date().toISOString();
-        matchedOrder.amount = amount;
-      } else {
-        const currentCode = orderCounter++;
-        subscriptionOrders.push({
-          id: `ord_${Date.now()}_${currentCode}`,
-          orderCode: currentCode,
-          orderNumber: `PRO #${currentCode}`,
-          userId: targetUser.id,
-          userName: targetUser.fullName || 'Người dùng',
-          userEmail: targetUser.email,
-          userPhone: targetUser.phone || undefined,
-          plan: durationDays >= 365 ? 'YEARLY' : 'MONTHLY',
-          amount,
-          status: 'SUCCESS',
-          gateway: 'SePay VietQR',
-          createdAt: new Date().toISOString(),
-          paidAt: new Date().toISOString(),
-        });
-      }
-
-      broadcastUserUpdate(targetUser.id, { action: 'SUBSCRIPTION_UPDATED', tier: 'PRO' });
-      return res.json({ success: true, message: `Đã kích hoạt PRO ${durationDays} ngày cho người dùng ${targetUser.id}` });
+      return res.json({
+        success: true,
+        message: result.message,
+        expiresAt: result.newExpiresAt,
+        plan: result.updatedPlan,
+      });
     }
 
     return res.json({ success: true, message: 'Không tìm thấy tài khoản người dùng khớp với nội dung chuyển khoản.' });
@@ -514,7 +504,7 @@ export const getAdminSubscriptionReports = async (req: AuthRequest, res: Respons
         const now = Date.now();
         const daysRemaining = Math.max(0, Math.ceil((expires - now) / (1000 * 60 * 60 * 24)));
         const isYearly = daysRemaining > 35;
-        const code = orderCounter++;
+        const code = getNextOrderCode();
         subscriptionOrders.push({
           id: `ord_${pu.id.slice(0, 8)}`,
           orderCode: code,

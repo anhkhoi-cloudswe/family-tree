@@ -9,6 +9,9 @@ import {
   RefreshCw,
   Clock,
   ArrowLeft,
+  Lock,
+  ShieldCheck,
+  AlertCircle,
 } from 'lucide-react';
 import { User, SubscriptionStatus } from '../types';
 import {
@@ -64,17 +67,41 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const isPro = status?.tier === 'PRO' && !status?.isExpired;
+  const currentPlan = status?.current_plan || (isPro ? 'pro_monthly' : 'free');
+  const isMonthlyActive = isPro && currentPlan === 'pro_monthly';
+  const isYearlyActive = isPro && currentPlan === 'pro_yearly';
+  const daysRemaining = status?.daysRemaining || 0;
+  const expiresDateStr = status?.expiresAt
+    ? new Date(status.expiresAt).toLocaleDateString('vi-VN')
+    : '';
+
+  // Chống thanh toán trùng lặp (Duplicate Prevention)
+  const isDuplicatePlan = (isMonthlyActive && billingCycle === 'MONTHLY') || isYearlyActive;
+
   // Initialize or reset when modal opens
   useEffect(() => {
     if (isOpen) {
       setStep('PLANS');
       setQrLoaded(false);
       setTimeLeft(600);
+      if (isMonthlyActive) {
+        setBillingCycle('YEARLY');
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, isMonthlyActive]);
 
   // Handle plan transition into PAYMENT step
   const handleProceedToPayment = async () => {
+    if (isDuplicatePlan) {
+      if (isYearlyActive) {
+        toast.info(`Bạn đang sở hữu Gói PRO Theo Năm còn hạn đến ${expiresDateStr}. Không thể tạo giao dịch trùng lặp.`);
+      } else {
+        toast.info('Bạn đang sử dụng gói này. Vui lòng chọn gói "Theo Năm (-35%)" để nâng cấp hoặc chờ gói hết hạn.');
+      }
+      return;
+    }
+
     try {
       setQrLoaded(false);
       setTimeLeft(600); // 10 minutes timeout
@@ -89,21 +116,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           bankName: order.bankName || 'MBBank',
           accountHolder: 'NGUYEN HOANG ANH KHOI',
         });
+        setStep('PAYMENT');
       }
-      setStep('PAYMENT');
     } catch (err: any) {
-      // Fallback local code if offline
-      const fallbackAmount = billingCycle === 'YEARLY' ? 399000 : 49000;
-      setOrderDetails({
-        orderCode: 1,
-        orderNumber: 'PRO #1',
-        transferMemo: 'PRO #1',
-        amount: fallbackAmount,
-        bankAccount: '2911121319',
-        bankName: 'MBBank',
-        accountHolder: 'NGUYEN HOANG ANH KHOI',
-      });
-      setStep('PAYMENT');
+      const errMsg = err?.message || err?.error || 'Không thể tạo đơn hàng thanh toán.';
+      toast.error(errMsg);
     }
   };
 
@@ -173,8 +190,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   }, [isOpen, step, onClose, onRefreshStatus, toast]);
 
   if (!isOpen) return null;
-
-  const isPro = status?.tier === 'PRO';
 
   const formatCountdown = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -271,17 +286,22 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           {step === 'PLANS' && (
             <>
               {/* Pricing Cycle Toggle */}
-              <div className="flex items-center justify-center gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 max-w-[260px] mx-auto text-xs font-semibold">
+              <div className="flex items-center justify-center gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 max-w-[280px] mx-auto text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setBillingCycle('MONTHLY')}
-                  className={`flex-1 py-1.5 rounded-lg transition whitespace-nowrap ${
+                  className={`flex-1 py-1.5 rounded-lg transition flex items-center justify-center gap-1 whitespace-nowrap ${
                     billingCycle === 'MONTHLY'
                       ? 'bg-slate-800 text-white shadow'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  Theo Tháng
+                  <span>Theo Tháng</span>
+                  {isMonthlyActive && (
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1 rounded-full font-bold">
+                      Đang dùng
+                    </span>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -293,9 +313,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   }`}
                 >
                   <span>Theo Năm</span>
-                  <span className="text-[9px] bg-amber-400 text-slate-950 px-1 rounded-full font-bold">
-                    -35%
-                  </span>
+                  {isYearlyActive ? (
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1 rounded-full font-bold">
+                      Đang dùng
+                    </span>
+                  ) : (
+                    <span className="text-[9px] bg-amber-400 text-slate-950 px-1 rounded-full font-bold">
+                      -35%
+                    </span>
+                  )}
                 </button>
               </div>
 
@@ -305,7 +331,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 <div className="order-1 sm:order-2 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-b from-amber-500/15 via-slate-950 to-slate-950 border-2 border-amber-500/50 shadow-lg shadow-amber-950/30 flex flex-col justify-between relative overflow-hidden">
                   <div className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 uppercase whitespace-nowrap">
                     <Sparkles size={10} />
-                    <span>Khuyên dùng</span>
+                    <span>{isPro ? 'Đang hoạt động' : 'Khuyên dùng'}</span>
                   </div>
 
                   <div>
@@ -322,6 +348,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         / {billingCycle === 'YEARLY' ? 'năm (33k/tháng)' : 'tháng'}
                       </span>
                     </div>
+
+                    {/* Cycle Upgrade Bonus Notice */}
+                    {isMonthlyActive && billingCycle === 'YEARLY' && (
+                      <div className="mb-2.5 p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px] flex items-center gap-2">
+                        <Sparkles size={14} className="text-amber-400 flex-shrink-0" />
+                        <span>Chuyển đổi chu kỳ: <strong>{daysRemaining} ngày còn lại</strong> của gói tháng sẽ được cộng dồn vào năm mới!</span>
+                      </div>
+                    )}
 
                     <ul className="space-y-1.5 sm:space-y-2 text-slate-300 text-[11px]">
                       <li className="flex items-center gap-2 font-medium text-emerald-300">
@@ -347,15 +381,51 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </ul>
                   </div>
 
-                  {/* Nút Nâng cấp PRO ngay */}
+                  {/* Nút Hành động & Khóa chống thanh toán trùng lặp */}
                   <div className="pt-3 sm:pt-4">
-                    <button
-                      type="button"
-                      onClick={handleProceedToPayment}
-                      className="w-full h-10 sm:h-11 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-extrabold text-xs sm:text-sm shadow-md shadow-amber-500/20 flex items-center justify-center transition cursor-pointer whitespace-nowrap active:scale-[0.98]"
-                    >
-                      <span>{isPro ? 'Gia Hạn Gói PRO' : 'Nâng Cấp PRO Ngay'}</span>
-                    </button>
+                    {isYearlyActive ? (
+                      <div className="space-y-1.5">
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full h-10 sm:h-11 px-4 rounded-xl bg-emerald-950/70 border border-emerald-500/50 text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed opacity-95"
+                        >
+                          <ShieldCheck size={16} className="text-emerald-400" />
+                          <span>Gói PRO Năm Đang Hoạt Động</span>
+                        </button>
+                        <p className="text-[10px] sm:text-[11px] text-emerald-400/90 text-center leading-tight">
+                          Hạn đến {expiresDateStr} (còn {daysRemaining} ngày). Đã khóa nút thanh toán trùng lặp.
+                        </p>
+                      </div>
+                    ) : isMonthlyActive && billingCycle === 'MONTHLY' ? (
+                      <div className="space-y-1.5">
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full h-10 sm:h-11 px-4 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed"
+                        >
+                          <Lock size={14} className="text-amber-400" />
+                          <span>Gói Tháng Đang Dùng ({daysRemaining} ngày)</span>
+                        </button>
+                        <p className="text-[10px] sm:text-[11px] text-amber-300/90 text-center leading-tight">
+                          Bạn đang dùng gói này. Hãy chọn tab <strong>Theo Năm (-35%)</strong> để nâng cấp hoặc chờ gói hết hạn.
+                        </p>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleProceedToPayment}
+                        className="w-full h-10 sm:h-11 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-extrabold text-xs sm:text-sm shadow-md shadow-amber-500/20 flex items-center justify-center transition cursor-pointer whitespace-nowrap active:scale-[0.98]"
+                      >
+                        <span>
+                          {isMonthlyActive && billingCycle === 'YEARLY'
+                            ? 'Chuyển Đổi Lên Gói Năm (-35%)'
+                            : status?.isExpired
+                            ? 'Gia Hạn Gói PRO'
+                            : 'Nâng Cấp PRO Ngay'}
+                        </span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
