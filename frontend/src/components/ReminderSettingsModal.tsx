@@ -117,12 +117,19 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
   };
 
   return (
-    <div className="minimal-modal-overlay" onClick={onClose} style={{ zIndex: 1200 }}>
+    <div
+      className="minimal-modal-overlay"
+      onClick={onClose}
+      style={{
+        zIndex: 1200,
+        padding: 'max(0.75rem, env(safe-area-inset-top)) 0.75rem max(0.75rem, env(safe-area-inset-bottom)) 0.75rem',
+      }}
+    >
       <div
         className="minimal-modal-box"
         style={{
           maxWidth: '560px',
-          maxHeight: '92vh',
+          maxHeight: '88dvh',
           display: 'flex',
           flexDirection: 'column',
           background: 'rgba(9, 24, 17, 0.98)',
@@ -136,19 +143,20 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
         {/* Header */}
         <div
           style={{
-            padding: '1.2rem 1.5rem',
+            padding: '1rem 1.25rem',
             borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, rgba(16, 185, 129, 0.15), rgba(6, 78, 59, 0.05))',
+            flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
             <div
               style={{
-                width: '38px',
-                height: '38px',
+                width: '36px',
+                height: '36px',
                 borderRadius: '10px',
                 background: 'rgba(52, 211, 153, 0.15)',
                 border: '1px solid rgba(52, 211, 153, 0.3)',
@@ -156,17 +164,18 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#34d399',
+                flexShrink: 0,
               }}
             >
-              <Bell size={20} />
+              <Bell size={18} />
             </div>
-            <div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+            <div style={{ minWidth: 0 }}>
+              <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#ffffff', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 Gợi Nhớ Sinh Nhật & Ngày Giỗ
               </h3>
             </div>
           </div>
-          <button className="btn-ghost-sm" onClick={onClose} title="Đóng">
+          <button className="btn-ghost-sm" onClick={onClose} title="Đóng" style={{ flexShrink: 0 }}>
             <X size={18} color="#94a3b8" />
           </button>
         </div>
@@ -174,11 +183,13 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
         {/* Body content */}
         <div
           style={{
-            padding: '1.4rem 1.5rem',
+            padding: '1.1rem 1.25rem',
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: '1.25rem',
+            gap: '1rem',
+            flex: 1,
+            minHeight: 0,
           }}
         >
           {/* 1. Main Toggle Switch */}
@@ -454,19 +465,20 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
         {/* Footer */}
         <div
           style={{
-            padding: '1rem 1.5rem',
+            padding: '0.85rem 1.25rem calc(0.85rem + env(safe-area-inset-bottom, 0px)) 1.25rem',
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '0.75rem',
-            background: 'rgba(6, 20, 13, 0.95)',
+            background: 'rgba(6, 20, 13, 0.98)',
+            flexShrink: 0,
           }}
         >
           <button
             type="button"
             className="btn-secondary"
             onClick={onClose}
-            style={{ fontSize: '0.86rem', padding: '0.5rem 1rem' }}
+            style={{ fontSize: '0.86rem', padding: '0.55rem 1rem', borderRadius: '10px' }}
           >
             Hủy Bỏ
           </button>
@@ -476,10 +488,11 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
             onClick={handleSave}
             style={{
               fontSize: '0.86rem',
-              padding: '0.5rem 1.25rem',
+              padding: '0.55rem 1.25rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.4rem',
+              borderRadius: '10px',
             }}
           >
             <Check size={16} />

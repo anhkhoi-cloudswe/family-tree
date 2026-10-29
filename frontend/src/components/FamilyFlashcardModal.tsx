@@ -137,12 +137,14 @@ export const FamilyFlashcardModal: React.FC<FamilyFlashcardModalProps> = ({
       <div className="flashcard-modal-container" onClick={(e) => e.stopPropagation()}>
         {/* HEADER */}
         <div className="flashcard-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, paddingRight: '0.5rem' }}>
             <div className="flashcard-badge-icon">
-              <Sparkles size={20} color="#a855f7" />
+              <Sparkles size={18} color="#a855f7" />
             </div>
-            <div>
-              <h2 className="flashcard-title">Đố Vui Gia Phả (Ai Là Ai?)</h2>
+            <div style={{ minWidth: 0 }}>
+              <h2 className="flashcard-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Đố Vui Gia Phả
+              </h2>
               <span className="flashcard-subtitle">
                 {!isCompleted && questions.length > 0
                   ? `Câu hỏi ${currentIndex + 1} / ${questions.length}`
@@ -151,15 +153,15 @@ export const FamilyFlashcardModal: React.FC<FamilyFlashcardModalProps> = ({
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
             {streak > 1 && !isCompleted && (
               <div className="flashcard-streak-pill" title="Chuỗi trả lời đúng liên tiếp!">
-                <Flame size={15} color="#f97316" />
+                <Flame size={14} color="#f97316" />
                 <span>Chuỗi {streak}🔥</span>
               </div>
             )}
             <button type="button" className="flashcard-close-btn" onClick={onClose} aria-label="Đóng">
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>

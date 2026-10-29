@@ -105,29 +105,50 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
     toast.success('Đã sao chép lịch giỗ vào bộ nhớ tạm!');
   };
 
+  const formatLunarDay = (lunarDay?: string | null) => {
+    if (!lunarDay || !lunarDay.trim()) return 'Chưa có ngày giỗ';
+    const clean = lunarDay.replace(/\s*âm\s*lịch/gi, '').trim();
+    return `${clean} Âm lịch`;
+  };
+
   return (
-    <div className="minimal-modal-overlay" onClick={onClose}>
+    <div
+      className="minimal-modal-overlay"
+      onClick={onClose}
+      style={{
+        zIndex: 1200,
+        padding: 'max(0.75rem, env(safe-area-inset-top)) 0.75rem max(0.75rem, env(safe-area-inset-bottom)) 0.75rem',
+      }}
+    >
       <div
         className="minimal-modal-box"
-        style={{ maxWidth: '720px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+        style={{
+          maxWidth: '720px',
+          maxHeight: '88dvh',
+          display: 'flex',
+          flexDirection: 'column',
+          background: 'rgba(9, 24, 17, 0.98)',
+          borderRadius: '20px',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div
           style={{
-            padding: '1.2rem 1.6rem',
+            padding: '1rem 1.25rem',
             borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, rgba(225, 29, 72, 0.18), rgba(16, 36, 26, 0.95))',
+            flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
             <div
               style={{
-                width: '38px',
-                height: '38px',
+                width: '36px',
+                height: '36px',
                 borderRadius: '10px',
                 background: 'rgba(244, 63, 94, 0.2)',
                 border: '1px solid rgba(244, 63, 94, 0.35)',
@@ -135,39 +156,39 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#fb7185',
+                flexShrink: 0,
               }}
             >
-              <Flame size={20} />
+              <Flame size={18} />
             </div>
-            <div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#f1f5f9', margin: 0, whiteSpace: 'nowrap' }}>
-                Lịch Giỗ Âm Lịch và Dương Lịch
+            <div style={{ minWidth: 0 }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#f1f5f9', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Lịch Giỗ Âm Lịch & Dương Lịch
               </h3>
             </div>
           </div>
-          <button className="btn-ghost-sm" onClick={onClose} title="Đóng">
+          <button className="btn-ghost-sm" onClick={onClose} title="Đóng" style={{ flexShrink: 0 }}>
             <X size={18} />
           </button>
         </div>
 
         {/* Search & Filter Bar */}
-        <div style={{ padding: '1.2rem 1.6rem 0.6rem 1.6rem' }}>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.8rem' }}>
+        <div style={{ padding: '0.85rem 1.1rem 0.4rem 1.1rem', flexShrink: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '0.5rem' }}>
             {/* Search Box */}
             <div
               style={{
-                flex: 1,
-                minWidth: '220px',
+                width: '100%',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.55rem',
                 background: 'rgba(255, 255, 255, 0.05)',
                 border: '1.5px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: '8px',
-                padding: '0.5rem 0.85rem',
+                borderRadius: '10px',
+                padding: '0.45rem 0.75rem',
               }}
             >
-              <Search size={16} color="#34d399" />
+              <Search size={15} color="#34d399" />
               <input
                 type="text"
                 placeholder="Tìm tổ tiên, ngày giỗ, nơi an táng..."
@@ -179,22 +200,23 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                   color: '#ffffff',
                   outline: 'none',
                   width: '100%',
-                  fontSize: '0.88rem',
+                  fontSize: '0.85rem',
                 }}
               />
             </div>
 
             {/* Quick Filter Tabs & Actions */}
-            <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '0.35rem', overflowX: 'auto', paddingBottom: '2px', WebkitOverflowScrolling: 'touch' }}>
               <button
                 type="button"
                 onClick={() => setFilterType('ALL')}
                 style={{
-                  padding: '0.45rem 0.85rem',
-                  fontSize: '0.82rem',
+                  padding: '0.4rem 0.7rem',
+                  fontSize: '0.78rem',
                   fontWeight: 600,
                   borderRadius: '8px',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                   border: filterType === 'ALL' ? '1.5px solid #10b981' : '1px solid rgba(255, 255, 255, 0.12)',
                   background: filterType === 'ALL' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.05)',
                   color: filterType === 'ALL' ? '#ffffff' : '#cbd5e1',
@@ -208,21 +230,22 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                 type="button"
                 onClick={() => setFilterType('UPCOMING')}
                 style={{
-                  padding: '0.45rem 0.85rem',
-                  fontSize: '0.82rem',
+                  padding: '0.4rem 0.7rem',
+                  fontSize: '0.78rem',
                   fontWeight: 600,
                   borderRadius: '8px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
+                  gap: '0.3rem',
+                  whiteSpace: 'nowrap',
                   border: filterType === 'UPCOMING' ? '1.5px solid #f43f5e' : '1px solid rgba(255, 255, 255, 0.12)',
                   background: filterType === 'UPCOMING' ? 'rgba(244, 63, 94, 0.25)' : 'rgba(255, 255, 255, 0.05)',
                   color: filterType === 'UPCOMING' ? '#ffffff' : upcomingCount > 0 ? '#fda4af' : '#94a3b8',
                   transition: 'all 0.15s ease',
                 }}
               >
-                <Bell size={13} />
+                <Bell size={12} />
                 <span>Sắp tới 45 ngày ({upcomingCount})</span>
               </button>
 
@@ -230,14 +253,14 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                 type="button"
                 onClick={handleCopySchedule}
                 style={{
-                  padding: '0.45rem 0.85rem',
-                  fontSize: '0.82rem',
+                  padding: '0.4rem 0.7rem',
+                  fontSize: '0.78rem',
                   fontWeight: 600,
                   borderRadius: '8px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
+                  gap: '0.3rem',
                   color: '#2dd4bf',
                   border: '1px solid rgba(45, 212, 191, 0.3)',
                   background: 'rgba(45, 212, 191, 0.1)',
@@ -246,7 +269,7 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                 }}
                 title="Sao chép danh sách ngày giỗ"
               >
-                <Copy size={13} />
+                <Copy size={12} />
                 <span>Sao chép</span>
               </button>
 
@@ -255,24 +278,24 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                   type="button"
                   onClick={onOpenReminderSettings}
                   style={{
-                    padding: '0.45rem 0.85rem',
-                    fontSize: '0.82rem',
+                    padding: '0.4rem 0.7rem',
+                    fontSize: '0.78rem',
                     fontWeight: 600,
                     borderRadius: '8px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.35rem',
-                    color: '#6ee7b7',
-                    border: '1px solid rgba(52, 211, 153, 0.3)',
-                    background: 'rgba(52, 211, 153, 0.1)',
+                    gap: '0.3rem',
+                    color: '#fbbf24',
+                    border: '1px solid rgba(251, 191, 36, 0.3)',
+                    background: 'rgba(251, 191, 36, 0.1)',
                     transition: 'all 0.15s ease',
                     whiteSpace: 'nowrap',
                   }}
-                  title="Cài đặt nhắc nhở ngày sinh & ngày giỗ"
+                  title="Cài đặt nhắc nhở"
                 >
-                  <Settings size={13} />
-                  <span>Nhắc nhở</span>
+                  <Settings size={12} />
+                  <span>Cài đặt</span>
                 </button>
               )}
             </div>
@@ -350,12 +373,12 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                         : 'rgba(52, 211, 153, 0.25)'
                     }`,
                     borderRadius: '12px',
-                    padding: '0.9rem 1.1rem',
+                    padding: '0.75rem 0.9rem',
                     boxShadow: isToday ? '0 4px 16px rgba(225, 29, 72, 0.3)' : '0 4px 16px rgba(0,0,0,0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '0.85rem',
+                    gap: '0.65rem',
                     cursor: 'pointer',
                     transition: 'all 0.18s ease',
                   }}
@@ -442,25 +465,25 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.5rem',
+                          gap: '0.4rem',
                           flexWrap: 'wrap',
                           marginTop: '0.35rem',
                         }}
                       >
-                        {/* Lunar Date */}
+                        {/* Lunar Date (Cleaned, no duplicate "Âm lịch") */}
                         <div
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '0.3rem',
+                            gap: '0.25rem',
                             color: person.lunarDeathDay ? '#fda4af' : '#64748b',
-                            fontSize: '0.84rem',
+                            fontSize: '0.8rem',
                             fontWeight: 600,
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          <Flame size={13} color={person.lunarDeathDay ? '#f43f5e' : '#64748b'} />
-                          <span>{person.lunarDeathDay ? `${person.lunarDeathDay} Âm lịch` : 'Chưa có ngày giỗ'}</span>
+                          <Flame size={12} color={person.lunarDeathDay ? '#f43f5e' : '#64748b'} />
+                          <span>{formatLunarDay(person.lunarDeathDay)}</span>
                         </div>
 
                         {/* Calculated Solar Date */}
@@ -469,19 +492,19 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '0.3rem',
+                              gap: '0.25rem',
                               color: '#38bdf8',
-                              fontSize: '0.8rem',
+                              fontSize: '0.76rem',
                               background: 'rgba(56, 189, 248, 0.12)',
                               border: '1px solid rgba(56, 189, 248, 0.25)',
-                              padding: '0.15rem 0.5rem',
+                              padding: '0.12rem 0.45rem',
                               borderRadius: '6px',
                               fontWeight: 500,
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            <Calendar size={12} color="#38bdf8" />
-                            <span>Dương lịch {new Date().getFullYear()}: <strong style={{ color: '#ffffff' }}>{anniversary.solarDateStr}</strong></span>
+                            <Calendar size={11} color="#38bdf8" />
+                            <span>Dương lịch: <strong style={{ color: '#ffffff' }}>{anniversary.solarDateStr}</strong></span>
                           </div>
                         )}
 
@@ -489,9 +512,9 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                         {anniversary.hasValidDate && (
                           <span
                             style={{
-                              fontSize: '0.74rem',
+                              fontSize: '0.72rem',
                               fontWeight: 700,
-                              padding: '0.18rem 0.55rem',
+                              padding: '0.12rem 0.5rem',
                               borderRadius: '999px',
                               background: isToday
                                 ? 'rgba(239, 68, 68, 0.25)'
@@ -518,7 +541,7 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                               }`,
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '0.25rem',
+                              gap: '0.2rem',
                               whiteSpace: 'nowrap',
                             }}
                           >
@@ -592,21 +615,22 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
         {/* Modal Footer */}
         <div
           style={{
-            padding: '0.85rem 1.6rem',
+            padding: '0.75rem 1.25rem calc(0.75rem + env(safe-area-inset-bottom, 0px)) 1.25rem',
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background: 'rgba(6, 20, 13, 0.95)',
+            background: 'rgba(6, 20, 13, 0.98)',
+            flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: '0.82rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>
-            Tổng số: <strong style={{ color: '#ffffff' }}>{deceasedMembers.length}</strong> tiền bối
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>
+            Tổng: <strong style={{ color: '#ffffff' }}>{deceasedMembers.length}</strong> tiền bối
           </span>
           <button
             type="button"
             style={{
-              padding: '0.45rem 1.1rem',
+              padding: '0.45rem 1.15rem',
               fontSize: '0.85rem',
               fontWeight: 600,
               borderRadius: '8px',

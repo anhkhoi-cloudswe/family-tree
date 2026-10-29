@@ -211,28 +211,28 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-[620px] max-h-[92vh] bg-slate-900 border border-amber-500/30 rounded-3xl shadow-2xl shadow-amber-950/40 overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="relative w-full max-w-[620px] max-h-[88dvh] sm:max-h-[90vh] bg-slate-900 border border-amber-500/30 rounded-2xl sm:rounded-3xl shadow-2xl shadow-amber-950/40 overflow-hidden flex flex-col">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/80 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-2.5">
+        <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-800 bg-slate-950/90 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 pr-2">
             {step === 'PAYMENT' ? (
               <button
                 type="button"
                 onClick={() => setStep('PLANS')}
-                className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition cursor-pointer"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition cursor-pointer flex-shrink-0"
                 title="Quay lại chọn gói"
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={16} />
               </button>
             ) : (
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
-                <Crown size={20} />
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center font-bold shadow-md shadow-amber-500/20 flex-shrink-0">
+                <Crown size={18} />
               </div>
             )}
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-base text-white whitespace-nowrap">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h3 className="font-extrabold text-sm sm:text-base text-white truncate">
                   {step === 'PAYMENT'
                     ? 'Thanh Toán Quét Mã VietQR'
                     : step === 'SUCCESS'
@@ -240,18 +240,18 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     : 'Gói Hội Viên Gia Phả Số'}
                 </h3>
                 {isPro ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 whitespace-nowrap">
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 whitespace-nowrap">
                     PRO
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
-                    Miễn Phí (5 Nhánh)
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
+                    Miễn Phí
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400 whitespace-nowrap truncate max-w-[340px] sm:max-w-none">
+              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">
                 {step === 'PAYMENT'
-                  ? 'Quét mã VietQR bằng bất kỳ ứng dụng ngân hàng nào (Kích hoạt tức thì 24/7)'
+                  ? 'Quét mã VietQR bằng bất kỳ ứng dụng ngân hàng nào (24/7)'
                   : 'Nâng tầm quản lý dòng họ với không gian lưu trữ không giới hạn'}
               </p>
             </div>
@@ -259,14 +259,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer flex-shrink-0"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4 text-xs">
+        <div className="p-3.5 sm:p-6 overflow-y-auto min-h-0 flex-1 space-y-3.5 sm:space-y-4 text-xs">
           {/* STEP 1: PLAN SELECTION (Đã giải phóng không gian trên, không hiển thị số nhánh) */}
           {step === 'PLANS' && (
             <>
@@ -299,65 +299,23 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </button>
               </div>
 
-              {/* Comparison Cards Grid */}
+              {/* Comparison Cards Grid (On mobile: PRO is shown first with priority) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-stretch">
-                {/* Free Plan */}
-                <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-bold text-sm text-slate-200 whitespace-nowrap">Gói Miễn Phí</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 whitespace-nowrap">
-                        Mặc định
-                      </span>
-                    </div>
-                    <div className="text-xl font-black text-white mb-3">0đ</div>
-                    <ul className="space-y-2 text-slate-400 text-[11px]">
-                      <li className="flex items-center gap-2">
-                        <Check size={13} className="text-emerald-400 flex-shrink-0" />
-                        <span>Tối đa <strong>5 nhánh cây gia phả</strong></span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check size={13} className="text-emerald-400 flex-shrink-0" />
-                        <span>Xem sơ đồ cây & danh bạ dòng họ</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check size={13} className="text-emerald-400 flex-shrink-0" />
-                        <span>Lịch giỗ âm dương & nhắc nhở</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check size={13} className="text-emerald-400 flex-shrink-0" />
-                        <span>Trắc nghiệm mini app gia đình</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check size={13} className="text-emerald-400 flex-shrink-0" />
-                        <span>Tải ảnh gia phả tiêu chuẩn (HD)</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  {/* Nút Gói Hiện Tại nâng cao ngang bằng với nút Nâng cấp PRO ngay */}
-                  <div className="pt-4">
-                    <div className="w-full h-11 rounded-xl bg-slate-800/80 text-center text-slate-400 font-semibold text-xs cursor-default flex items-center justify-center whitespace-nowrap">
-                      {isPro ? 'Gói Cơ Bản' : 'Gói Hiện Tại'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* PRO Plan */}
-                <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-500/15 via-slate-950 to-slate-950 border-2 border-amber-500/50 shadow-lg shadow-amber-950/30 flex flex-col justify-between relative overflow-hidden">
-                  <div className="absolute top-2 right-2 flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 uppercase whitespace-nowrap">
+                {/* PRO Plan (order-1 on mobile so user sees upgrade right away) */}
+                <div className="order-1 sm:order-2 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-b from-amber-500/15 via-slate-950 to-slate-950 border-2 border-amber-500/50 shadow-lg shadow-amber-950/30 flex flex-col justify-between relative overflow-hidden">
+                  <div className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 uppercase whitespace-nowrap">
                     <Sparkles size={10} />
                     <span>Khuyên dùng</span>
                   </div>
 
                   <div>
-                    <div className="flex items-center gap-1.5 mb-2">
+                    <div className="flex items-center gap-1.5 mb-1.5">
                       <Crown size={15} className="text-amber-400" />
                       <span className="font-bold text-sm text-amber-300 whitespace-nowrap">Gói PRO</span>
                     </div>
 
-                    <div className="flex items-baseline gap-1.5 mb-3">
-                      <span className="text-2xl font-black text-white whitespace-nowrap">
+                    <div className="flex items-baseline gap-1.5 mb-2.5">
+                      <span className="text-xl sm:text-2xl font-black text-white whitespace-nowrap">
                         {billingCycle === 'YEARLY' ? '399.000đ' : '49.000đ'}
                       </span>
                       <span className="text-slate-400 text-[10px] whitespace-nowrap">
@@ -365,7 +323,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       </span>
                     </div>
 
-                    <ul className="space-y-2 text-slate-300 text-[11px]">
+                    <ul className="space-y-1.5 sm:space-y-2 text-slate-300 text-[11px]">
                       <li className="flex items-center gap-2 font-medium text-emerald-300">
                         <Check size={13} className="text-emerald-400 flex-shrink-0" />
                         <span><strong>Không giới hạn số lượng nhánh cây</strong></span>
@@ -389,15 +347,56 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </ul>
                   </div>
 
-                  {/* Nút Nâng cấp PRO ngay: bỏ icon sét, bỏ text quét VietQR */}
-                  <div className="pt-4">
+                  {/* Nút Nâng cấp PRO ngay */}
+                  <div className="pt-3 sm:pt-4">
                     <button
                       type="button"
                       onClick={handleProceedToPayment}
-                      className="w-full h-11 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 flex items-center justify-center transition cursor-pointer whitespace-nowrap"
+                      className="w-full h-10 sm:h-11 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-extrabold text-xs sm:text-sm shadow-md shadow-amber-500/20 flex items-center justify-center transition cursor-pointer whitespace-nowrap active:scale-[0.98]"
                     >
                       <span>{isPro ? 'Gia Hạn Gói PRO' : 'Nâng Cấp PRO Ngay'}</span>
                     </button>
+                  </div>
+                </div>
+
+                {/* Free Plan (order-2 on mobile) */}
+                <div className="order-2 sm:order-1 p-3.5 sm:p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-bold text-sm text-slate-200 whitespace-nowrap">Gói Miễn Phí</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 whitespace-nowrap">
+                        Mặc định
+                      </span>
+                    </div>
+                    <div className="text-lg sm:text-xl font-black text-white mb-2.5">0đ</div>
+                    <ul className="space-y-1.5 sm:space-y-2 text-slate-400 text-[11px]">
+                      <li className="flex items-center gap-2">
+                        <Check size={13} className="text-emerald-400 flex-shrink-0" />
+                        <span>Tối đa <strong>5 nhánh cây gia phả</strong></span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check size={13} className="text-emerald-400 flex-shrink-0" />
+                        <span>Xem sơ đồ cây & danh bạ dòng họ</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check size={13} className="text-emerald-400 flex-shrink-0" />
+                        <span>Lịch giỗ âm dương & nhắc nhở</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check size={13} className="text-emerald-400 flex-shrink-0" />
+                        <span>Trắc nghiệm mini app gia đình</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check size={13} className="text-emerald-400 flex-shrink-0" />
+                        <span>Tải ảnh gia phả tiêu chuẩn (HD)</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-3 sm:pt-4">
+                    <div className="w-full h-10 sm:h-11 rounded-xl bg-slate-800/80 text-center text-slate-400 font-semibold text-xs cursor-default flex items-center justify-center whitespace-nowrap">
+                      {isPro ? 'Gói Cơ Bản' : 'Gói Hiện Tại'}
+                    </div>
                   </div>
                 </div>
               </div>
