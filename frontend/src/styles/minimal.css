@@ -3329,38 +3329,45 @@ button, input, select, textarea {
 .picker-results-list {
   flex: 1;
   overflow-y: auto;
-  padding: 0.85rem 1.2rem;
+  padding: 0.25rem 1.1rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0;
   overscroll-behavior: contain;
 }
 
-/* Member Item Card */
+/* Member Item Card (Clean iOS Hairline Borderless Style) */
 .picker-item-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 0.95rem;
-  border-radius: 14px;
+  padding: 0.75rem 0.35rem;
+  border-radius: 0;
   cursor: pointer;
-  background: rgba(12, 30, 21, 0.85) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.09) !important;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  transition: background-color 0.15s ease;
   gap: 0.75rem;
+  box-shadow: none !important;
+}
+
+.picker-item-card:last-child {
+  border-bottom: none !important;
 }
 
 .picker-item-card:hover,
 .picker-item-card[data-selected="true"] {
-  background: rgba(16, 185, 129, 0.16) !important;
-  border-color: #34d399 !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 16px rgba(16, 185, 129, 0.2);
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .picker-item-card.is-current {
-  border-color: #60a5fa !important;
-  background: rgba(37, 99, 235, 0.14) !important;
+  border-bottom: 1px solid rgba(96, 165, 250, 0.3) !important;
+  background: rgba(37, 99, 235, 0.12) !important;
 }
 
 .picker-item-left {
@@ -3372,25 +3379,24 @@ button, input, select, textarea {
 }
 
 .picker-avatar {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(13, 148, 136, 0.3) 100%);
-  color: #6ee7b7;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   border: 1.5px solid rgba(52, 211, 153, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 0.88rem;
+  color: #34d399;
   flex-shrink: 0;
   overflow: hidden;
 }
 
 .picker-avatar.is-current {
-  background: #10b981;
-  color: #ffffff;
-  border-color: #34d399;
+  border-color: #60a5fa;
+  color: #93c5fd;
 }
 
 .picker-avatar img {
@@ -3415,10 +3421,10 @@ button, input, select, textarea {
 }
 
 .picker-person-name {
-  font-size: 0.96rem;
-  font-weight: 800;
+  font-size: 0.92rem;
+  font-weight: 700;
   color: #ffffff !important;
-  line-height: 1.3;
+  line-height: 1.25;
   white-space: nowrap;
 }
 
@@ -3430,19 +3436,19 @@ button, input, select, textarea {
 }
 
 .picker-person-nickname {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-style: italic;
   color: #38bdf8;
   font-weight: 600;
 }
 
 .picker-viewing-badge {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 800;
   background: rgba(16, 185, 129, 0.25);
   color: #34d399;
   border: 1px solid rgba(52, 211, 153, 0.4);
-  padding: 0.08rem 0.5rem;
+  padding: 0.08rem 0.45rem;
   border-radius: 999px;
   white-space: nowrap;
 }
@@ -3451,14 +3457,14 @@ button, input, select, textarea {
 .picker-badges-row {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   flex-wrap: wrap;
 }
 
 .picker-badge-kinship {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 0.12rem 0.55rem;
+  padding: 0.1rem 0.5rem;
   border-radius: 999px;
   background: rgba(37, 99, 235, 0.22);
   color: #60a5fa;
@@ -3467,9 +3473,9 @@ button, input, select, textarea {
 }
 
 .picker-badge-gen {
-  font-size: 0.73rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  padding: 0.12rem 0.5rem;
+  padding: 0.1rem 0.45rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.07);
   color: #cbd5e1;
@@ -3478,9 +3484,9 @@ button, input, select, textarea {
 }
 
 .picker-badge-status {
-  font-size: 0.73rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  padding: 0.12rem 0.5rem;
+  padding: 0.1rem 0.45rem;
   border-radius: 999px;
   white-space: nowrap;
 }
@@ -3862,6 +3868,9 @@ input:-internal-autofill-selected {
   width: 100%;
   overflow: hidden;
   position: relative;
+  background: rgba(2, 6, 23, 0.42); /* Đồng bộ nền tối sâu như Tất cả nhánh */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* Sticky Search & Filter Toolbar */
@@ -3869,7 +3878,7 @@ input:-internal-autofill-selected {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(3, 19, 11, 0.88);
+  background: rgba(4, 13, 8, 0.94);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -4147,12 +4156,12 @@ input:-internal-autofill-selected {
 }
 
 .list-avatar-box {
-  width: 58px;
-  height: 58px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   position: relative;
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  border: 2px solid rgba(52, 211, 153, 0.45);
+  border: 1.5px solid rgba(52, 211, 153, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4172,7 +4181,7 @@ input:-internal-autofill-selected {
 }
 
 .list-avatar-initials {
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: #34d399;
   letter-spacing: 0.02em;
@@ -4228,18 +4237,22 @@ input:-internal-autofill-selected {
 }
 
 .list-member-name {
-  font-size: 1.15rem; /* ~19px large elderly-friendly */
+  font-size: 0.98rem; /* Đồng bộ size tinh gọn, không rớt dòng */
   font-weight: 700;
   color: #ffffff;
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .list-nickname {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 500;
   color: #94a3b8;
   margin-left: 0.35rem;
+  white-space: nowrap;
 }
 
 .list-badges-row {
@@ -4250,12 +4263,13 @@ input:-internal-autofill-selected {
 }
 
 .list-kinship-chip {
-  font-size: 0.84rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  padding: 0.2rem 0.6rem;
+  padding: 0.12rem 0.45rem;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
 }
 
 .list-kinship-chip.pill-me {
@@ -4317,8 +4331,8 @@ input:-internal-autofill-selected {
 .list-meta-rows {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.84rem;
+  gap: 0.2rem;
+  font-size: 0.76rem;
   color: #94a3b8;
 }
 

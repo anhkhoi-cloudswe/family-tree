@@ -447,7 +447,7 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
                           className="picker-person-name"
                           title={person.fullName}
                           style={{
-                            fontSize: '0.96rem',
+                            fontSize: '0.92rem',
                             fontWeight: 700,
                             color: '#ffffff',
                             whiteSpace: 'nowrap',

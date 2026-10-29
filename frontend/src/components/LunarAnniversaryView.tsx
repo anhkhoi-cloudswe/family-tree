@@ -290,8 +290,8 @@ export const LunarAnniversaryView: React.FC<LunarAnniversaryViewProps> = ({
                     {/* Avatar Initials */}
                     <div
                       style={{
-                        width: '46px',
-                        height: '46px',
+                        width: '42px',
+                        height: '42px',
                         borderRadius: '50%',
                         background: isToday ? '#e11d48' : 'rgba(255, 255, 255, 0.08)',
                         color: isToday ? '#ffffff' : '#6ee7b7',
@@ -300,7 +300,7 @@ export const LunarAnniversaryView: React.FC<LunarAnniversaryViewProps> = ({
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontWeight: 700,
-                        fontSize: '0.95rem',
+                        fontSize: '0.88rem',
                         flexShrink: 0,
                       }}
                     >
@@ -309,10 +309,10 @@ export const LunarAnniversaryView: React.FC<LunarAnniversaryViewProps> = ({
 
                     <div style={{ flex: 1, minWidth: 0 }}>
                       {/* Name & Generation */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                         <h4
                           style={{
-                            fontSize: '0.98rem',
+                            fontSize: '0.92rem',
                             fontWeight: 700,
                             color: '#ffffff',
                             margin: 0,
@@ -322,14 +322,14 @@ export const LunarAnniversaryView: React.FC<LunarAnniversaryViewProps> = ({
                           {person.fullName}
                         </h4>
                         {person.nickname && (
-                          <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontStyle: 'italic', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontStyle: 'italic', whiteSpace: 'nowrap' }}>
                             ({person.nickname})
                           </span>
                         )}
                         <span
                           style={{
-                            fontSize: '0.72rem',
-                            padding: '0.12rem 0.45rem',
+                            fontSize: '0.68rem',
+                            padding: '0.1rem 0.4rem',
                             background: 'rgba(255, 255, 255, 0.07)',
                             color: '#cbd5e1',
                             borderRadius: '999px',
