@@ -302,15 +302,14 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
           </div>
         </div>
 
-        {/* Ancestors List */}
+        {/* Ancestors List - Clean iOS List Style with Hairline Dividers */}
         <div
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '0.6rem 1.6rem 1.2rem 1.6rem',
+            padding: '0.2rem 1.1rem 1.2rem 1.1rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.85rem',
           }}
         >
           {filtered.length === 0 ? (
@@ -350,55 +349,37 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
               )}
             </div>
           ) : (
-            filtered.map(({ person, anniversary }) => {
+            filtered.map(({ person, anniversary }, idx) => {
               const badge = anniversary.statusBadge;
               const isToday = badge.type === 'today';
               const isUpcoming = badge.type === 'upcoming';
+              const isLast = idx === filtered.length - 1;
 
               return (
                 <div
                   key={person.id}
                   onClick={() => onSelectPerson(person)}
                   style={{
-                    background: isToday
-                      ? 'rgba(225, 29, 72, 0.22)'
-                      : isUpcoming && anniversary.daysLeft <= 15
-                      ? 'rgba(245, 158, 11, 0.18)'
-                      : 'rgba(16, 36, 26, 0.8)',
-                    border: `1.5px solid ${
-                      isToday
-                        ? '#f43f5e'
-                        : isUpcoming && anniversary.daysLeft <= 15
-                        ? '#f59e0b'
-                        : 'rgba(52, 211, 153, 0.25)'
-                    }`,
-                    borderRadius: '12px',
-                    padding: '0.75rem 0.9rem',
-                    boxShadow: isToday ? '0 4px 16px rgba(225, 29, 72, 0.3)' : '0 4px 16px rgba(0,0,0,0.3)',
+                    background: isToday ? 'rgba(225, 29, 72, 0.12)' : 'transparent',
+                    borderBottom: isLast ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: isToday ? '8px' : '0px',
+                    padding: '0.8rem 0.35rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '0.65rem',
+                    gap: '0.75rem',
                     cursor: 'pointer',
-                    transition: 'all 0.18s ease',
+                    transition: 'background-color 0.15s ease',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = isToday ? '#f43f5e' : 'rgba(52, 211, 153, 0.6)';
                     e.currentTarget.style.background = isToday
-                      ? 'rgba(225, 29, 72, 0.28)'
-                      : 'rgba(16, 36, 26, 0.95)';
+                      ? 'rgba(225, 29, 72, 0.18)'
+                      : 'rgba(255, 255, 255, 0.04)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = isToday
-                      ? '#f43f5e'
-                      : isUpcoming && anniversary.daysLeft <= 15
-                      ? '#f59e0b'
-                      : 'rgba(52, 211, 153, 0.25)';
                     e.currentTarget.style.background = isToday
-                      ? 'rgba(225, 29, 72, 0.22)'
-                      : isUpcoming && anniversary.daysLeft <= 15
-                      ? 'rgba(245, 158, 11, 0.18)'
-                      : 'rgba(16, 36, 26, 0.8)';
+                      ? 'rgba(225, 29, 72, 0.12)'
+                      : 'transparent';
                   }}
                   role="button"
                   tabIndex={0}
@@ -413,7 +394,7 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
                         borderRadius: '50%',
                         background: isToday ? '#e11d48' : 'rgba(255, 255, 255, 0.08)',
                         color: isToday ? '#ffffff' : '#6ee7b7',
-                        border: '1.5px solid rgba(52, 211, 153, 0.4)',
+                        border: '1.5px solid rgba(52, 211, 153, 0.35)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -625,7 +606,7 @@ export const LunarAnniversaryModal: React.FC<LunarAnniversaryModalProps> = ({
           }}
         >
           <span style={{ fontSize: '0.8rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>
-            Tổng: <strong style={{ color: '#ffffff' }}>{deceasedMembers.length}</strong> tiền bối
+            Tổng: <strong style={{ color: '#ffffff' }}>{deceasedMembers.length}</strong>
           </span>
           <button
             type="button"

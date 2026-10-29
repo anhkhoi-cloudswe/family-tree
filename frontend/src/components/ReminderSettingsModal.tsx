@@ -198,16 +198,17 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '0.9rem 1.1rem',
-              background: enabled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.04)',
-              border: `1.5px solid ${enabled ? 'rgba(52, 211, 153, 0.4)' : 'rgba(255, 255, 255, 0.1)'}`,
-              borderRadius: '12px',
+              padding: '0.4rem 0.2rem 0.85rem 0.2rem',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
               transition: 'all 0.2s ease',
             }}
           >
             <div>
               <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#ffffff' }}>
                 Bật tính năng nhắc nhở tự động
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '0.15rem' }}>
+                Thông báo sinh nhật và ngày giỗ sắp diễn ra
               </div>
             </div>
 
@@ -234,10 +235,8 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
               {/* 2. Days in advance setting */}
               <div
                 style={{
-                  padding: '1.1rem',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '12px',
+                  padding: '0.4rem 0.2rem 0.85rem 0.2rem',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
@@ -323,10 +322,8 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
               {/* 3. Event Types Checkboxes */}
               <div
                 style={{
-                  padding: '1.1rem',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '12px',
+                  padding: '0.4rem 0.2rem 0.85rem 0.2rem',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
                 <div style={{ fontWeight: 600, fontSize: '0.92rem', color: '#ffffff', marginBottom: '0.6rem' }}>
@@ -377,11 +374,11 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
               </div>
 
               {/* 4. Preview list of upcoming events matching configured advance days */}
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <div style={{ padding: '0.4rem 0.2rem 0.5rem 0.2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
                   <span style={{ fontSize: '0.86rem', fontWeight: 600, color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Sparkles size={14} />
-                    Sự kiện khớp lịch nhắc (Trong vòng {advanceDays} ngày tới):
+                    Sự kiện khớp lịch nhắc ({advanceDays} ngày tới):
                   </span>
                   <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
                     {upcomingEvents.length} sự kiện
@@ -393,9 +390,6 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                     style={{
                       padding: '1.2rem',
                       textAlign: 'center',
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      borderRadius: '10px',
-                      border: '1px dashed rgba(255, 255, 255, 0.1)',
                       color: '#94a3b8',
                       fontSize: '0.84rem',
                     }}
@@ -403,9 +397,10 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                     Không có ngày sinh nhật hay ngày giỗ nào trong vòng {advanceDays} ngày tới.
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {upcomingEvents.map((ev, idx) => {
                       const matchedPerson = tree?.members.find((m) => m.id === ev.personId);
+                      const isLast = idx === upcomingEvents.length - 1;
                       return (
                         <div
                           key={`${ev.personId}-${idx}`}
@@ -418,12 +413,10 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            padding: '0.65rem 0.85rem',
-                            background: ev.daysLeft === 0 ? 'rgba(225, 29, 72, 0.2)' : 'rgba(52, 211, 153, 0.08)',
-                            border: `1px solid ${ev.daysLeft === 0 ? '#f43f5e' : 'rgba(52, 211, 153, 0.25)'}`,
-                            borderRadius: '8px',
+                            padding: '0.75rem 0.25rem',
+                            borderBottom: isLast ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
                             cursor: matchedPerson ? 'pointer' : 'default',
-                            transition: 'all 0.15s ease',
+                            transition: 'background-color 0.15s ease',
                           }}
                           role={matchedPerson ? 'button' : undefined}
                           tabIndex={matchedPerson ? 0 : undefined}
