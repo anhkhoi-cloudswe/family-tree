@@ -743,7 +743,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
 
                   {/* Delete button at bottom of drawer */}
                   {isCanEdit && (
-                    <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
+                    <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                       <button
                         type="button"
                         className="btn-danger-ghost"
@@ -956,9 +956,13 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                         />
                       </div>
                       <div className="form-field">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <label className="form-label-clean">Ngày giỗ (Âm lịch)</label>
-                          <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Tự động tính</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', marginBottom: '0.35rem' }}>
+                          <label className="form-label-clean" style={{ margin: 0, whiteSpace: 'nowrap' }}>
+                            Ngày giỗ (Âm lịch)
+                          </label>
+                          <span style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: 600, flexShrink: 0 }}>
+                            Tự động tính
+                          </span>
                         </div>
                         <input
                           type="text"
@@ -979,21 +983,23 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                       return (
                         <div
                           style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px dashed rgba(244, 63, 94, 0.4)',
-                            borderRadius: '8px',
-                            padding: '0.55rem 0.8rem',
+                            background: 'rgba(244, 63, 94, 0.1)',
+                            border: '1px solid rgba(244, 63, 94, 0.28)',
+                            borderRadius: '10px',
+                            padding: '0.65rem 0.85rem',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.6rem',
-                            fontSize: '0.82rem',
+                            gap: '0.65rem',
+                            fontSize: '0.84rem',
+                            marginTop: '0.5rem',
                           }}
                         >
-                          <Calendar size={15} color="#fb7185" />
-                          <span style={{ color: '#fecdd3' }}>
-                            👉 <strong>Ngày giỗ năm nay ({anniversary.targetSolarYear}):</strong>{' '}
-                            <span style={{ color: '#ffffff', fontWeight: 600 }}>{anniversary.dateStr}</span> (Dương lịch)
-                          </span>
+                          <Calendar size={16} color="#fb7185" style={{ flexShrink: 0 }} />
+                          <div style={{ color: '#fecdd3', lineHeight: 1.45, flex: 1, minWidth: 0 }}>
+                            <span>👉 <strong>Giỗ năm nay ({anniversary.targetSolarYear}):</strong> </span>
+                            <span style={{ color: '#34d399', fontWeight: 800 }}>{anniversary.dateStr}</span>{' '}
+                            <span style={{ color: '#cbd5e1', fontSize: '0.78rem' }}>(Dương lịch)</span>
+                          </div>
                         </div>
                       );
                     })()}

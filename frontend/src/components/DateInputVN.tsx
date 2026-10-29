@@ -109,7 +109,14 @@ export const DateInputVN: React.FC<DateInputVNProps> = ({
       <input
         type="text"
         className={className}
-        style={{ paddingRight: '2.4rem', height: '100%', width: '100%', boxSizing: 'border-box' }}
+        style={{
+          paddingLeft: '0.7rem',
+          paddingRight: '2rem',
+          height: '100%',
+          width: '100%',
+          boxSizing: 'border-box',
+          fontSize: '0.88rem',
+        }}
         placeholder={placeholder}
         value={displayVal}
         onChange={handleTextChange}
@@ -120,9 +127,9 @@ export const DateInputVN: React.FC<DateInputVNProps> = ({
       <div
         style={{
           position: 'absolute',
-          right: '8px',
-          width: '32px',
-          height: '32px',
+          right: '5px',
+          width: '28px',
+          height: '28px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -130,7 +137,7 @@ export const DateInputVN: React.FC<DateInputVNProps> = ({
         }}
         title="Chọn ngày từ lịch hoặc tự gõ ngày"
       >
-        <Calendar size={18} color="#34d399" style={{ pointerEvents: 'none' }} />
+        <Calendar size={16} color="#34d399" style={{ pointerEvents: 'none' }} />
         <input
           ref={hiddenDateInputRef}
           type="date"

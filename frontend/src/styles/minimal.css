@@ -2550,6 +2550,19 @@ button, input, select, textarea {
   padding: 1.4rem 1.6rem 3rem 1.6rem;
 }
 
+@media (max-width: 640px) {
+  .minimal-drawer {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .drawer-scroll-body {
+    padding: 1.1rem 1rem 3.5rem 1rem !important;
+  }
+  .drawer-header-row {
+    padding: 0.85rem 1rem !important;
+  }
+}
+
 .drawer-hero-profile {
   display: flex;
   flex-direction: column;
@@ -2692,23 +2705,27 @@ button, input, select, textarea {
 }
 
 .drawer-info-card {
-  background: rgba(15, 32, 22, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-md);
-  padding: 1.1rem 1.2rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  margin-bottom: 1.35rem;
 }
 
 .info-card-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
   margin-bottom: 0.85rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .info-card-header h4 {
-  font-size: 0.95rem;
-  font-weight: 800;
+  font-size: 0.92rem;
+  font-weight: 700;
   color: #ffffff;
+  margin: 0;
 }
 
 .info-grid-2 {
@@ -3745,40 +3762,43 @@ input:-internal-autofill-selected {
   to { transform: rotate(360deg); }
 }
 
-/* Drawer Edit Mode Section Cards */
+/* Drawer Modern Borderless Sections */
 .drawer-edit-section {
-  background: rgba(16, 36, 26, 0.75);
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 1rem 1.1rem;
-  margin-bottom: 1.1rem;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 1.35rem;
+  transition: none;
   color: #f1f5f9;
 }
 .drawer-edit-section:focus-within {
-  border-color: #34d399;
-  background: rgba(16, 185, 129, 0.12);
+  border-color: transparent;
+  background: transparent;
 }
 .drawer-edit-section.highlight-deceased {
-  background: rgba(225, 29, 72, 0.12);
-  border-color: rgba(244, 63, 94, 0.35);
+  background: transparent;
+  border: none;
 }
 .drawer-edit-section-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
   margin-bottom: 0.85rem;
   padding-bottom: 0.45rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 .drawer-edit-section-header h4 {
-  font-size: 0.88rem;
-  font-weight: 800;
+  font-size: 0.92rem;
+  font-weight: 700;
   color: #ffffff;
   margin: 0;
 }
+.drawer-edit-section.highlight-deceased .drawer-edit-section-header {
+  border-bottom: 1px solid rgba(244, 63, 94, 0.35);
+}
 .drawer-edit-section.highlight-deceased .drawer-edit-section-header h4 {
-  color: #fda4af;
+  color: #fb7185;
 }
 
 /* Canvas HD Export Overlay */
