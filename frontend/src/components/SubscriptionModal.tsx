@@ -285,43 +285,41 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           {/* STEP 1: PLAN SELECTION (Đã giải phóng không gian trên, không hiển thị số nhánh) */}
           {step === 'PLANS' && (
             <>
-              {/* Pricing Cycle Toggle */}
-              <div className="flex items-center justify-center gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 max-w-[280px] mx-auto text-xs font-semibold">
+              {/* Pricing Cycle Toggle (Smooth sliding indicator) */}
+              <div className="relative flex items-center p-1 bg-slate-950/90 rounded-2xl border border-slate-800 max-w-[260px] mx-auto text-xs font-semibold select-none">
+                <div
+                  className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl transition-all duration-300 ease-out ${
+                    billingCycle === 'MONTHLY'
+                      ? 'left-1 bg-slate-800 shadow'
+                      : 'left-[calc(50%)] bg-gradient-to-r from-amber-600 to-amber-500 shadow-md shadow-amber-950/40'
+                  }`}
+                />
                 <button
                   type="button"
                   onClick={() => setBillingCycle('MONTHLY')}
-                  className={`flex-1 py-1.5 rounded-lg transition flex items-center justify-center gap-1 whitespace-nowrap ${
-                    billingCycle === 'MONTHLY'
-                      ? 'bg-slate-800 text-white shadow'
-                      : 'text-slate-400 hover:text-slate-200'
+                  className={`relative z-10 flex-1 py-1.5 rounded-xl transition-colors duration-200 flex items-center justify-center whitespace-nowrap cursor-pointer ${
+                    billingCycle === 'MONTHLY' ? 'text-white font-bold' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  <span>Theo Tháng</span>
-                  {isMonthlyActive && (
-                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1 rounded-full font-bold">
-                      Đang dùng
-                    </span>
-                  )}
+                  Theo Tháng
                 </button>
                 <button
                   type="button"
                   onClick={() => setBillingCycle('YEARLY')}
-                  className={`flex-1 py-1.5 rounded-lg transition flex items-center justify-center gap-1 whitespace-nowrap ${
-                    billingCycle === 'YEARLY'
-                      ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white shadow'
-                      : 'text-slate-400 hover:text-slate-200'
+                  className={`relative z-10 flex-1 py-1.5 rounded-xl transition-colors duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                    billingCycle === 'YEARLY' ? 'text-white font-bold' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   <span>Theo Năm</span>
-                  {isYearlyActive ? (
-                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1 rounded-full font-bold">
-                      Đang dùng
-                    </span>
-                  ) : (
-                    <span className="text-[9px] bg-amber-400 text-slate-950 px-1 rounded-full font-bold">
-                      -35%
-                    </span>
-                  )}
+                  <span
+                    className={`text-[9px] px-1 rounded-full font-bold transition-colors ${
+                      billingCycle === 'YEARLY'
+                        ? 'bg-amber-300 text-slate-950'
+                        : 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                    }`}
+                  >
+                    -35%
+                  </span>
                 </button>
               </div>
 
@@ -329,9 +327,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-stretch">
                 {/* PRO Plan (order-1 on mobile so user sees upgrade right away) */}
                 <div className="order-1 sm:order-2 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-b from-amber-500/15 via-slate-950 to-slate-950 border-2 border-amber-500/50 shadow-lg shadow-amber-950/30 flex flex-col justify-between relative overflow-hidden">
-                  <div className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 uppercase whitespace-nowrap">
-                    <Sparkles size={10} />
-                    <span>{isPro ? 'Đang hoạt động' : 'Khuyên dùng'}</span>
+                  <div className="absolute top-2.5 right-2.5 text-[9px] font-bold px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 uppercase tracking-wide whitespace-nowrap shadow-sm">
+                    Đề Xuất
                   </div>
 
                   <div>
@@ -348,14 +345,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         / {billingCycle === 'YEARLY' ? 'năm (33k/tháng)' : 'tháng'}
                       </span>
                     </div>
-
-                    {/* Cycle Upgrade Bonus Notice */}
-                    {isMonthlyActive && billingCycle === 'YEARLY' && (
-                      <div className="mb-2.5 p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px] flex items-center gap-2">
-                        <Sparkles size={14} className="text-amber-400 flex-shrink-0" />
-                        <span>Chuyển đổi chu kỳ: <strong>{daysRemaining} ngày còn lại</strong> của gói tháng sẽ được cộng dồn vào năm mới!</span>
-                      </div>
-                    )}
 
                     <ul className="space-y-1.5 sm:space-y-2 text-slate-300 text-[11px]">
                       <li className="flex items-center gap-2 font-medium text-emerald-300">
@@ -384,33 +373,23 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   {/* Nút Hành động & Khóa chống thanh toán trùng lặp */}
                   <div className="pt-3 sm:pt-4">
                     {isYearlyActive ? (
-                      <div className="space-y-1.5">
-                        <button
-                          type="button"
-                          disabled
-                          className="w-full h-10 sm:h-11 px-4 rounded-xl bg-emerald-950/70 border border-emerald-500/50 text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed opacity-95"
-                        >
-                          <ShieldCheck size={16} className="text-emerald-400" />
-                          <span>Gói PRO Năm Đang Hoạt Động</span>
-                        </button>
-                        <p className="text-[10px] sm:text-[11px] text-emerald-400/90 text-center leading-tight">
-                          Hạn đến {expiresDateStr} (còn {daysRemaining} ngày). Đã khóa nút thanh toán trùng lặp.
-                        </p>
-                      </div>
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full h-10 sm:h-11 px-4 rounded-xl bg-emerald-950/70 border border-emerald-500/50 text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed opacity-95"
+                      >
+                        <ShieldCheck size={16} className="text-emerald-400" />
+                        <span>Gói PRO Năm Đang Hoạt Động</span>
+                      </button>
                     ) : isMonthlyActive && billingCycle === 'MONTHLY' ? (
-                      <div className="space-y-1.5">
-                        <button
-                          type="button"
-                          disabled
-                          className="w-full h-10 sm:h-11 px-4 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed"
-                        >
-                          <Lock size={14} className="text-amber-400" />
-                          <span>Gói Tháng Đang Dùng ({daysRemaining} ngày)</span>
-                        </button>
-                        <p className="text-[10px] sm:text-[11px] text-amber-300/90 text-center leading-tight">
-                          Bạn đang dùng gói này. Hãy chọn tab <strong>Theo Năm (-35%)</strong> để nâng cấp hoặc chờ gói hết hạn.
-                        </p>
-                      </div>
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full h-10 sm:h-11 px-4 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed"
+                      >
+                        <Lock size={14} className="text-amber-400" />
+                        <span>Gói Tháng Đang Dùng ({daysRemaining} ngày)</span>
+                      </button>
                     ) : (
                       <button
                         type="button"
@@ -419,7 +398,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       >
                         <span>
                           {isMonthlyActive && billingCycle === 'YEARLY'
-                            ? 'Chuyển Đổi Lên Gói Năm (-35%)'
+                            ? 'Đổi lên Gói Năm (-35%)'
                             : status?.isExpired
                             ? 'Gia Hạn Gói PRO'
                             : 'Nâng Cấp PRO Ngay'}
