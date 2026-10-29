@@ -358,7 +358,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
         >
           {/* Header */}
           <div className="drawer-header-row">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
               {onBack && (
                 <button
                   type="button"
@@ -370,12 +370,14 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                   <ArrowLeft size={18} />
                 </button>
               )}
-              <span className="drawer-gen-tag">
-                Thế hệ {person.generation || 1}
-              </span>
-              <span className="drawer-header-subtitle">
-                Hồ Sơ Thành Viên
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
+                <span className="drawer-gen-tag" style={{ alignSelf: 'flex-start', margin: 0 }}>
+                  Thế hệ {person.generation || 1}
+                </span>
+                <span className="drawer-header-subtitle" style={{ whiteSpace: 'nowrap', fontWeight: 700, fontSize: '0.98rem' }}>
+                  Hồ Sơ Thành Viên
+                </span>
+              </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -515,27 +517,28 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                       const anniversary = getSolarAnniversaryForYear(person.lunarDeathDay);
                       const cleanLunar = person.lunarDeathDay.replace(/\s*Âm\s*lịch/i, '').trim();
                       return (
-                        <div className="drawer-lunar-highlight">
+                        <div className="drawer-lunar-highlight" style={{ boxSizing: 'border-box', maxWidth: '100%', alignItems: 'flex-start' }}>
                           <Flame size={20} color="#f43f5e" style={{ flexShrink: 0, marginTop: '2px' }} />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div className="lunar-title" style={{ fontSize: '0.84rem', fontWeight: 600, color: 'rgba(255, 255, 255, 0.75)', marginBottom: '0.2rem' }}>
+                            <div className="lunar-title" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'rgba(255, 255, 255, 0.75)', marginBottom: '0.2rem' }}>
                               Ngày Giỗ Hàng Năm:
                             </div>
-                            <div className="lunar-date" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f43f5e', letterSpacing: '0.01em', marginBottom: '0.55rem' }}>
-                              {cleanLunar} (Âm lịch)
+                            <div className="lunar-date" style={{ fontSize: '1.18rem', fontWeight: 800, color: '#f43f5e', letterSpacing: '0.01em', marginBottom: '0.45rem', wordBreak: 'break-word' }}>
+                              {cleanLunar} <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#f87171' }}>(Âm lịch)</span>
                             </div>
                             {anniversary && (
-                              <div style={{ fontSize: '0.88rem', color: '#cbd5e1', lineHeight: 1.6 }}>
-                                <div style={{ whiteSpace: 'nowrap' }}>
-                                  <span>👉 Giỗ năm nay </span>
-                                  <strong style={{ color: '#fbbf24', fontWeight: 800, fontSize: '0.92rem' }}>
-                                    ({anniversary.targetSolarYear})
-                                  </strong>:
-                                </div>
-                                <div style={{ marginTop: '0.15rem', whiteSpace: 'nowrap' }}>
-                                  <strong style={{ color: '#34d399', fontSize: '1.05rem', fontWeight: 800, letterSpacing: '0.01em' }}>
-                                    {anniversary.dateStr} (Dương lịch)
+                              <div style={{ fontSize: '0.86rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                                  <span>👉 Giỗ năm nay</span>
+                                  <strong style={{ color: '#fbbf24', fontWeight: 800 }}>
+                                    ({anniversary.targetSolarYear}):
                                   </strong>
+                                </div>
+                                <div style={{ marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+                                  <strong style={{ color: '#34d399', fontSize: '1rem', fontWeight: 800 }}>
+                                    {anniversary.dateStr}
+                                  </strong>
+                                  <span style={{ color: '#6ee7b7', fontSize: '0.82rem', fontWeight: 500 }}>(Dương lịch)</span>
                                 </div>
                               </div>
                             )}

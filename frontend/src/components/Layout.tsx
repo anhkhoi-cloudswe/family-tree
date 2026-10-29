@@ -236,11 +236,6 @@ export const Layout: React.FC<LayoutProps> = ({
             : 'bg-slate-700/50 text-slate-300 border-slate-600/40',
           onClick: onOpenSubscription,
         },
-        {
-          key: 'TOUR',
-          label: 'Hướng dẫn',
-          icon: BookOpen,
-        },
       ];
 
   // Render role badge helper
@@ -327,7 +322,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
             {/* Right: Expandable Search Icon Button + Bell + Share */}
             <div className="flex items-center gap-1 flex-shrink-0">
-              {onOpenPersonPicker && (
+              {onOpenPersonPicker && activeNav !== 'BRANCHES' && (
                 <button
                   type="button"
                   onClick={() => setIsMobileSearchExpanded(true)}
@@ -354,7 +349,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 </button>
               )}
 
-              {tree && (
+              {tree && activeNav !== 'BRANCHES' && (
                 <button
                   type="button"
                   onClick={onOpenShareModal}

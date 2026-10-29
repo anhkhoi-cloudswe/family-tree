@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, X, User, History, Check, Shield, Users, Sparkles, Navigation } from 'lucide-react';
+import { Search, X, User, History, Check, Shield, Users, Sparkles, Navigation, ArrowRight } from 'lucide-react';
 import { Person, FamilyTree } from '../types';
 import { getKinshipToMe, getPaternalMaternalMemberIds } from '../utils/kinshipHelper';
 import { getInitials } from '../utils/formatHelper';
+
+export type PersonPickerMode = 'SEARCH' | 'PERSPECTIVE';
 
 interface PersonPickerModalProps {
   isOpen: boolean;
   tree: FamilyTree;
   mePerson: Person | null;
+  initialMode?: PersonPickerMode;
   onSelectPerson: (person: Person) => void;
+  onViewPerson?: (person: Person) => void;
   onClose: () => void;
   onResetToMe?: () => void;
 }
@@ -19,16 +23,26 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
   isOpen,
   tree,
   mePerson,
+  initialMode = 'SEARCH',
   onSelectPerson,
+  onViewPerson,
   onClose,
   onResetToMe,
 }) => {
+  const [mode, setMode] = useState<PersonPickerMode>(initialMode);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'ALL' | 'PATERNAL' | 'MATERNAL' | number>('ALL');
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
+
+  // Sync mode with initialMode when opened
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+    }
+  }, [isOpen, initialMode]);
 
   // Load recently chosen from localStorage
   useEffect(() => {
@@ -126,7 +140,11 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
       // ignore
     }
 
-    onSelectPerson(person);
+    if (mode === 'SEARCH' && onViewPerson) {
+      onViewPerson(person);
+    } else {
+      onSelectPerson(person);
+    }
     onClose();
   };
 
@@ -184,16 +202,22 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
         {/* Mobile Pull/Drag Indicator */}
         <div className="picker-drag-handle" aria-hidden="true" />
 
-        {/* 1. Header with Title & Search Input */}
+        {/* 1. Header with Mode Tabs & Search Input */}
         <div className="picker-header-wrap">
           <div className="picker-title-row">
             <div className="picker-title-content">
-              <div className="picker-icon-badge">
-                <Users size={19} />
+              <div className="picker-icon-badge" style={{ color: mode === 'SEARCH' ? '#34d399' : '#38bdf8' }}>
+                {mode === 'SEARCH' ? <Search size={19} /> : <Navigation size={19} />}
               </div>
               <div className="picker-heading-text">
-                <h3 id="picker-title">Tìm Kiếm & Đổi Góc Nhìn</h3>
-                <p>Tra cứu thành viên hoặc chọn vai vế trung tâm</p>
+                <h3 id="picker-title">
+                  {mode === 'SEARCH' ? 'Tìm Kiếm Thành Viên' : 'Đổi Góc Nhìn Phả Hệ'}
+                </h3>
+                <p>
+                  {mode === 'SEARCH'
+                    ? 'Tra cứu và xem hồ sơ chi tiết của thành viên'
+                    : 'Chọn người thân làm tâm điểm tính xưng hô & sơ đồ'}
+                </p>
               </div>
             </div>
             <button className="btn-ghost-sm" onClick={onClose} aria-label="Đóng bảng chọn">
@@ -201,13 +225,72 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
             </button>
           </div>
 
+          {/* Mode Switcher: Differentiate Search vs Change Perspective clearly */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              padding: '0.25rem',
+              background: 'rgba(0, 0, 0, 0.4)',
+              borderRadius: '12px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              gap: '0.3rem',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setMode('SEARCH')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.45rem',
+                padding: '0.5rem 0.6rem',
+                borderRadius: '9px',
+                fontSize: '0.84rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: mode === 'SEARCH' ? '1px solid rgba(52, 211, 153, 0.5)' : '1px solid transparent',
+                background: mode === 'SEARCH' ? 'rgba(16, 185, 129, 0.22)' : 'transparent',
+                color: mode === 'SEARCH' ? '#34d399' : '#94a3b8',
+                transition: 'all 0.18s ease',
+              }}
+            >
+              <Search size={15} />
+              <span>Tìm Kiếm</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMode('PERSPECTIVE')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.45rem',
+                padding: '0.5rem 0.6rem',
+                borderRadius: '9px',
+                fontSize: '0.84rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: mode === 'PERSPECTIVE' ? '1px solid rgba(56, 189, 248, 0.5)' : '1px solid transparent',
+                background: mode === 'PERSPECTIVE' ? 'rgba(14, 165, 233, 0.22)' : 'transparent',
+                color: mode === 'PERSPECTIVE' ? '#38bdf8' : '#94a3b8',
+                transition: 'all 0.18s ease',
+              }}
+            >
+              <Navigation size={15} />
+              <span>Đổi Góc Nhìn</span>
+            </button>
+          </div>
+
           {/* Search Box */}
           <div className="picker-search-container">
-            <Search size={18} color="#34d399" style={{ flexShrink: 0 }} />
+            <Search size={18} color={mode === 'SEARCH' ? '#34d399' : '#38bdf8'} style={{ flexShrink: 0 }} />
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Tìm theo tên, biệt danh, thế hệ..."
+              placeholder={mode === 'SEARCH' ? 'Tìm theo tên, biệt danh, thế hệ...' : 'Chọn người thân làm tâm điểm...'}
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -228,7 +311,7 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
             )}
           </div>
 
-          {/* Quick Filter Tabs (Smooth Horizontal Scroll) */}
+          {/* Quick Filter Tabs (Smooth Horizontal Scroll, Clean Labels) */}
           <div className="picker-tabs-scroll" role="tablist" aria-label="Bộ lọc nhánh và thế hệ">
             <button
               type="button"
@@ -253,7 +336,7 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
                 setSelectedIndex(0);
               }}
             >
-              <span>🏛️ Bên Nội</span>
+              <span>Bên Nội</span>
             </button>
 
             <button
@@ -266,7 +349,7 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
                 setSelectedIndex(0);
               }}
             >
-              <span>🌸 Bên Ngoại</span>
+              <span>Bên Ngoại</span>
             </button>
 
             {generations.map((gen) => (
@@ -360,15 +443,27 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
 
                     <div className="picker-info-col">
                       <div className="picker-name-row">
-                        <span className="picker-person-name">
+                        <span
+                          className="picker-person-name"
+                          title={person.fullName}
+                          style={{
+                            fontSize: '0.96rem',
+                            fontWeight: 700,
+                            color: '#ffffff',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxWidth: '100%',
+                          }}
+                        >
                           {person.fullName}
                         </span>
                         {person.nickname && (
-                          <span className="picker-person-nickname">
+                          <span className="picker-person-nickname" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
                             ({person.nickname})
                           </span>
                         )}
-                        {isCurrentMe && (
+                        {mode === 'PERSPECTIVE' && isCurrentMe && (
                           <span className="picker-viewing-badge">
                             Đang xem
                           </span>
@@ -390,13 +485,18 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Active Selection Indicator */}
+                  {/* Active Selection / Mode Action Indicator */}
                   <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, paddingLeft: '0.4rem' }}>
-                    {isCurrentMe ? (
-                      <Check size={18} color="#34d399" />
-                    ) : isSelected ? (
-                      <Sparkles size={16} color="#fbbf24" />
-                    ) : null}
+                    {mode === 'SEARCH' ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#34d399', fontSize: '0.78rem', fontWeight: 600 }}>
+                        <span className="hidden sm:inline">Hồ sơ</span>
+                        <ArrowRight size={17} />
+                      </div>
+                    ) : isCurrentMe ? (
+                      <Check size={19} color="#34d399" />
+                    ) : (
+                      <Navigation size={16} color="#38bdf8" />
+                    )}
                   </div>
                 </div>
               );
@@ -408,10 +508,14 @@ export const PersonPickerModal: React.FC<PersonPickerModalProps> = ({
         <div className="picker-footer-bar">
           {/* Desktop Keyboard Hints (Hidden on Mobile) */}
           <div className="picker-desktop-hints">
-            <span>Dùng phím <kbd>↑</kbd> <kbd>↓</kbd> để duyệt, <kbd>Enter</kbd> để chọn, <kbd>Esc</kbd> để đóng</span>
+            <span>
+              {mode === 'SEARCH'
+                ? 'Nhấn vào thành viên để xem hồ sơ chi tiết'
+                : 'Dùng phím ↑ ↓ để duyệt, Enter để chọn góc nhìn'}
+            </span>
           </div>
 
-          {onResetToMe && (
+          {onResetToMe && mode === 'PERSPECTIVE' && (
             <button
               type="button"
               className="btn-secondary"

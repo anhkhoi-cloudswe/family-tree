@@ -96,6 +96,7 @@ const AppContent: React.FC = () => {
   const [showReminderModal, setShowReminderModal] = useState<boolean>(false);
   const [reminderSettings, setReminderSettings] = useState<ReminderSettings>(getStoredReminderSettings);
   const [showPersonPicker, setShowPersonPicker] = useState<boolean>(false);
+  const [personPickerMode, setPersonPickerMode] = useState<'SEARCH' | 'PERSPECTIVE'>('SEARCH');
   const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
   const [showAdminModal, setShowAdminModal] = useState<boolean>(false);
   const [showTour, setShowTour] = useState<boolean>(false);
@@ -966,7 +967,10 @@ const AppContent: React.FC = () => {
         onUpdatePhone={() => setShowUpdatePhoneModal(true)}
         onOpenProfile={() => setShowProfileModal(true)}
         onLogout={handleLogout}
-        onOpenPersonPicker={() => setShowPersonPicker(true)}
+        onOpenPersonPicker={() => {
+          setPersonPickerMode('SEARCH');
+          setShowPersonPicker(true);
+        }}
       >
         {/* 2-Tier Sticky Navbar: Show when viewing Tree or Member List */}
         {mainView !== 'BRANCHES' && (
@@ -990,7 +994,10 @@ const AppContent: React.FC = () => {
             onBranchFilterChange={setBranchFilter}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
-            onOpenPersonPicker={() => setShowPersonPicker(true)}
+            onOpenPersonPicker={() => {
+              setPersonPickerMode('PERSPECTIVE');
+              setShowPersonPicker(true);
+            }}
             onOpenAddMember={() => {
               setAddMemberTarget(null);
               setShowAddMemberModal(true);
@@ -1076,7 +1083,10 @@ const AppContent: React.FC = () => {
               onBranchFilterChange={setBranchFilter}
               viewMode={viewMode}
               onViewModeChange={setViewMode}
-              onOpenPersonPicker={() => setShowPersonPicker(true)}
+              onOpenPersonPicker={() => {
+                setPersonPickerMode('PERSPECTIVE');
+                setShowPersonPicker(true);
+              }}
               onSelectPerson={(p) => {
                 setDrawerSource(null);
                 setDrawerHistory([]);
@@ -1217,7 +1227,13 @@ const AppContent: React.FC = () => {
           isOpen={showPersonPicker}
           tree={tree}
           mePerson={mePerson}
+          initialMode={personPickerMode}
           onSelectPerson={handleSelectPerspective}
+          onViewPerson={(p) => {
+            setDrawerSource(null);
+            setDrawerHistory([]);
+            setDrawerPerson(p);
+          }}
           onClose={() => setShowPersonPicker(false)}
           onResetToMe={handleResetToMySelf}
         />

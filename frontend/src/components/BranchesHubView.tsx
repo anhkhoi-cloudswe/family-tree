@@ -189,11 +189,11 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
 
         {/* Filter Tabs & Search Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-1 p-1 bg-slate-950/80 border border-slate-800 rounded-xl text-xs font-medium">
+          <div className="flex items-center gap-1 p-1 bg-slate-950/80 border border-slate-800 rounded-xl text-xs font-medium overflow-x-auto flex-nowrap scrollbar-none max-w-full">
             <button
               type="button"
               onClick={() => setFilterTab('ALL')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-lg transition ${
                 filterTab === 'ALL'
                   ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -204,7 +204,7 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
             <button
               type="button"
               onClick={() => setFilterTab('OWNED')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-lg transition ${
                 filterTab === 'OWNED'
                   ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -215,7 +215,7 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
             <button
               type="button"
               onClick={() => setFilterTab('JOINED')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-lg transition ${
                 filterTab === 'JOINED'
                   ? 'bg-teal-500/20 text-teal-300 font-bold border border-teal-500/40 shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -226,13 +226,12 @@ export const BranchesHubView: React.FC<BranchesHubViewProps> = ({
             <button
               type="button"
               onClick={() => setFilterTab('PENDING')}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+              className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
                 filterTab === 'PENDING'
                   ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Clock size={12} className={filterTab === 'PENDING' ? 'text-amber-400' : 'text-slate-500'} />
               <span>Chờ Duyệt ({pendingInvitations.length})</span>
               {pendingInvitations.length > 0 && (
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />

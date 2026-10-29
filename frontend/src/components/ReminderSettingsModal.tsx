@@ -169,9 +169,9 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
             >
               <Bell size={18} />
             </div>
-            <div style={{ minWidth: 0 }}>
-              <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#ffffff', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                Gợi Nhớ Sinh Nhật & Ngày Giỗ
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <h3 style={{ fontSize: 'clamp(0.85rem, 4vw, 0.96rem)', fontWeight: 700, color: '#ffffff', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Nhắc Nhở Sinh Nhật & Ngày Giỗ
               </h3>
             </div>
           </div>
@@ -247,8 +247,8 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                   </span>
                 </div>
 
-                {/* Preset Pills */}
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.9rem' }}>
+                {/* Preset Pills - Clean 2-column grid side by side */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginBottom: '0.9rem' }}>
                   {[
                     { days: 1, label: '1 ngày (Mặc định)' },
                     { days: 7, label: '1 tuần (7 ngày)' },
@@ -260,15 +260,16 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                         type="button"
                         onClick={() => handleSelectPreset(p.days)}
                         style={{
-                          padding: '0.45rem 0.85rem',
+                          padding: '0.55rem 0.4rem',
                           borderRadius: '8px',
                           fontSize: '0.82rem',
-                          fontWeight: isSelected ? 600 : 500,
+                          fontWeight: isSelected ? 700 : 500,
                           background: isSelected ? 'rgba(52, 211, 153, 0.25)' : 'rgba(255, 255, 255, 0.05)',
                           border: `1.5px solid ${isSelected ? '#34d399' : 'rgba(255, 255, 255, 0.12)'}`,
                           color: isSelected ? '#34d399' : '#cbd5e1',
                           cursor: 'pointer',
                           transition: 'all 0.15s ease',
+                          textAlign: 'center',
                           whiteSpace: 'nowrap',
                         }}
                       >
@@ -467,8 +468,8 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
           style={{
             padding: '0.85rem 1.25rem calc(0.85rem + env(safe-area-inset-bottom, 0px)) 1.25rem',
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            display: 'flex',
-            justifyContent: 'flex-end',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
             gap: '0.75rem',
             background: 'rgba(6, 20, 13, 0.98)',
             flexShrink: 0,
@@ -478,7 +479,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
             type="button"
             className="btn-secondary"
             onClick={onClose}
-            style={{ fontSize: '0.86rem', padding: '0.55rem 1rem', borderRadius: '10px' }}
+            style={{ fontSize: '0.86rem', padding: '0.65rem 1rem', borderRadius: '10px', justifyContent: 'center' }}
           >
             Hủy Bỏ
           </button>
@@ -488,9 +489,10 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
             onClick={handleSave}
             style={{
               fontSize: '0.86rem',
-              padding: '0.55rem 1.25rem',
+              padding: '0.65rem 1.25rem',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '0.4rem',
               borderRadius: '10px',
             }}
