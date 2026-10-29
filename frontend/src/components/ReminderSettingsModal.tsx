@@ -143,21 +143,22 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
         {/* Header */}
         <div
           style={{
-            padding: '1rem 1.25rem',
+            padding: '0.85rem 1rem',
             borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, rgba(16, 185, 129, 0.15), rgba(6, 78, 59, 0.05))',
             flexShrink: 0,
+            gap: '0.5rem',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0, flex: 1 }}>
             <div
               style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
                 background: 'rgba(52, 211, 153, 0.15)',
                 border: '1px solid rgba(52, 211, 153, 0.3)',
                 display: 'flex',
@@ -167,15 +168,18 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                 flexShrink: 0,
               }}
             >
-              <Bell size={18} />
+              <Bell size={16} />
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <h3 style={{ fontSize: 'clamp(0.85rem, 4vw, 0.96rem)', fontWeight: 700, color: '#ffffff', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                Nhắc Nhở Sinh Nhật & Ngày Giỗ
+              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#ffffff', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Cài Đặt Nhắc Nhở
               </h3>
+              <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Sinh nhật thành viên & ngày giỗ tổ tiên
+              </p>
             </div>
           </div>
-          <button className="btn-ghost-sm" onClick={onClose} title="Đóng" style={{ flexShrink: 0 }}>
+          <button className="btn-ghost-sm" onClick={onClose} title="Đóng" style={{ flexShrink: 0, padding: '0.35rem' }}>
             <X size={18} color="#94a3b8" />
           </button>
         </div>
@@ -375,12 +379,12 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
 
               {/* 4. Preview list of upcoming events matching configured advance days */}
               <div style={{ padding: '0.4rem 0.2rem 0.5rem 0.2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
-                  <span style={{ fontSize: '0.86rem', fontWeight: 600, color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginBottom: '0.65rem' }}>
+                  <span style={{ fontSize: '0.84rem', fontWeight: 600, color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Sparkles size={14} />
                     Sự kiện khớp lịch nhắc ({advanceDays} ngày tới):
                   </span>
-                  <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#94a3b8', paddingLeft: '1.25rem' }}>
                     {upcomingEvents.length} sự kiện
                   </span>
                 </div>
@@ -459,11 +463,11 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
         {/* Footer */}
         <div
           style={{
-            padding: '0.85rem 1.25rem calc(0.85rem + env(safe-area-inset-bottom, 0px)) 1.25rem',
+            padding: '0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px)) 1rem',
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: '0.75rem',
+            gap: '0.65rem',
             background: 'rgba(6, 20, 13, 0.98)',
             flexShrink: 0,
           }}
@@ -472,7 +476,15 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
             type="button"
             className="btn-secondary"
             onClick={onClose}
-            style={{ fontSize: '0.86rem', padding: '0.65rem 1rem', borderRadius: '10px', justifyContent: 'center' }}
+            style={{
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              padding: '0.45rem 0.5rem',
+              borderRadius: '9px',
+              justifyContent: 'center',
+              whiteSpace: 'nowrap',
+              height: '38px',
+            }}
           >
             Hủy Bỏ
           </button>
@@ -481,16 +493,19 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
             className="btn-primary"
             onClick={handleSave}
             style={{
-              fontSize: '0.86rem',
-              padding: '0.65rem 1.25rem',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              padding: '0.45rem 0.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.4rem',
-              borderRadius: '10px',
+              gap: '0.35rem',
+              borderRadius: '9px',
+              whiteSpace: 'nowrap',
+              height: '38px',
             }}
           >
-            <Check size={16} />
+            <Check size={15} />
             <span>Lưu Cài Đặt</span>
           </button>
         </div>

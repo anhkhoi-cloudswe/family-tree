@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import { Navbar } from './components/Navbar';
 import { TreeCanvas } from './components/TreeCanvas';
 import { MemberListView } from './components/MemberListView';
+import { LunarAnniversaryView } from './components/LunarAnniversaryView';
 import { MemberDetailDrawer } from './components/MemberDetailDrawer';
 import { AddMemberModal } from './components/AddMemberModal';
 import { LunarAnniversaryModal } from './components/LunarAnniversaryModal';
@@ -83,8 +84,8 @@ const AppContent: React.FC = () => {
   const [isSubmittingMagicLink, setIsSubmittingMagicLink] = useState<boolean>(false);
   const [magicLinkError, setMagicLinkError] = useState<string | null>(null);
 
-  // Main View: Tất cả Nhánh (BRANCHES) | Sơ đồ Cây (TREE) | Danh Bạ Thu Gọn (LIST)
-  const [mainView, setMainView] = useState<'BRANCHES' | 'TREE' | 'LIST'>('TREE');
+  // Main View: Tất cả Nhánh (BRANCHES) | Sơ đồ Cây (TREE) | Danh Bạ Thu Gọn (LIST) | Lịch Giỗ (LUNAR)
+  const [mainView, setMainView] = useState<'BRANCHES' | 'TREE' | 'LIST' | 'LUNAR'>('TREE');
 
   // Modals & Drawer states
   const [drawerPerson, setDrawerPerson] = useState<Person | null>(null);
@@ -926,7 +927,7 @@ const AppContent: React.FC = () => {
           if (key === 'BRANCHES') setMainView('BRANCHES');
           else if (key === 'TREE') setMainView('TREE');
           else if (key === 'LIST') setMainView('LIST');
-          else if (key === 'LUNAR') setShowLunarModal(true);
+          else if (key === 'LUNAR') setMainView('LUNAR');
           else if (key === 'FLASHCARD') setShowFlashcardModal(true);
           else if (key === 'REMINDER') setShowReminderModal(true);
           else if (key === 'SHARE') {
@@ -1002,7 +1003,7 @@ const AppContent: React.FC = () => {
               setAddMemberTarget(null);
               setShowAddMemberModal(true);
             }}
-            onOpenLunar={() => setShowLunarModal(true)}
+            onOpenLunar={() => setMainView('LUNAR')}
             onOpenReminder={() => setShowReminderModal(true)}
             onOpenFlashcard={() => setShowFlashcardModal(true)}
             onExportImage={handleExportImageClick}
@@ -1113,7 +1114,7 @@ const AppContent: React.FC = () => {
               onExportExcel={handleExportExcel}
               isExportingExcel={isExportingExcel}
             />
-          ) : (
+          ) : mainView === 'LIST' ? (
             <MemberListView
               tree={tree}
               mePerson={mePerson}
@@ -1124,6 +1125,16 @@ const AppContent: React.FC = () => {
                 setDrawerHistory([]);
                 setDrawerPerson(p);
               }}
+            />
+          ) : (
+            <LunarAnniversaryView
+              tree={tree}
+              onSelectPerson={(p) => {
+                setDrawerSource(null);
+                setDrawerHistory([]);
+                setDrawerPerson(p);
+              }}
+              onOpenReminderSettings={() => setShowReminderModal(true)}
             />
           )
         ) : (
