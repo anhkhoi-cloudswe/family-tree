@@ -50,6 +50,18 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
   const [notifyBirthday, setNotifyBirthday] = useState<boolean>(settings.notifyBirthday);
   const [notifyAnniversary, setNotifyAnniversary] = useState<boolean>(settings.notifyAnniversary);
   const [showConfigSection, setShowConfigSection] = useState<boolean>(false);
+  const [hasInteractedToggle, setHasInteractedToggle] = useState<boolean>(false);
+
+  const handleToggleEnabled = () => {
+    setHasInteractedToggle(true);
+    if (enabled) {
+      // Khi tắt: đóng luôn panel config nếu đang mở
+      setShowConfigSection(false);
+      setEnabled(false);
+    } else {
+      setEnabled(true);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -228,36 +240,39 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
             </span>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexShrink: 0 }}>
-              {/* Settings Toggle Button: Gọn gàng, dễ thấy, không bị chèn hay đè chữ */}
-              <button
-                type="button"
-                onClick={() => setShowConfigSection(!showConfigSection)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.3rem',
-                  padding: '0.35rem 0.6rem',
-                  borderRadius: '8px',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  background: showConfigSection ? 'rgba(52, 211, 153, 0.22)' : 'rgba(255, 255, 255, 0.06)',
-                  border: `1px solid ${showConfigSection ? '#34d399' : 'rgba(255, 255, 255, 0.15)'}`,
-                  color: showConfigSection ? '#34d399' : '#cbd5e1',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                  transition: 'all 0.18s ease',
-                }}
-                title="Tùy chỉnh thời gian nhắc trước và loại sự kiện"
-              >
-                <Sliders size={13} />
-                <span>Cài đặt</span>
-                {showConfigSection ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-              </button>
+              {/* Settings Toggle Button: Tan biến thành cát bụi khi Off, Bay xuống mềm mại khi On */}
+              {(enabled || hasInteractedToggle) && (
+                <button
+                  type="button"
+                  onClick={() => setShowConfigSection(!showConfigSection)}
+                  className={enabled ? (hasInteractedToggle ? 'anim-drop-enter' : '') : 'anim-dust-exit'}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                    padding: '0.35rem 0.6rem',
+                    borderRadius: '8px',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    background: showConfigSection ? 'rgba(52, 211, 153, 0.22)' : 'rgba(255, 255, 255, 0.06)',
+                    border: `1px solid ${showConfigSection ? '#34d399' : 'rgba(255, 255, 255, 0.15)'}`,
+                    color: showConfigSection ? '#34d399' : '#cbd5e1',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease',
+                  }}
+                  title="Tùy chỉnh thời gian nhắc trước và loại sự kiện"
+                >
+                  <Sliders size={13} />
+                  <span>Cài đặt</span>
+                  {showConfigSection ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                </button>
+              )}
 
               <button
                 type="button"
-                onClick={() => setEnabled(!enabled)}
+                onClick={handleToggleEnabled}
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -301,8 +316,8 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                 {/* Preset Pills */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
                   {[
-                    { days: 1, label: '1 ngày (Mặc định)' },
-                    { days: 7, label: '1 tuần (7 ngày)' },
+                    { days: 1, label: '1 ngày' },
+                    { days: 7, label: '7 ngày' },
                   ].map((p) => {
                     const isSelected = advanceDays === p.days;
                     return (
@@ -597,11 +612,14 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                                 whiteSpace: 'nowrap',
                               }}
                             >
-                              {ev.type === 'BIRTHDAY' ? 'Sinh nhật' : 'Ngày giỗ'}:{' '}
-                              <strong style={{ color: '#e2e8f0' }}>{ev.dateStr}</strong>
+                              {ev.type === 'BIRTHDAY' ? (
+                                <>Sinh nhật: <strong style={{ color: '#34d399' }}>{ev.dateStr}</strong></>
+                              ) : (
+                                <>Ngày giỗ: <strong style={{ color: '#f87171' }}>{ev.dateStr}</strong></>
+                              )}
                             </span>
 
-                            {/* Badge Còn ... ngày */}
+                            {/* Badge Còn ... ngày: Ngày giỗ dùng tone Đỏ/Rose, Sinh nhật dùng tone Xanh lá */}
                             <span
                               style={{
                                 fontSize: '0.7rem',
@@ -609,21 +627,21 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                                 padding: '0.12rem 0.5rem',
                                 borderRadius: '999px',
                                 background: isToday
-                                  ? 'rgba(225, 29, 72, 0.25)'
-                                  : isTomorrow
-                                  ? 'rgba(217, 119, 6, 0.25)'
-                                  : 'rgba(5, 150, 105, 0.22)',
+                                  ? '#e11d48'
+                                  : ev.type === 'ANNIVERSARY'
+                                  ? 'rgba(225, 29, 72, 0.22)'
+                                  : 'rgba(16, 185, 129, 0.22)',
                                 color: isToday
-                                  ? '#fca5a5'
-                                  : isTomorrow
-                                  ? '#fcd34d'
+                                  ? '#ffffff'
+                                  : ev.type === 'ANNIVERSARY'
+                                  ? '#fda4af'
                                   : '#6ee7b7',
                                 border: `1px solid ${
                                   isToday
-                                    ? 'rgba(239, 68, 68, 0.45)'
-                                    : isTomorrow
-                                    ? 'rgba(245, 158, 11, 0.45)'
-                                    : 'rgba(16, 185, 129, 0.35)'
+                                    ? '#fda4af'
+                                    : ev.type === 'ANNIVERSARY'
+                                    ? 'rgba(244, 63, 94, 0.45)'
+                                    : 'rgba(52, 211, 153, 0.45)'
                                 }`,
                                 whiteSpace: 'nowrap',
                                 flexShrink: 0,

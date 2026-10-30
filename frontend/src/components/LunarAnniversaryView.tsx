@@ -367,29 +367,29 @@ export const LunarAnniversaryView: React.FC<LunarAnniversaryViewProps> = ({
                           <span>{formatLunarDay(person.lunarDeathDay || undefined)}</span>
                         </div>
 
-                        {/* Calculated Solar Date */}
+                        {/* Calculated Solar Date - Tone Đỏ trang trọng đồng bộ với ngày giỗ */}
                         {anniversary.hasValidDate && (
                           <div
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '0.25rem',
-                              color: '#38bdf8',
+                              color: '#fda4af',
                               fontSize: '0.76rem',
-                              background: 'rgba(56, 189, 248, 0.12)',
-                              border: '1px solid rgba(56, 189, 248, 0.25)',
+                              background: 'rgba(225, 29, 72, 0.14)',
+                              border: '1px solid rgba(244, 63, 94, 0.35)',
                               padding: '0.12rem 0.45rem',
                               borderRadius: '6px',
                               fontWeight: 500,
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            <Calendar size={11} color="#38bdf8" />
+                            <Calendar size={11} color="#fb7185" />
                             <span>Dương lịch: <strong style={{ color: '#ffffff' }}>{anniversary.solarDateStr}</strong></span>
                           </div>
                         )}
 
-                        {/* Status Countdown Badge */}
+                        {/* Status Countdown Badge - Tone Đỏ/Rose đồng nhất */}
                         {anniversary.hasValidDate && (
                           <span
                             style={{
@@ -398,27 +398,27 @@ export const LunarAnniversaryView: React.FC<LunarAnniversaryViewProps> = ({
                               padding: '0.12rem 0.5rem',
                               borderRadius: '999px',
                               background: isToday
-                                ? 'rgba(239, 68, 68, 0.25)'
+                                ? '#e11d48'
                                 : isUpcoming && anniversary.daysLeft <= 15
-                                ? 'rgba(245, 158, 11, 0.22)'
+                                ? 'rgba(225, 29, 72, 0.22)'
                                 : isUpcoming
-                                ? 'rgba(14, 165, 233, 0.2)'
-                                : 'rgba(148, 163, 184, 0.15)',
+                                ? 'rgba(244, 63, 94, 0.16)'
+                                : 'rgba(255, 255, 255, 0.08)',
                               color: isToday
-                                ? '#fca5a5'
+                                ? '#ffffff'
                                 : isUpcoming && anniversary.daysLeft <= 15
-                                ? '#fcd34d'
+                                ? '#fca5a5'
                                 : isUpcoming
-                                ? '#7dd3fc'
+                                ? '#fda4af'
                                 : '#cbd5e1',
                               border: `1px solid ${
                                 isToday
-                                  ? 'rgba(239, 68, 68, 0.45)'
+                                  ? '#fda4af'
                                   : isUpcoming && anniversary.daysLeft <= 15
-                                  ? 'rgba(245, 158, 11, 0.4)'
+                                  ? 'rgba(239, 68, 68, 0.45)'
                                   : isUpcoming
-                                  ? 'rgba(14, 165, 233, 0.35)'
-                                  : 'rgba(148, 163, 184, 0.25)'
+                                  ? 'rgba(244, 63, 94, 0.35)'
+                                  : 'rgba(255, 255, 255, 0.15)'
                               }`,
                               whiteSpace: 'nowrap',
                             }}
