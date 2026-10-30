@@ -123,7 +123,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
 
   return (
     <div
-      className="minimal-modal-overlay"
+      className="minimal-modal-overlay reminder-modal-overlay"
       onClick={onClose}
       style={{
         zIndex: 1200,
@@ -131,10 +131,11 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
       }}
     >
       <div
-        className="minimal-modal-box"
+        className="minimal-modal-box reminder-modal-box"
         style={{
           maxWidth: '560px',
-          maxHeight: '88dvh',
+          width: '100%',
+          maxHeight: '90dvh',
           display: 'flex',
           flexDirection: 'column',
           background: 'rgba(9, 24, 17, 0.98)',
@@ -142,6 +143,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
           borderRadius: '20px',
           boxShadow: '0 25px 60px rgba(0,0,0,0.8), 0 0 35px rgba(16,185,129,0.15)',
           overflow: 'hidden',
+          boxSizing: 'border-box',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -209,33 +211,40 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
               justifyContent: 'space-between',
               padding: '0.2rem 0 0.75rem 0',
               borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-              gap: '0.5rem',
+              gap: '0.65rem',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
-              <span style={{ fontWeight: 600, fontSize: '0.92rem', color: '#ffffff', whiteSpace: 'nowrap' }}>
-                Bật tính năng nhắc nhở
-              </span>
-            </div>
+            <span
+              style={{
+                fontWeight: 600,
+                fontSize: '0.92rem',
+                color: '#ffffff',
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              Bật tính năng nhắc nhở
+            </span>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-              {/* Settings Toggle Button: Gọn gàng, dễ bấm, không rớt dòng */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexShrink: 0 }}>
+              {/* Settings Toggle Button: Gọn gàng, dễ thấy, không bị chèn hay đè chữ */}
               <button
                 type="button"
                 onClick={() => setShowConfigSection(!showConfigSection)}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  padding: '0.32rem 0.65rem',
+                  gap: '0.3rem',
+                  padding: '0.35rem 0.6rem',
                   borderRadius: '8px',
-                  fontSize: '0.76rem',
+                  fontSize: '0.78rem',
                   fontWeight: 600,
-                  background: showConfigSection ? 'rgba(52, 211, 153, 0.2)' : 'rgba(255, 255, 255, 0.06)',
-                  border: `1px solid ${showConfigSection ? '#34d399' : 'rgba(255, 255, 255, 0.14)'}`,
+                  background: showConfigSection ? 'rgba(52, 211, 153, 0.22)' : 'rgba(255, 255, 255, 0.06)',
+                  border: `1px solid ${showConfigSection ? '#34d399' : 'rgba(255, 255, 255, 0.15)'}`,
                   color: showConfigSection ? '#34d399' : '#cbd5e1',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
+                  flexShrink: 0,
                   transition: 'all 0.18s ease',
                 }}
                 title="Tùy chỉnh thời gian nhắc trước và loại sự kiện"
@@ -255,11 +264,12 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                   color: enabled ? '#34d399' : '#64748b',
                   display: 'flex',
                   alignItems: 'center',
-                  padding: '2px',
+                  padding: '0',
+                  flexShrink: 0,
                 }}
                 title={enabled ? 'Nhấn để tắt' : 'Nhấn để bật'}
               >
-                {enabled ? <ToggleRight size={34} /> : <ToggleLeft size={34} />}
+                {enabled ? <ToggleRight size={36} /> : <ToggleLeft size={36} />}
               </button>
             </div>
           </div>
@@ -490,11 +500,11 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                       tabIndex={matchedPerson ? 0 : undefined}
                     >
                       {/* Avatar Initials + Thông tin sự kiện */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, flex: 1 }}>
                         <div
                           style={{
-                            width: '40px',
-                            height: '40px',
+                            width: '42px',
+                            height: '42px',
                             borderRadius: '50%',
                             background: isToday
                               ? 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)'
@@ -513,7 +523,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontWeight: 700,
-                            fontSize: '0.84rem',
+                            fontSize: '0.86rem',
                             flexShrink: 0,
                           }}
                         >
@@ -521,16 +531,11 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                         </div>
 
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          {/* Tên thành viên + Icon loại sự kiện */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                            {ev.type === 'BIRTHDAY' ? (
-                              <Cake size={13} color="#f472b6" style={{ flexShrink: 0 }} />
-                            ) : (
-                              <Flame size={13} color="#fb7185" style={{ flexShrink: 0 }} />
-                            )}
+                          {/* Hàng 1: Họ tên trọn vẹn (chiếm toàn bộ bề ngang) */}
+                          <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                             <span
                               style={{
-                                fontSize: '0.88rem',
+                                fontSize: '0.94rem',
                                 fontWeight: 700,
                                 color: '#ffffff',
                                 whiteSpace: 'nowrap',
@@ -541,11 +546,23 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                             >
                               {ev.fullName}
                             </span>
+                          </div>
+
+                          {/* Hàng 2: Thế hệ (Đời) + Ngày sự kiện + Badge Đếm ngược */}
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.45rem',
+                              flexWrap: 'wrap',
+                              marginTop: '0.25rem',
+                            }}
+                          >
                             {ev.generation && (
                               <span
                                 style={{
                                   fontSize: '0.68rem',
-                                  padding: '0.08rem 0.35rem',
+                                  padding: '0.08rem 0.4rem',
                                   background: 'rgba(255, 255, 255, 0.08)',
                                   color: '#cbd5e1',
                                   borderRadius: '999px',
@@ -557,55 +574,51 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                                 Đời {ev.generation}
                               </span>
                             )}
-                          </div>
 
-                          {/* Ngày diễn ra */}
-                          <div
-                            style={{
-                              fontSize: '0.74rem',
-                              color: '#94a3b8',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              marginTop: '0.15rem',
-                            }}
-                          >
-                            {ev.type === 'BIRTHDAY' ? 'Sinh nhật' : 'Ngày giỗ'}:{' '}
-                            <strong style={{ color: '#e2e8f0' }}>{ev.dateStr}</strong>
+                            <span
+                              style={{
+                                fontSize: '0.74rem',
+                                color: '#94a3b8',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {ev.type === 'BIRTHDAY' ? 'Sinh nhật' : 'Ngày giỗ'}:{' '}
+                              <strong style={{ color: '#e2e8f0' }}>{ev.dateStr}</strong>
+                            </span>
+
+                            {/* Badge Còn ... ngày */}
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                padding: '0.12rem 0.5rem',
+                                borderRadius: '999px',
+                                background: isToday
+                                  ? 'rgba(225, 29, 72, 0.25)'
+                                  : isTomorrow
+                                  ? 'rgba(217, 119, 6, 0.25)'
+                                  : 'rgba(5, 150, 105, 0.22)',
+                                color: isToday
+                                  ? '#fca5a5'
+                                  : isTomorrow
+                                  ? '#fcd34d'
+                                  : '#6ee7b7',
+                                border: `1px solid ${
+                                  isToday
+                                    ? 'rgba(239, 68, 68, 0.45)'
+                                    : isTomorrow
+                                    ? 'rgba(245, 158, 11, 0.45)'
+                                    : 'rgba(16, 185, 129, 0.35)'
+                                }`,
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                              }}
+                            >
+                              {ev.badgeText}
+                            </span>
                           </div>
                         </div>
                       </div>
-
-                      {/* Countdown Badge Pill */}
-                      <span
-                        style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          padding: '0.18rem 0.55rem',
-                          borderRadius: '999px',
-                          background: isToday
-                            ? 'rgba(225, 29, 72, 0.25)'
-                            : isTomorrow
-                            ? 'rgba(217, 119, 6, 0.25)'
-                            : 'rgba(5, 150, 105, 0.2)',
-                          color: isToday
-                            ? '#fca5a5'
-                            : isTomorrow
-                            ? '#fcd34d'
-                            : '#6ee7b7',
-                          border: `1px solid ${
-                            isToday
-                              ? 'rgba(239, 68, 68, 0.45)'
-                              : isTomorrow
-                              ? 'rgba(245, 158, 11, 0.45)'
-                              : 'rgba(16, 185, 129, 0.35)'
-                          }`,
-                          whiteSpace: 'nowrap',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {ev.badgeText}
-                      </span>
                     </div>
                   );
                 })}
