@@ -133,9 +133,10 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
       <div
         className="minimal-modal-box reminder-modal-box"
         style={{
-          maxWidth: '560px',
+          maxWidth: '520px',
           width: '100%',
-          maxHeight: '90dvh',
+          height: '560px',
+          maxHeight: '88dvh',
           display: 'flex',
           flexDirection: 'column',
           background: 'rgba(9, 24, 17, 0.98)',
@@ -219,11 +220,11 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                 fontWeight: 600,
                 fontSize: '0.92rem',
                 color: '#ffffff',
-                flex: 1,
-                minWidth: 0,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
             >
-              Bật tính năng nhắc nhở
+              Bật nhắc nhở
             </span>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexShrink: 0 }}>
