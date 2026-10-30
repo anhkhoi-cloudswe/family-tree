@@ -1241,9 +1241,12 @@ const AppContent: React.FC = () => {
           initialMode={personPickerMode}
           onSelectPerson={handleSelectPerspective}
           onViewPerson={(p) => {
-            setDrawerSource(null);
-            setDrawerHistory([]);
-            setDrawerPerson(p);
+            // Khi tìm kiếm thành viên từ sơ đồ cây, chuyển góc nhìn / cuộn mượt tới vị trí người đó trong sơ đồ
+            if (mainView !== 'TREE') {
+              setMainView('TREE');
+            }
+            setFocusPersonId(p.id);
+            toast.info(`Đang chuyển đến vị trí: ${p.fullName}`);
           }}
           onClose={() => setShowPersonPicker(false)}
           onResetToMe={handleResetToMySelf}

@@ -11,6 +11,9 @@ import {
   ToggleRight,
   Clock,
   Sparkles,
+  Sliders,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Person, FamilyTree } from '../types';
 import {
@@ -21,6 +24,7 @@ import {
   calculateDaysLeftAnnual,
 } from '../utils/dateHelper';
 import { calculateAnniversaryStatus } from '../utils/lunarHelper';
+import { getInitials } from '../utils/formatHelper';
 import { useToast } from './Toast';
 
 interface ReminderSettingsModalProps {
@@ -45,6 +49,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
   const [advanceDays, setAdvanceDays] = useState<number>(settings.advanceDays);
   const [notifyBirthday, setNotifyBirthday] = useState<boolean>(settings.notifyBirthday);
   const [notifyAnniversary, setNotifyAnniversary] = useState<boolean>(settings.notifyAnniversary);
+  const [showConfigSection, setShowConfigSection] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
@@ -175,7 +180,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                 Cài Đặt Nhắc Nhở
               </h3>
               <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                Sinh nhật thành viên & ngày giỗ tổ tiên
+                Sinh nhật và ngày giỗ
               </p>
             </div>
           </div>
@@ -187,71 +192,103 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
         {/* Body content */}
         <div
           style={{
-            padding: '1.1rem 1.25rem',
+            padding: '0.85rem 1rem',
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: '1rem',
+            gap: '0.85rem',
             flex: 1,
             minHeight: 0,
           }}
         >
-          {/* 1. Main Toggle Switch */}
+          {/* 1. Main Toggle Switch & Quick Settings Button Row */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '0.4rem 0.2rem 0.85rem 0.2rem',
+              padding: '0.2rem 0 0.75rem 0',
               borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-              transition: 'all 0.2s ease',
+              gap: '0.5rem',
             }}
           >
-            <div>
-              <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#ffffff' }}>
-                Bật tính năng nhắc nhở tự động
-              </div>
-              <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '0.15rem' }}>
-                Thông báo sinh nhật và ngày giỗ sắp diễn ra
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+              <span style={{ fontWeight: 600, fontSize: '0.92rem', color: '#ffffff', whiteSpace: 'nowrap' }}>
+                Bật tính năng nhắc nhở
+              </span>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setEnabled(!enabled)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: enabled ? '#34d399' : '#64748b',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '4px',
-              }}
-              title={enabled ? 'Nhấn để tắt' : 'Nhấn để bật'}
-            >
-              {enabled ? <ToggleRight size={38} /> : <ToggleLeft size={38} />}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+              {/* Settings Toggle Button: Gọn gàng, dễ bấm, không rớt dòng */}
+              <button
+                type="button"
+                onClick={() => setShowConfigSection(!showConfigSection)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.32rem 0.65rem',
+                  borderRadius: '8px',
+                  fontSize: '0.76rem',
+                  fontWeight: 600,
+                  background: showConfigSection ? 'rgba(52, 211, 153, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                  border: `1px solid ${showConfigSection ? '#34d399' : 'rgba(255, 255, 255, 0.14)'}`,
+                  color: showConfigSection ? '#34d399' : '#cbd5e1',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.18s ease',
+                }}
+                title="Tùy chỉnh thời gian nhắc trước và loại sự kiện"
+              >
+                <Sliders size={13} />
+                <span>Cài đặt</span>
+                {showConfigSection ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setEnabled(!enabled)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: enabled ? '#34d399' : '#64748b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '2px',
+                }}
+                title={enabled ? 'Nhấn để tắt' : 'Nhấn để bật'}
+              >
+                {enabled ? <ToggleRight size={34} /> : <ToggleLeft size={34} />}
+              </button>
+            </div>
           </div>
 
-          {enabled && (
-            <>
+          {/* Config Expandable Panel (Tự động bung ra khi người dùng ấn nút "Cài đặt") */}
+          {enabled && showConfigSection && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem',
+                padding: '0.85rem',
+                background: 'rgba(0, 0, 0, 0.35)',
+                border: '1px solid rgba(52, 211, 153, 0.25)',
+                borderRadius: '14px',
+                animation: 'fadeIn 0.2s ease',
+              }}
+            >
               {/* 2. Days in advance setting */}
-              <div
-                style={{
-                  padding: '0.4rem 0.2rem 0.85rem 0.2rem',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
-                  <Clock size={16} color="#34d399" />
-                  <span style={{ fontWeight: 600, fontSize: '0.92rem', color: '#ffffff' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.65rem' }}>
+                  <Clock size={15} color="#34d399" />
+                  <span style={{ fontWeight: 600, fontSize: '0.88rem', color: '#ffffff' }}>
                     Thời gian nhắc trước:
                   </span>
                 </div>
 
-                {/* Preset Pills - Clean 2-column grid side by side */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginBottom: '0.9rem' }}>
+                {/* Preset Pills */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
                   {[
                     { days: 1, label: '1 ngày (Mặc định)' },
                     { days: 7, label: '1 tuần (7 ngày)' },
@@ -263,15 +300,14 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                         type="button"
                         onClick={() => handleSelectPreset(p.days)}
                         style={{
-                          padding: '0.55rem 0.4rem',
+                          padding: '0.5rem 0.35rem',
                           borderRadius: '8px',
-                          fontSize: '0.82rem',
+                          fontSize: '0.8rem',
                           fontWeight: isSelected ? 700 : 500,
                           background: isSelected ? 'rgba(52, 211, 153, 0.25)' : 'rgba(255, 255, 255, 0.05)',
                           border: `1.5px solid ${isSelected ? '#34d399' : 'rgba(255, 255, 255, 0.12)'}`,
                           color: isSelected ? '#34d399' : '#cbd5e1',
                           cursor: 'pointer',
-                          transition: 'all 0.15s ease',
                           textAlign: 'center',
                           whiteSpace: 'nowrap',
                         }}
@@ -283,15 +319,8 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                 </div>
 
                 {/* Custom days input */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                    flexWrap: 'nowrap',
-                  }}
-                >
-                  <span style={{ fontSize: '0.84rem', color: '#94a3b8', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'nowrap' }}>
+                  <span style={{ fontSize: '0.8rem', color: '#94a3b8', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     Nhập ngày cụ thể:
                   </span>
                   <input
@@ -304,44 +333,39 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                       setAdvanceDays(isNaN(val) ? 1 : val);
                     }}
                     style={{
-                      width: '64px',
-                      padding: '0.35rem 0.5rem',
-                      background: 'rgba(0,0,0,0.3)',
+                      width: '58px',
+                      padding: '0.3rem 0.45rem',
+                      background: 'rgba(0,0,0,0.4)',
                       border: '1.5px solid rgba(52, 211, 153, 0.4)',
                       borderRadius: '8px',
                       color: '#ffffff',
-                      fontSize: '0.9rem',
+                      fontSize: '0.86rem',
                       fontWeight: 600,
                       textAlign: 'center',
                       outline: 'none',
                       flexShrink: 0,
                     }}
                   />
-                  <span style={{ fontSize: '0.84rem', color: '#cbd5e1', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  <span style={{ fontSize: '0.8rem', color: '#cbd5e1', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     ngày trước
                   </span>
                 </div>
               </div>
 
               {/* 3. Event Types Checkboxes */}
-              <div
-                style={{
-                  padding: '0.4rem 0.2rem 0.85rem 0.2rem',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                }}
-              >
-                <div style={{ fontWeight: 600, fontSize: '0.92rem', color: '#ffffff', marginBottom: '0.6rem' }}>
+              <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.65rem' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.86rem', color: '#ffffff', marginBottom: '0.55rem' }}>
                   Loại sự kiện cần nhắc:
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                   <label
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.65rem',
+                      gap: '0.6rem',
                       cursor: 'pointer',
-                      fontSize: '0.88rem',
+                      fontSize: '0.84rem',
                       color: '#e2e8f0',
                     }}
                   >
@@ -351,7 +375,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                       onChange={(e) => setNotifyBirthday(e.target.checked)}
                       style={{ width: '16px', height: '16px', accentColor: '#34d399' }}
                     />
-                    <Cake size={16} color="#f472b6" />
+                    <Cake size={15} color="#f472b6" />
                     <span>Sinh nhật thành viên</span>
                   </label>
 
@@ -359,9 +383,9 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.65rem',
+                      gap: '0.6rem',
                       cursor: 'pointer',
-                      fontSize: '0.88rem',
+                      fontSize: '0.84rem',
                       color: '#e2e8f0',
                     }}
                   >
@@ -371,93 +395,223 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                       onChange={(e) => setNotifyAnniversary(e.target.checked)}
                       style={{ width: '16px', height: '16px', accentColor: '#34d399' }}
                     />
-                    <Flame size={16} color="#fb7185" />
+                    <Flame size={15} color="#fb7185" />
                     <span>Ngày giỗ âm lịch tổ tiên</span>
                   </label>
                 </div>
               </div>
+            </div>
+          )}
 
-              {/* 4. Preview list of upcoming events matching configured advance days */}
-              <div style={{ padding: '0.4rem 0.2rem 0.5rem 0.2rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginBottom: '0.65rem' }}>
-                  <span style={{ fontSize: '0.84rem', fontWeight: 600, color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Sparkles size={14} />
-                    Sự kiện khớp lịch nhắc ({advanceDays} ngày tới):
-                  </span>
-                  <span style={{ fontSize: '0.78rem', color: '#94a3b8', paddingLeft: '1.25rem' }}>
-                    {upcomingEvents.length} sự kiện
-                  </span>
-                </div>
+          {/* 4. Highlight chính: Danh sách sự kiện khớp lịch nhắc (Thiết kế dạng danh bạ iOS Hairline phẳng) */}
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+            {/* Header thông tin khớp lịch nhắc: 2 hàng chuẩn */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '0.65rem' }}>
+              <span style={{ fontSize: '0.84rem', fontWeight: 600, color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}>
+                <Sparkles size={14} />
+                Sự kiện khớp lịch nhắc ({advanceDays} ngày tới):
+              </span>
+              <div style={{ paddingLeft: '1.25rem' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    padding: '0.1rem 0.55rem',
+                    borderRadius: '999px',
+                    background: upcomingEvents.length > 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                    color: upcomingEvents.length > 0 ? '#34d399' : '#94a3b8',
+                    border: `1px solid ${upcomingEvents.length > 0 ? 'rgba(52, 211, 153, 0.35)' : 'rgba(255, 255, 255, 0.12)'}`,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {upcomingEvents.length} sự kiện
+                </span>
+              </div>
+            </div>
 
-                {upcomingEvents.length === 0 ? (
-                  <div
-                    style={{
-                      padding: '1.2rem',
-                      textAlign: 'center',
-                      color: '#94a3b8',
-                      fontSize: '0.84rem',
-                    }}
-                  >
-                    Không có ngày sinh nhật hay ngày giỗ nào trong vòng {advanceDays} ngày tới.
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {upcomingEvents.map((ev, idx) => {
-                      const matchedPerson = tree?.members.find((m) => m.id === ev.personId);
-                      const isLast = idx === upcomingEvents.length - 1;
-                      return (
+            {!enabled ? (
+              <div
+                style={{
+                  padding: '2rem 1rem',
+                  textAlign: 'center',
+                  color: '#94a3b8',
+                  fontSize: '0.84rem',
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '12px',
+                  border: '1px dashed rgba(255, 255, 255, 0.1)',
+                }}
+              >
+                Tính năng nhắc nhở đang tắt. Hãy bật nút ở trên để theo dõi sinh nhật và ngày giỗ sắp tới.
+              </div>
+            ) : upcomingEvents.length === 0 ? (
+              <div
+                style={{
+                  padding: '2rem 1rem',
+                  textAlign: 'center',
+                  color: '#94a3b8',
+                  fontSize: '0.84rem',
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '12px',
+                  border: '1px dashed rgba(255, 255, 255, 0.1)',
+                }}
+              >
+                Không có ngày sinh nhật hay ngày giỗ nào trong vòng {advanceDays} ngày tới.
+              </div>
+            ) : (
+              /* Danh bạ sự kiện sắp tới chuẩn Apple Hairline Divider */
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {upcomingEvents.map((ev, idx) => {
+                  const matchedPerson = tree?.members.find((m) => m.id === ev.personId);
+                  const isLast = idx === upcomingEvents.length - 1;
+                  const isToday = ev.daysLeft === 0;
+                  const isTomorrow = ev.daysLeft === 1;
+
+                  return (
+                    <div
+                      key={`${ev.personId}-${idx}`}
+                      onClick={() => {
+                        if (matchedPerson && onSelectPerson) {
+                          onSelectPerson(matchedPerson);
+                        }
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.75rem 0.25rem',
+                        borderBottom: isLast ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
+                        cursor: matchedPerson ? 'pointer' : 'default',
+                        transition: 'background-color 0.15s ease',
+                        gap: '0.65rem',
+                      }}
+                      role={matchedPerson ? 'button' : undefined}
+                      tabIndex={matchedPerson ? 0 : undefined}
+                    >
+                      {/* Avatar Initials + Thông tin sự kiện */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
                         <div
-                          key={`${ev.personId}-${idx}`}
-                          onClick={() => {
-                            if (matchedPerson && onSelectPerson) {
-                              onSelectPerson(matchedPerson);
-                            }
-                          }}
                           style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            background: isToday
+                              ? 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)'
+                              : ev.type === 'BIRTHDAY'
+                              ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(219, 39, 119, 0.35) 100%)'
+                              : 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.35) 100%)',
+                            border: `1.5px solid ${
+                              isToday
+                                ? '#fda4af'
+                                : ev.type === 'BIRTHDAY'
+                                ? 'rgba(244, 114, 182, 0.45)'
+                                : 'rgba(251, 191, 36, 0.45)'
+                            }`,
+                            color: '#ffffff',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '0.75rem 0.25rem',
-                            borderBottom: isLast ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
-                            cursor: matchedPerson ? 'pointer' : 'default',
-                            transition: 'background-color 0.15s ease',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: '0.84rem',
+                            flexShrink: 0,
                           }}
-                          role={matchedPerson ? 'button' : undefined}
-                          tabIndex={matchedPerson ? 0 : undefined}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                            {ev.type === 'BIRTHDAY' ? <Cake size={16} color="#f472b6" /> : <Flame size={16} color="#fb7185" />}
-                            <div>
-                              <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#ffffff', whiteSpace: 'nowrap' }}>
-                                {ev.title}
-                              </div>
-                              <div style={{ fontSize: '0.76rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>
-                                Dương lịch: {ev.dateStr}
-                              </div>
-                            </div>
+                          {getInitials(ev.fullName)}
+                        </div>
+
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          {/* Tên thành viên + Icon loại sự kiện */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            {ev.type === 'BIRTHDAY' ? (
+                              <Cake size={13} color="#f472b6" style={{ flexShrink: 0 }} />
+                            ) : (
+                              <Flame size={13} color="#fb7185" style={{ flexShrink: 0 }} />
+                            )}
+                            <span
+                              style={{
+                                fontSize: '0.88rem',
+                                fontWeight: 700,
+                                color: '#ffffff',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                              title={ev.fullName}
+                            >
+                              {ev.fullName}
+                            </span>
+                            {ev.generation && (
+                              <span
+                                style={{
+                                  fontSize: '0.68rem',
+                                  padding: '0.08rem 0.35rem',
+                                  background: 'rgba(255, 255, 255, 0.08)',
+                                  color: '#cbd5e1',
+                                  borderRadius: '999px',
+                                  fontWeight: 600,
+                                  whiteSpace: 'nowrap',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                Đời {ev.generation}
+                              </span>
+                            )}
                           </div>
 
-                          <span
+                          {/* Ngày diễn ra */}
+                          <div
                             style={{
                               fontSize: '0.74rem',
-                              fontWeight: 700,
-                              padding: '0.2rem 0.55rem',
-                              borderRadius: '999px',
-                              background: ev.daysLeft === 0 ? '#e11d48' : ev.daysLeft === 1 ? '#d97706' : '#059669',
-                              color: '#ffffff',
+                              color: '#94a3b8',
                               whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              marginTop: '0.15rem',
                             }}
                           >
-                            {ev.badgeText}
-                          </span>
+                            {ev.type === 'BIRTHDAY' ? 'Sinh nhật' : 'Ngày giỗ'}:{' '}
+                            <strong style={{ color: '#e2e8f0' }}>{ev.dateStr}</strong>
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      </div>
+
+                      {/* Countdown Badge Pill */}
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          padding: '0.18rem 0.55rem',
+                          borderRadius: '999px',
+                          background: isToday
+                            ? 'rgba(225, 29, 72, 0.25)'
+                            : isTomorrow
+                            ? 'rgba(217, 119, 6, 0.25)'
+                            : 'rgba(5, 150, 105, 0.2)',
+                          color: isToday
+                            ? '#fca5a5'
+                            : isTomorrow
+                            ? '#fcd34d'
+                            : '#6ee7b7',
+                          border: `1px solid ${
+                            isToday
+                              ? 'rgba(239, 68, 68, 0.45)'
+                              : isTomorrow
+                              ? 'rgba(245, 158, 11, 0.45)'
+                              : 'rgba(16, 185, 129, 0.35)'
+                          }`,
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {ev.badgeText}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Footer */}
