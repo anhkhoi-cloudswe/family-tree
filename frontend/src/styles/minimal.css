@@ -3868,9 +3868,7 @@ input:-internal-autofill-selected {
   width: 100%;
   overflow: hidden;
   position: relative;
-  background: rgba(2, 6, 23, 0.42); /* Đồng bộ nền tối sâu như Tất cả nhánh */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: transparent;
 }
 
 /* Sticky Search & Filter Toolbar */
