@@ -526,9 +526,23 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                             fontWeight: 700,
                             fontSize: '0.86rem',
                             flexShrink: 0,
+                            overflow: 'hidden',
+                            position: 'relative',
                           }}
                         >
-                          {getInitials(ev.fullName)}
+                          {matchedPerson?.avatarUrl ? (
+                            <img
+                              src={matchedPerson.avatarUrl}
+                              alt={ev.fullName}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              loading="lazy"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            getInitials(ev.fullName)
+                          )}
                         </div>
 
                         <div style={{ minWidth: 0, flex: 1 }}>
