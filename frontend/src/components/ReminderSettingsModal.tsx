@@ -23,7 +23,7 @@ import {
   parseDayMonth,
   calculateDaysLeftAnnual,
 } from '../utils/dateHelper';
-import { calculateAnniversaryStatus } from '../utils/lunarHelper';
+import { calculateAnniversaryStatus, getCountdownBadgeStyle } from '../utils/lunarHelper';
 import { getInitials } from '../utils/formatHelper';
 import { useToast } from './Toast';
 
@@ -615,40 +615,31 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
                               {ev.type === 'BIRTHDAY' ? (
                                 <>Sinh nhật: <strong style={{ color: '#34d399' }}>{ev.dateStr}</strong></>
                               ) : (
-                                <>Ngày giỗ: <strong style={{ color: '#f87171' }}>{ev.dateStr}</strong></>
+                                <>Giỗ: <strong style={{ color: '#facc15' }}>{ev.dateStr}</strong> <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>(Dương)</span></>
                               )}
                             </span>
 
-                            {/* Badge Còn ... ngày: Ngày giỗ dùng tone Đỏ/Rose, Sinh nhật dùng tone Xanh lá */}
-                            <span
-                              style={{
-                                fontSize: '0.7rem',
-                                fontWeight: 700,
-                                padding: '0.12rem 0.5rem',
-                                borderRadius: '999px',
-                                background: isToday
-                                  ? '#e11d48'
-                                  : ev.type === 'ANNIVERSARY'
-                                  ? 'rgba(225, 29, 72, 0.22)'
-                                  : 'rgba(16, 185, 129, 0.22)',
-                                color: isToday
-                                  ? '#ffffff'
-                                  : ev.type === 'ANNIVERSARY'
-                                  ? '#fda4af'
-                                  : '#6ee7b7',
-                                border: `1px solid ${
-                                  isToday
-                                    ? '#fda4af'
-                                    : ev.type === 'ANNIVERSARY'
-                                    ? 'rgba(244, 63, 94, 0.45)'
-                                    : 'rgba(52, 211, 153, 0.45)'
-                                }`,
-                                whiteSpace: 'nowrap',
-                                flexShrink: 0,
-                              }}
-                            >
-                              {ev.badgeText}
-                            </span>
+                            {/* Badge Còn ... ngày: Chuẩn màu hệ thống (Cam sáng/đỏ cam cho < 7 ngày, Xanh dịu cho > 7 ngày, Xám tối khi qua) */}
+                            {(() => {
+                              const badgeStyle = getCountdownBadgeStyle(ev.daysLeft);
+                              return (
+                                <span
+                                  style={{
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    padding: '0.12rem 0.5rem',
+                                    borderRadius: '999px',
+                                    background: badgeStyle.background,
+                                    color: badgeStyle.color,
+                                    border: badgeStyle.border,
+                                    whiteSpace: 'nowrap',
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {ev.badgeText}
+                                </span>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>

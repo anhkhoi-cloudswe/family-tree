@@ -1283,7 +1283,8 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                     <Calendar size={15} color="#fb7185" />
                     <span style={{ color: '#fecdd3' }}>
                       👉 <strong>Ngày giỗ năm nay ({anniversary.targetSolarYear}):</strong>{' '}
-                      <span style={{ color: '#ffffff', fontWeight: 600 }}>{anniversary.dateStr}</span> (Dương lịch)
+                      <span style={{ color: '#facc15', fontWeight: 800 }}>{anniversary.dateStr}</span>{' '}
+                      <span style={{ color: '#fef08a', fontWeight: 600 }}>(Dương lịch)</span>
                     </span>
                   </div>
                 );

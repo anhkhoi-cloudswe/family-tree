@@ -260,6 +260,63 @@ export function parseLunarDate(str?: string | null): { day: number; month: numbe
   return null;
 }
 
+export interface CountdownColorStyle {
+  background: string;
+  color: string;
+  border: string;
+}
+
+/**
+ * Trả về style chuẩn đồng nhất cho ô "Còn lại ... ngày" / "Đã qua ... ngày" trên toàn hệ thống:
+ * 1. Hôm nay hoặc Sắp đến gần (dưới 7 ngày hoặc trong tuần này): Màu cam sáng / đỏ cam cảnh báo.
+ * 2. Còn thời gian dài (trên 7 ngày hoặc vài tháng tới): Màu xanh dương nhạt (Sky blue / Cyan) hoặc xám bạc trung tính, dịu mắt.
+ * 3. Sự kiện đã qua (daysLeft < 0, ví dụ "Đã qua X ngày"): Màu xám tối (muted gray) chìm xuống.
+ */
+export function getCountdownBadgeStyle(daysLeft: number): CountdownColorStyle {
+  if (daysLeft === 0) {
+    // Hôm nay: Đỏ tươi nổi bật
+    return {
+      background: '#e11d48',
+      color: '#ffffff',
+      border: '1px solid #fda4af',
+    };
+  }
+
+  if (daysLeft > 0 && daysLeft <= 7) {
+    // Sắp đến gần (dưới 7 ngày / trong tuần này): Cam sáng / đỏ cam cảnh báo
+    return {
+      background: 'rgba(234, 88, 12, 0.22)',
+      color: '#fb923c',
+      border: '1px solid rgba(249, 115, 22, 0.45)',
+    };
+  }
+
+  if (daysLeft > 7 && daysLeft <= 30) {
+    // Trong tháng tới: Xanh dương nhạt (Cyan / Sky blue) dịu mắt
+    return {
+      background: 'rgba(14, 165, 233, 0.18)',
+      color: '#38bdf8',
+      border: '1px solid rgba(56, 189, 248, 0.35)',
+    };
+  }
+
+  if (daysLeft > 30) {
+    // Còn dài (vài tháng tới): Xanh dương nhạt / xám bạc trung tính dịu mắt
+    return {
+      background: 'rgba(56, 189, 248, 0.12)',
+      color: '#7dd3fc',
+      border: '1px solid rgba(56, 189, 248, 0.25)',
+    };
+  }
+
+  // daysLeft < 0: Đã qua trong năm -> Màu xám tối chìm xuống
+  return {
+    background: 'rgba(255, 255, 255, 0.06)',
+    color: '#94a3b8',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+  };
+}
+
 export interface AnniversaryStatus {
   hasValidDate: boolean;
   lunarText: string;

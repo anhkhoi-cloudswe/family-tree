@@ -13,7 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { Person, FamilyTree } from '../types';
-import { calculateAnniversaryStatus, AnniversaryStatus } from '../utils/lunarHelper';
+import { calculateAnniversaryStatus, AnniversaryStatus, getCountdownBadgeStyle } from '../utils/lunarHelper';
 import { getInitials } from '../utils/formatHelper';
 import { useToast } from './Toast';
 
@@ -351,81 +351,64 @@ export const LunarAnniversaryView: React.FC<LunarAnniversaryViewProps> = ({
                           marginTop: '0.35rem',
                         }}
                       >
-                        {/* Lunar Date */}
+                        {/* Lunar Date - Giỗ Âm hiển thị màu Đỏ */}
                         <div
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '0.25rem',
-                            color: person.lunarDeathDay ? '#fda4af' : '#64748b',
+                            color: person.lunarDeathDay ? '#f87171' : '#64748b',
                             fontSize: '0.8rem',
                             fontWeight: 600,
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          <Flame size={12} color={person.lunarDeathDay ? '#f43f5e' : '#64748b'} />
+                          <Flame size={12} color={person.lunarDeathDay ? '#ef4444' : '#64748b'} />
                           <span>{formatLunarDay(person.lunarDeathDay || undefined)}</span>
                         </div>
 
-                        {/* Calculated Solar Date - Tone Đỏ trang trọng đồng bộ với ngày giỗ */}
+                        {/* Calculated Solar Date - Giỗ Dương lịch hiển thị màu Vàng */}
                         {anniversary.hasValidDate && (
                           <div
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '0.25rem',
-                              color: '#fda4af',
+                              color: '#facc15',
                               fontSize: '0.76rem',
-                              background: 'rgba(225, 29, 72, 0.14)',
-                              border: '1px solid rgba(244, 63, 94, 0.35)',
+                              background: 'rgba(234, 179, 8, 0.12)',
+                              border: '1px solid rgba(250, 204, 21, 0.35)',
                               padding: '0.12rem 0.45rem',
                               borderRadius: '6px',
-                              fontWeight: 500,
+                              fontWeight: 600,
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            <Calendar size={11} color="#fb7185" />
-                            <span>Dương lịch: <strong style={{ color: '#ffffff' }}>{anniversary.solarDateStr}</strong></span>
+                            <Calendar size={11} color="#eab308" />
+                            <span>Dương lịch: <strong style={{ color: '#fef08a' }}>{anniversary.solarDateStr}</strong></span>
                           </div>
                         )}
 
-                        {/* Status Countdown Badge - Tone Đỏ/Rose đồng nhất */}
-                        {anniversary.hasValidDate && (
-                          <span
-                            style={{
-                              fontSize: '0.72rem',
-                              fontWeight: 700,
-                              padding: '0.12rem 0.5rem',
-                              borderRadius: '999px',
-                              background: isToday
-                                ? '#e11d48'
-                                : isUpcoming && anniversary.daysLeft <= 15
-                                ? 'rgba(225, 29, 72, 0.22)'
-                                : isUpcoming
-                                ? 'rgba(244, 63, 94, 0.16)'
-                                : 'rgba(255, 255, 255, 0.08)',
-                              color: isToday
-                                ? '#ffffff'
-                                : isUpcoming && anniversary.daysLeft <= 15
-                                ? '#fca5a5'
-                                : isUpcoming
-                                ? '#fda4af'
-                                : '#cbd5e1',
-                              border: `1px solid ${
-                                isToday
-                                  ? '#fda4af'
-                                  : isUpcoming && anniversary.daysLeft <= 15
-                                  ? 'rgba(239, 68, 68, 0.45)'
-                                  : isUpcoming
-                                  ? 'rgba(244, 63, 94, 0.35)'
-                                  : 'rgba(255, 255, 255, 0.15)'
-                              }`,
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {badge.text}
-                          </span>
-                        )}
+                        {/* Status Countdown Badge - Chuẩn màu hệ thống: Sắp đến gần = Cam sáng/Đỏ cam, Dài = Xanh nhạt/Xám bạc, Đã qua = Xám tối */}
+                        {anniversary.hasValidDate && (() => {
+                          const badgeStyle = getCountdownBadgeStyle(anniversary.daysLeft);
+                          return (
+                            <span
+                              style={{
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                padding: '0.12rem 0.5rem',
+                                borderRadius: '999px',
+                                background: badgeStyle.background,
+                                color: badgeStyle.color,
+                                border: badgeStyle.border,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {badge.text}
+                            </span>
+                          );
+                        })()}
                       </div>
 
                       {/* Burial Place & Google Maps Link (If recorded) */}

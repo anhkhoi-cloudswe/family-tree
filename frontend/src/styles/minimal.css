@@ -4341,11 +4341,11 @@ input:-internal-autofill-selected {
 }
 
 .lunar-death-highlight {
-  color: #fbbf24;
+  color: #f87171; /* Giỗ Âm hiển thị màu Đỏ */
 }
 
 .solar-death-highlight {
-  color: #38bdf8;
+  color: #facc15; /* Giỗ Dương lịch hiển thị màu Vàng */
 }
 
 /* Quick Direct Call Button */

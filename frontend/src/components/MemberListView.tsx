@@ -333,7 +333,11 @@ export const MemberListView: React.FC<MemberListViewProps> = ({
                             <Calendar size={13} className="meta-icon" />
                             <span>
                               {!member.isDeceased ? (
-                                member.birthDate && <span>Sinh: {formatDateVN(member.birthDate)}</span>
+                                member.birthDate && (
+                                  <span style={{ color: '#34d399', fontWeight: 600 }}>
+                                    Sinh: {formatDateVN(member.birthDate)}
+                                  </span>
+                                )
                               ) : (
                                 (() => {
                                   const effectiveLunar =

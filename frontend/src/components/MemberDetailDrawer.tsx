@@ -493,7 +493,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                     <div className={person.isDeceased ? 'info-grid-2' : 'info-grid-1'}>
                       <div className="info-item">
                         <span className="info-label">Ngày sinh</span>
-                        <span className="info-val">
+                        <span className="info-val" style={{ color: person.birthDate ? '#34d399' : undefined, fontWeight: person.birthDate ? 700 : undefined }}>
                           {person.birthDate
                             ? formatDateVN(person.birthDate)
                             : 'Chưa cập nhật'}
@@ -503,7 +503,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                       {person.isDeceased && (
                         <div className="info-item">
                           <span className="info-label">Ngày mất</span>
-                          <span className="info-val">
+                          <span className="info-val" style={{ color: person.deathDate ? '#facc15' : undefined, fontWeight: person.deathDate ? 700 : undefined }}>
                             {person.deathDate
                               ? formatDateVN(person.deathDate)
                               : 'Chưa rõ'}
@@ -523,22 +523,22 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                             <div className="lunar-title" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'rgba(255, 255, 255, 0.75)', marginBottom: '0.2rem' }}>
                               Ngày Giỗ Hàng Năm:
                             </div>
-                            <div className="lunar-date" style={{ fontSize: '1.18rem', fontWeight: 800, color: '#f43f5e', letterSpacing: '0.01em', marginBottom: '0.45rem', wordBreak: 'break-word' }}>
+                            <div className="lunar-date" style={{ fontSize: '1.18rem', fontWeight: 800, color: '#ef4444', letterSpacing: '0.01em', marginBottom: '0.45rem', wordBreak: 'break-word' }}>
                               {cleanLunar} <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#f87171' }}>(Âm lịch)</span>
                             </div>
                             {anniversary && (
                               <div style={{ fontSize: '0.86rem', color: '#cbd5e1', lineHeight: 1.5 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                                   <span>👉 Giỗ năm nay</span>
-                                  <strong style={{ color: '#fbbf24', fontWeight: 800 }}>
+                                  <strong style={{ color: '#cbd5e1', fontWeight: 700 }}>
                                     ({anniversary.targetSolarYear}):
                                   </strong>
                                 </div>
                                 <div style={{ marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
-                                  <strong style={{ color: '#34d399', fontSize: '1rem', fontWeight: 800 }}>
+                                  <strong style={{ color: '#facc15', fontSize: '1.05rem', fontWeight: 800 }}>
                                     {anniversary.dateStr}
                                   </strong>
-                                  <span style={{ color: '#6ee7b7', fontSize: '0.82rem', fontWeight: 500 }}>(Dương lịch)</span>
+                                  <span style={{ color: '#fef08a', fontSize: '0.82rem', fontWeight: 600 }}>(Dương lịch)</span>
                                 </div>
                               </div>
                             )}
@@ -997,8 +997,8 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                           <Calendar size={16} color="#fb7185" style={{ flexShrink: 0 }} />
                           <div style={{ color: '#fecdd3', lineHeight: 1.45, flex: 1, minWidth: 0 }}>
                             <span>👉 <strong>Giỗ năm nay ({anniversary.targetSolarYear}):</strong> </span>
-                            <span style={{ color: '#34d399', fontWeight: 800 }}>{anniversary.dateStr}</span>{' '}
-                            <span style={{ color: '#cbd5e1', fontSize: '0.78rem' }}>(Dương lịch)</span>
+                            <span style={{ color: '#facc15', fontWeight: 800 }}>{anniversary.dateStr}</span>{' '}
+                            <span style={{ color: '#fef08a', fontSize: '0.78rem', fontWeight: 600 }}>(Dương lịch)</span>
                           </div>
                         </div>
                       );
