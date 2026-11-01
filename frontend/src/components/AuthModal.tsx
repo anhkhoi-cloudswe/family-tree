@@ -160,12 +160,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
+  // Kiểm tra validation cho form Đăng Ký: đủ 3 trường hợp lệ + đã tick đồng ý Điều khoản & Bảo mật
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const isRegisterValid =
+    fullName.trim().length >= 2 &&
+    isEmailValid &&
+    password.length >= 6 &&
+    consentDecree13;
+
   // Xử lý Đăng Ký Tài Khoản Mới
   // Best practice Firebase: Tạo user với emailVerified = false, bắn email xác thực (Hạn mức 1.000 mail/ngày).
   // Chặn ở Database: Chưa ghi bất kỳ dữ liệu nào vào PostgreSQL DB cho đến khi email được kích hoạt!
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!isRegisterValid) return;
     setIsLoading(true);
 
     const cleanEmail = email.toLowerCase().trim();
@@ -817,7 +826,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || (authMode === 'REGISTER' && !isRegisterValid)}
                 style={{
                   width: '100%',
                   display: 'flex',
@@ -828,13 +837,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   fontSize: '0.9rem',
                   fontWeight: 600,
                   color: '#ffffff',
-                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-                  border: '1px solid rgba(52, 211, 153, 0.4)',
+                  background:
+                    authMode === 'REGISTER' && !isRegisterValid
+                      ? 'linear-gradient(135deg, rgba(5, 150, 105, 0.4) 0%, rgba(16, 185, 129, 0.3) 100%)'
+                      : 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                  border:
+                    authMode === 'REGISTER' && !isRegisterValid
+                      ? '1px solid rgba(255, 255, 255, 0.08)'
+                      : '1px solid rgba(52, 211, 153, 0.4)',
                   borderRadius: '10px',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  opacity: isLoading ? 0.75 : 1,
-                  boxShadow: '0 4px 18px rgba(16, 185, 129, 0.35)',
-                  transition: 'all 0.15s ease',
+                  cursor: isLoading || (authMode === 'REGISTER' && !isRegisterValid) ? 'not-allowed' : 'pointer',
+                  opacity: isLoading ? 0.75 : authMode === 'REGISTER' && !isRegisterValid ? 0.45 : 1,
+                  filter: authMode === 'REGISTER' && !isRegisterValid ? 'grayscale(0.6)' : 'none',
+                  boxShadow:
+                    authMode === 'REGISTER' && !isRegisterValid
+                      ? 'none'
+                      : '0 4px 18px rgba(16, 185, 129, 0.35)',
+                  transition: 'all 0.2s ease',
                 }}
               >
                 {authMode === 'LOGIN' ? <LogIn size={16} /> : <UserPlus size={16} />}
