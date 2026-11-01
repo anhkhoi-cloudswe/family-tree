@@ -256,7 +256,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       )}
 
       {/* 2. Hero Section Với Nền Thiên Nhiên, Gradient Tinh Tế & Scroll Fade-Out */}
-      <section className="relative pt-24 sm:pt-36 pb-28 sm:pb-44 px-4 sm:px-6 w-full flex flex-col items-center text-center overflow-visible bg-[#070e09]">
+      <section className="relative pt-24 sm:pt-36 pb-28 sm:pb-44 px-4 sm:px-6 w-full flex flex-col items-center text-center overflow-visible">
         {/* Lớp Ảnh Thiên Nhiên Phong Cảnh Đồi Chè (WebP siêu nhẹ + fallback PNG) - Kéo dài vượt hẳn qua nút CTA */}
         <div
           className="absolute inset-x-0 -top-24 sm:-top-32 h-[850px] sm:h-[1050px] pointer-events-none -z-20 overflow-hidden w-full"
@@ -270,7 +270,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <img
               src="/images/hero-bg.webp"
               alt="Phong cảnh thiên nhiên cội nguồn"
-              className="w-full h-full object-cover object-top brightness-125 contrast-110"
+              className="w-full h-full object-cover object-center brightness-125 contrast-110"
               style={{
                 transform: `translateY(${heroParallaxOffset}px) scale(1.02)`,
               }}
@@ -280,16 +280,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* Lớp Phủ Gradient Chuẩn: Phần đỉnh trong suốt để thấy ảnh, phần đuôi hòa sắc với màu đồi chè (#3c540e / #122314) chuyển dần sang đen sâu #070e09 */}
         <div
-          className="absolute inset-x-0 -top-24 sm:-top-32 h-[850px] sm:h-[1050px] pointer-events-none -z-10 bg-gradient-to-b from-black/45 via-transparent via-65% to-[#070e09] w-full"
+          className="absolute inset-x-0 -top-24 sm:-top-32 h-[850px] sm:h-[1050px] pointer-events-none -z-10 bg-gradient-to-b from-black/40 via-transparent to-[#070e09] w-full"
           style={{
             opacity: Math.max(0, 1 - scrollY / 460),
             transition: 'opacity 0.25s ease-out',
           }}
-        />
-
-        {/* Lớp chuyển màu mượt mà chân đồi chè: Không còn vệt đen ngắt đoạn ở đuôi ảnh */}
-        <div
-          className="absolute inset-x-0 top-[600px] sm:top-[750px] h-[250px] sm:h-[300px] pointer-events-none -z-10 bg-gradient-to-b from-transparent via-[#2d420a]/40 to-[#070e09] w-full"
         />
 
         {/* Neon Botanical Glow Atmosphere Orbs */}
