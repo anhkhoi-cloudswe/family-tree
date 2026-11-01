@@ -549,6 +549,24 @@ const AppContent: React.FC = () => {
       try {
         const currentUser = await apiGetMe();
         setUser(currentUser);
+        setIsGuestMode(false);
+        setIsDiscoverDemo(false);
+        setIsPoliciesPage(false);
+
+        // Chuẩn hóa URL cho người dùng đã đăng nhập: nếu đang ở /login, /register, /guest... thì đưa về /dashboard
+        const currentPath = window.location.pathname.toLowerCase();
+        if (
+          currentPath === '/login' ||
+          currentPath === '/signin' ||
+          currentPath === '/register' ||
+          currentPath === '/signup' ||
+          currentPath === '/guest' ||
+          currentPath === '/landing' ||
+          currentPath === '/'
+        ) {
+          window.history.replaceState(null, '', '/dashboard');
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         const inviteParamTreeId = urlParams.get('inviteTree') || urlParams.get('treeId');
         const savedTreeId = inviteParamTreeId || localStorage.getItem('fam3_current_tree_id') || currentUser.trees?.[0]?.id;
@@ -708,6 +726,10 @@ const AppContent: React.FC = () => {
   const handleAuthSuccess = async (authUser: User, defaultTreeId?: string) => {
     setUser(authUser);
     setShowAuthModal(false);
+    setIsGuestMode(false);
+    setIsDiscoverDemo(false);
+    setIsPoliciesPage(false);
+    window.history.pushState(null, '', '/dashboard');
     setIsLoading(true);
     await loadTreeData(defaultTreeId, authUser);
     setIsLoading(false);
@@ -838,7 +860,10 @@ const AppContent: React.FC = () => {
       setStoredToken(res.token);
       setUser(res.user);
       setShowMagicLinkPrompt(false);
-      window.history.replaceState(null, '', window.location.pathname);
+      setIsGuestMode(false);
+      setIsDiscoverDemo(false);
+      setIsPoliciesPage(false);
+      window.history.replaceState(null, '', '/dashboard');
       toast.success(`Đăng nhập thành công với tài khoản: ${res.user.email}!`);
       await loadTreeData(res.defaultTreeId || undefined, res.user);
     } catch (err: any) {
@@ -861,7 +886,11 @@ const AppContent: React.FC = () => {
     setTree(null);
     setMePerson(null);
     setAdminActiveTab('USERS');
-    setShowAuthModal(true);
+    setIsGuestMode(true);
+    setIsDiscoverDemo(false);
+    setIsPoliciesPage(false);
+    window.history.pushState(null, '', '/guest');
+    setShowAuthModal(false);
     toast.info('Đã đăng xuất tài khoản an toàn.');
   };
 
@@ -1125,10 +1154,22 @@ const AppContent: React.FC = () => {
             : mainView
         }
         onSelectNav={(key) => {
-          if (key === 'BRANCHES') setMainView('BRANCHES');
-          else if (key === 'TREE') setMainView('TREE');
-          else if (key === 'LIST') setMainView('LIST');
-          else if (key === 'LUNAR') setMainView('LUNAR');
+          if (key === 'BRANCHES') {
+            setMainView('BRANCHES');
+            window.history.pushState(null, '', '/branches');
+          }
+          else if (key === 'TREE') {
+            setMainView('TREE');
+            window.history.pushState(null, '', '/tree');
+          }
+          else if (key === 'LIST') {
+            setMainView('LIST');
+            window.history.pushState(null, '', '/members');
+          }
+          else if (key === 'LUNAR') {
+            setMainView('LUNAR');
+            window.history.pushState(null, '', '/anniversary');
+          }
           else if (key === 'FLASHCARD') setShowFlashcardModal(true);
           else if (key === 'REMINDER') setShowReminderModal(true);
           else if (key === 'SHARE') {
@@ -1141,20 +1182,24 @@ const AppContent: React.FC = () => {
           else if (key === 'ADMIN_USERS') {
             setMainView('TREE');
             setAdminActiveTab('USERS');
+            window.history.pushState(null, '', '/admin/users');
           }
           else if (key === 'ADMIN_SUBSCRIPTIONS') {
             setMainView('TREE');
             setAdminActiveTab('SUBSCRIPTIONS');
+            window.history.pushState(null, '', '/admin/subscriptions');
           }
           else if (key === 'ADMIN_REPORTS') {
             setMainView('TREE');
             setAdminActiveTab('REPORTS');
+            window.history.pushState(null, '', '/admin/reports');
           }
           else if (key === 'ADMIN') setShowAdminModal(true);
         }}
         onAdminTabSelect={(tab) => {
           setMainView('TREE');
           setAdminActiveTab(tab);
+          window.history.pushState(null, '', `/admin/${tab.toLowerCase()}`);
         }}
         pendingInvitationsCount={pendingInvitations.length}
         onOpenInvitations={() => setShowInvitationsModal(true)}
@@ -1189,9 +1234,15 @@ const AppContent: React.FC = () => {
               setSharingTree(tree);
               setShowShareModal(true);
             }}
-            onBackToBranches={() => setMainView('BRANCHES')}
+            onBackToBranches={() => {
+              setMainView('BRANCHES');
+              window.history.pushState(null, '', '/branches');
+            }}
             mainView={mainView as 'TREE' | 'LIST'}
-            onMainViewChange={(mode) => setMainView(mode)}
+            onMainViewChange={(mode) => {
+              setMainView(mode);
+              window.history.pushState(null, '', mode === 'TREE' ? '/tree' : '/members');
+            }}
             branchFilter={branchFilter}
             onBranchFilterChange={setBranchFilter}
             viewMode={viewMode}
@@ -1204,7 +1255,10 @@ const AppContent: React.FC = () => {
               setAddMemberTarget(null);
               setShowAddMemberModal(true);
             }}
-            onOpenLunar={() => setMainView('LUNAR')}
+            onOpenLunar={() => {
+              setMainView('LUNAR');
+              window.history.pushState(null, '', '/anniversary');
+            }}
             onOpenReminder={() => setShowReminderModal(true)}
             onOpenFlashcard={() => setShowFlashcardModal(true)}
             onExportImage={handleExportImageClick}
