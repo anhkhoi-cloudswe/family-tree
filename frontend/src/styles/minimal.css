@@ -6146,7 +6146,7 @@ input:-internal-autofill-selected {
 
 .landing-enter-anim {
   animation: landingPageEnter 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: opacity, transform;
+  will-change: opacity;
 }
 
 

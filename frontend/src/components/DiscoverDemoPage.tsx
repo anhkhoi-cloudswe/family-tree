@@ -49,12 +49,8 @@ export const DiscoverDemoPage: React.FC<DiscoverDemoPageProps> = ({
             </div>
           </div>
 
-          {/* Cột Giữa (Desktop): Để trống hoặc ghi chú nhẹ nhàng để đảm bảo bố cục 3 cột cân xứng tuyệt đối */}
-          <div className="hidden md:flex items-center justify-center">
-            <div className="text-xs text-[#a3b19b] font-mono tracking-wide">
-              Bản Xem Trước Trực Quan
-            </div>
-          </div>
+          {/* Cột Giữa (Desktop): Giữ chỗ để đảm bảo bố cục 3 cột đối xứng với Landing Page */}
+          <div className="hidden md:flex items-center justify-center" />
 
           {/* Cột Phải: Nút Đăng Nhập đồng bộ chuẩn xác với Landing Page */}
           <div className="flex items-center justify-end">

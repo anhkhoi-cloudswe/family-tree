@@ -43,20 +43,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   // Lắng nghe sự kiện scroll trên cả window và container .landing-guest-wrapper
   useEffect(() => {
+    let animId: number;
     const handleScroll = () => {
-      const wrapper = document.querySelector('.landing-guest-wrapper');
-      const currentScrollY = wrapper ? wrapper.scrollTop : window.scrollY;
-      setScrollY(currentScrollY);
+      cancelAnimationFrame(animId);
+      animId = requestAnimationFrame(() => {
+        const wrapper = document.querySelector('.landing-guest-wrapper');
+        const currentScrollY = wrapper ? wrapper.scrollTop : window.pageYOffset || document.documentElement.scrollTop;
+        setScrollY(currentScrollY);
+      });
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+    document.addEventListener('scroll', handleScroll, { passive: true, capture: true });
     const wrapper = document.querySelector('.landing-guest-wrapper');
     if (wrapper) {
       wrapper.addEventListener('scroll', handleScroll, { passive: true });
     }
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(animId);
+      window.removeEventListener('scroll', handleScroll, { capture: true });
+      document.removeEventListener('scroll', handleScroll, { capture: true });
       if (wrapper) {
         wrapper.removeEventListener('scroll', handleScroll);
       }
