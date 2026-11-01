@@ -22,7 +22,7 @@ import {
   Network,
 } from 'lucide-react';
 import { FamilyTreeLogo } from './FamilyTreeLogo';
-import heroBgWebp from '../assets/hero-bg.webp';
+import heroBgWebp from '../assets/hero-bg1.webp';
 import footerBgWebp from '../assets/footer-bg.webp';
 
 interface LandingPageProps {
@@ -268,7 +268,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <picture className="w-full h-full block">
             <source srcSet={heroBgWebp} type="image/webp" />
             <img
-              src="/images/hero-bg.webp"
+              src={heroBgWebp}
               alt="Phong cảnh thiên nhiên cội nguồn"
               className="w-full h-full object-cover object-center brightness-125 contrast-110"
               style={{
