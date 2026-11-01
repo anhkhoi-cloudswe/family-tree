@@ -257,7 +257,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* 2. Hero Section Với Nền Thiên Nhiên, Gradient Tinh Tế & Scroll Fade-Out */}
       <section className="relative pt-20 sm:pt-36 pb-24 sm:pb-36 px-4 sm:px-6 w-full flex flex-col items-center text-center overflow-visible">
-        {/* Lớp Ảnh Thiên Nhiên Phong Cảnh Đồi Chè (WebP siêu nhẹ + fallback PNG) - Kéo dài vượt hẳn qua nút CTA */}
+        {/* Lớp Ảnh Thiên Nhiên Phong Cảnh Đồi Chè (WebP siêu nhẹ + fallback PNG) - Neo cố định top center để thấy trọn khinh khí cầu và mặt trời */}
         <div
           className="absolute inset-x-0 -top-24 sm:-top-32 h-[880px] sm:h-[1100px] pointer-events-none -z-20 overflow-hidden w-full"
           style={{
@@ -270,15 +270,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             style={{
               backgroundImage: `url(${heroBgWebp})`,
               backgroundSize: 'cover',
-              backgroundPosition: 'center 40%',
+              backgroundPosition: 'top center',
               transform: `translateY(${heroParallaxOffset}px)`,
             }}
           />
         </div>
 
-        {/* Lớp Phủ Gradient Chuẩn: Tăng cường độ tương phản ở nửa dưới để văn bản luôn nổi bật tuyệt đối */}
+        {/* Lớp Phủ Gradient Chuẩn: Tăng cường độ phủ tối ở phần giữa để tiêu đề chữ trắng nổi bật tuyệt đối */}
         <div
-          className="absolute inset-x-0 -top-24 sm:-top-32 h-[880px] sm:h-[1100px] pointer-events-none -z-10 bg-gradient-to-b from-black/50 via-black/40 via-50% to-[#070e09]/95 w-full"
+          className="absolute inset-x-0 -top-24 sm:-top-32 h-[880px] sm:h-[1100px] pointer-events-none -z-10 bg-gradient-to-b from-black/40 via-black/65 via-45% to-[#070e09] w-full"
           style={{
             opacity: Math.max(0, 1 - scrollY / 460),
             transition: 'opacity 0.25s ease-out',
