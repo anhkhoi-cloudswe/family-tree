@@ -750,18 +750,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
                 )}
 
-                {/* Checkbox Đồng ý Điều khoản dịch vụ & Chính sách bảo mật khi Đăng ký mới */}
+                {/* Checkbox Đồng ý Điều khoản dịch vụ & Chính sách bảo mật khi Đăng ký mới (không đóng hộp viền) */}
                 {authMode === 'REGISTER' && (
                   <div
                     style={{
                       marginTop: '0.75rem',
-                      padding: '0.65rem 0.75rem',
-                      background: 'rgba(16, 185, 129, 0.08)',
-                      border: '1px solid rgba(52, 211, 153, 0.25)',
-                      borderRadius: '9px',
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: '0.55rem',
+                      gap: '0.6rem',
                     }}
                   >
                     <input
@@ -781,7 +777,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <label
                       htmlFor="consent-decree-13"
                       style={{
-                        fontSize: '0.74rem',
+                        fontSize: '0.75rem',
                         color: '#cbd5e1',
                         lineHeight: 1.5,
                         cursor: 'pointer',
