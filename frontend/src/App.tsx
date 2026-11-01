@@ -522,6 +522,10 @@ const AppContent: React.FC = () => {
         ) {
           setIsPoliciesPage(true);
           setShowAuthModal(false);
+        } else if (currentPath === '/login' || currentPath === '/signin' || currentPath === '/register' || currentPath === '/signup') {
+          // Người dùng vào trực tiếp URL /login hoặc /register
+          setIsGuestMode(false);
+          setShowAuthModal(true);
         } else {
           // Mặc định cho mọi khách truy cập chưa đăng nhập: Hiển thị Landing Page (/guest)
           setIsGuestMode(true);
@@ -1000,12 +1004,15 @@ const AppContent: React.FC = () => {
       <div className="landing-guest-wrapper">
         <LandingPage
           onStartDemo={() => {
+            window.history.pushState(null, '', '/login');
             setShowAuthModal(true);
           }}
           onOpenLogin={() => {
+            window.history.pushState(null, '', '/login');
             setShowAuthModal(true);
           }}
           onOpenRegister={() => {
+            window.history.pushState(null, '', '/register');
             setShowAuthModal(true);
           }}
           onOpenLegalDocs={(tab) => {
@@ -1030,6 +1037,11 @@ const AppContent: React.FC = () => {
             onSuccess={handleAuthSuccess}
             resetToken={resetPasswordToken}
             onClearResetToken={() => setResetPasswordToken(null)}
+            onBackToHome={() => {
+              setShowAuthModal(false);
+              window.history.pushState(null, '', '/guest');
+              setIsGuestMode(true);
+            }}
           />
         )}
       </div>

@@ -6,6 +6,10 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        serif: ['"Plus Jakarta Sans"', 'serif'],
+      },
       colors: {
         canvas: '#090d16',
       },

@@ -37,6 +37,7 @@ interface AuthModalProps {
   onSuccess: (user: User, defaultTreeId?: string) => void;
   resetToken?: string | null;
   onClearResetToken?: () => void;
+  onBackToHome?: () => void;
 }
 
 type AuthMode =
@@ -51,6 +52,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onSuccess,
   resetToken,
   onClearResetToken,
+  onBackToHome,
 }) => {
   const toast = useToast();
   const [authMode, setAuthMode] = useState<AuthMode>('LOGIN');
@@ -453,11 +455,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Brand header */}
         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
           <div
+            onClick={() => {
+              if (onBackToHome) {
+                onBackToHome();
+              } else {
+                window.location.href = '/guest';
+              }
+            }}
+            title="Quay lại trang chủ Famlykin"
             style={{
-              display: 'flex',
+              display: 'inline-flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              margin: '0 auto 0.6rem auto',
+              margin: '0 auto',
+              cursor: 'pointer',
+              transition: 'transform 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
             <FamilyTreeLogo
@@ -466,18 +485,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 filter: 'drop-shadow(0 10px 24px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 16px rgba(16, 185, 129, 0.3))',
               }}
             />
+            <h2
+              style={{
+                fontSize: '1.3rem',
+                fontWeight: 700,
+                color: '#ffffff',
+                letterSpacing: '-0.02em',
+                margin: '0.4rem 0 0 0',
+              }}
+            >
+              Famlykin
+            </h2>
+            <span style={{ fontSize: '0.72rem', color: '#10b981', marginTop: '0.15rem' }}>
+              ← Quay về trang chủ
+            </span>
           </div>
-          <h2
-            style={{
-              fontSize: '1.3rem',
-              fontWeight: 700,
-              color: '#ffffff',
-              letterSpacing: '-0.02em',
-              margin: 0,
-            }}
-          >
-            Famlykin
-          </h2>
         </div>
 
         {/* Màn hình 1 & 2: Đăng Nhập hoặc Đăng Ký */}
@@ -500,6 +522,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 onClick={() => {
                   setAuthMode('LOGIN');
                   setError(null);
+                  window.history.replaceState(null, '', '/login');
                 }}
                 style={{
                   flex: 1,
@@ -524,6 +547,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 onClick={() => {
                   setAuthMode('REGISTER');
                   setError(null);
+                  window.history.replaceState(null, '', '/register');
                 }}
                 style={{
                   flex: 1,

@@ -70,23 +70,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </header>
 
       {/* 2. Hero Section */}
-      <section className="relative pt-12 pb-16 sm:pt-20 sm:pb-28 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
+      <section className="relative pt-8 pb-16 sm:pt-16 sm:pb-24 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
         {/* Glow Effects */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[600px] h-[350px] sm:h-[600px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm font-semibold mb-6 animate-pulse">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm font-semibold mb-6">
           <Sparkles size={15} />
           <span>Lưu truyền gốc rễ • Kết nối trăm năm</span>
         </div>
 
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight max-w-4xl font-serif leading-tight sm:leading-snug">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight max-w-4xl leading-tight sm:leading-tight">
           Số Hóa Cây Gia Phả & Quản Lý <br className="hidden sm:inline" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500">
             Ngày Giỗ Tổ Tiên Cổ Truyền
           </span>
         </h1>
 
-        <p className="mt-5 text-sm sm:text-lg text-slate-300 max-w-2xl leading-relaxed">
+        <p className="mt-5 text-sm sm:text-lg text-slate-300 max-w-2xl leading-relaxed font-normal">
           Nền tảng phả hệ Việt Nam đầu tiên tích hợp <strong>Lịch Giỗ Âm - Dương thông minh</strong>, 
           bàn tính xưng hô chuẩn thuần phong mỹ tục, và trắc nghiệm dòng tộc dành cho thế hệ tương lai.
         </p>
@@ -110,6 +110,81 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <TreePine size={18} className="text-emerald-400" />
             <span>Khám Phá Cây Mẫu Trải Nghiệm</span>
           </button>
+        </div>
+
+        {/* Hero Interactive App Mockup Preview (Minh họa trực quan giao diện) */}
+        <div className="mt-12 sm:mt-16 w-full max-w-5xl rounded-3xl p-2 sm:p-4 bg-gradient-to-b from-emerald-500/20 via-slate-900/50 to-slate-950 border border-emerald-500/30 shadow-2xl shadow-emerald-500/10">
+          <div className="rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 relative">
+            {/* Mockup browser bar */}
+            <div className="h-10 bg-slate-900/90 px-4 flex items-center gap-2 border-b border-slate-800">
+              <div className="w-3 h-3 rounded-full bg-rose-500/80" />
+              <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+              <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+              <div className="mx-auto px-4 py-1 rounded-md bg-slate-950 text-[11px] text-slate-400 border border-slate-800/80 font-mono">
+                https://famlykin.io.vn
+              </div>
+            </div>
+
+            {/* Tree Canvas Preview Card Graphic */}
+            <div className="p-6 sm:p-12 relative flex flex-col items-center justify-center min-h-[280px] sm:min-h-[380px] bg-gradient-to-b from-[#061e12] to-[#04120b]">
+              <div className="absolute inset-0 opacity-15 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+              
+              {/* Level 1: Ancestor */}
+              <div className="flex flex-col items-center z-10">
+                <div className="px-5 py-3 rounded-2xl bg-slate-900/90 border-2 border-emerald-400/80 shadow-lg shadow-emerald-500/20 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-300 font-bold flex items-center justify-center text-sm border border-emerald-500/40">
+                    NV
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>Nguyễn Văn Cụ</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold">Đời 1</span>
+                    </div>
+                    <div className="text-xs text-rose-300 flex items-center gap-1 mt-0.5 font-medium">
+                      <Flame size={12} className="text-rose-400" />
+                      <span>Giỗ Âm: 15/07 Âm lịch</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Connecting branch line */}
+                <div className="w-0.5 h-10 bg-emerald-400/60 my-1" />
+
+                {/* Level 2: Children */}
+                <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
+                  <div className="px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 text-slate-200 font-semibold flex items-center justify-center text-xs">
+                      NA
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-white">Nguyễn Văn Anh</div>
+                      <div className="text-[11px] text-emerald-400 font-semibold">Bác ruột (Đời 2)</div>
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-2.5 rounded-xl bg-slate-900/90 border-2 border-emerald-500 shadow-md flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/30 text-emerald-300 font-semibold flex items-center justify-center text-xs border border-emerald-500/40">
+                      NB
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-white">Nguyễn Văn Ba</div>
+                      <div className="text-[11px] text-emerald-400 font-semibold">Bố ruột (Đời 2)</div>
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 text-slate-200 font-semibold flex items-center justify-center text-xs">
+                      NC
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-white">Nguyễn Thị Cúc</div>
+                      <div className="text-[11px] text-teal-400 font-semibold">Cô ruột (Đời 2)</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Highlight trust badges */}
