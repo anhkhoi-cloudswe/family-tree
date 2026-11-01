@@ -265,17 +265,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             transition: 'opacity 0.25s ease-out',
           }}
         >
-          <picture className="w-full h-full block">
-            <source srcSet={heroBgWebp} type="image/webp" />
-            <img
-              src={heroBgWebp}
-              alt="Phong cảnh thiên nhiên cội nguồn"
-              className="w-full h-full object-cover object-center brightness-115 contrast-110"
-              style={{
-                transform: `translateY(${heroParallaxOffset}px) scale(1.02)`,
-              }}
-            />
-          </picture>
+          <div
+            className="w-full h-full bg-no-repeat transition-transform duration-100 ease-out brightness-110 contrast-105"
+            style={{
+              backgroundImage: `url(${heroBgWebp})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center 40%',
+              transform: `translateY(${heroParallaxOffset}px)`,
+            }}
+          />
         </div>
 
         {/* Lớp Phủ Gradient Chuẩn: Tăng cường độ tương phản ở nửa dưới để văn bản luôn nổi bật tuyệt đối */}
