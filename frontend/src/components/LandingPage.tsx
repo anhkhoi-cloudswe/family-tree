@@ -41,13 +41,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
 
-  // Lắng nghe sự kiện scroll để tạo hiệu ứng Parallax & Fade-out mượt mà
+  // Lắng nghe sự kiện scroll trên cả window và container .landing-guest-wrapper
   useEffect(() => {
     const handleScroll = () => {
-      setScrollY(window.scrollY);
+      const wrapper = document.querySelector('.landing-guest-wrapper');
+      const currentScrollY = wrapper ? wrapper.scrollTop : window.scrollY;
+      setScrollY(currentScrollY);
     };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    const wrapper = document.querySelector('.landing-guest-wrapper');
+    if (wrapper) {
+      wrapper.addEventListener('scroll', handleScroll, { passive: true });
+    }
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (wrapper) {
+        wrapper.removeEventListener('scroll', handleScroll);
+      }
+    };
   }, []);
 
   const scrollToSection = (id: string) => {
@@ -73,86 +86,94 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             : 'backdrop-blur-sm bg-[#0b160f]/60 border-b border-transparent'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
-          {/* Logo Famlykin (Luôn cố định vị trí, không bị nhảy giật khi mở Drawer) */}
-          <div
-            className="flex items-center gap-3 cursor-pointer group shrink-0"
-            onClick={() => {
-              if (mobileMenuOpen) setMobileMenuOpen(false);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          >
-            <div className="transition-transform duration-300 group-hover:scale-105">
-              <FamilyTreeLogo size={36} />
-            </div>
-            <div className="flex items-baseline">
-              <span className="text-xl sm:text-2xl font-bold font-serif tracking-wider text-white group-hover:text-[#68ef3f] transition-colors">
-                Famlykin
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-[11px] px-2.5 py-0.5 rounded-full bg-[#122314] text-[#68ef3f] border border-[#273f2b] font-medium">
-                Gia Phả Số Hóa
-              </span>
-            </div>
-          </div>
-
-          {/* Desktop Navigation Links (Trung tâm) */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2 px-3 py-1.5 rounded-full bg-[#122314]/70 border border-[#273f2b] backdrop-blur-md">
-            <button
-              type="button"
-              onClick={() => scrollToSection('features')}
-              className="px-4 py-1.5 rounded-full text-xs lg:text-sm font-medium text-[#b7bda5] hover:text-white hover:bg-[#1a331d]/60 transition-all cursor-pointer"
-            >
-              Tính Năng
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection('pricing')}
-              className="px-4 py-1.5 rounded-full text-xs lg:text-sm font-medium text-[#b7bda5] hover:text-white hover:bg-[#1a331d]/60 transition-all cursor-pointer"
-            >
-              Bảng Giá
-            </button>
-            <button
-              type="button"
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 grid grid-cols-2 md:grid-cols-3 items-center">
+          {/* Cột Trái: Logo Famlykin */}
+          <div className="flex items-center justify-start">
+            <div
+              className="flex items-center gap-3 cursor-pointer group"
               onClick={() => {
-                onOpenLegalDocs('PRIVACY');
+                if (mobileMenuOpen) setMobileMenuOpen(false);
+                const wrapper = document.querySelector('.landing-guest-wrapper');
+                if (wrapper) wrapper.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="px-4 py-1.5 rounded-full text-xs lg:text-sm font-medium text-[#b7bda5] hover:text-white hover:bg-[#1a331d]/60 transition-all cursor-pointer"
             >
-              Chính Sách
-            </button>
-          </nav>
-
-          {/* Desktop Right CTA Button (Đồng bộ nút Đăng Nhập -> như mobile view) */}
-          <div className="hidden md:flex items-center gap-3 shrink-0">
-            <button
-              type="button"
-              onClick={onOpenLogin}
-              className="px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#122314] bg-[#68ef3f] hover:bg-[#58dc31] shadow-[0_0_20px_rgba(104,239,63,0.35)] transition-all transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap flex items-center gap-1.5"
-            >
-              <span>Đăng Nhập</span>
-              <ArrowRight size={16} />
-            </button>
+              <div className="transition-transform duration-300 group-hover:scale-105">
+                <FamilyTreeLogo size={36} />
+              </div>
+              <div className="flex items-baseline">
+                <span className="text-xl sm:text-2xl font-bold font-serif tracking-wider text-white group-hover:text-[#68ef3f] transition-colors">
+                  Famlykin
+                </span>
+                <span className="hidden sm:inline-block ml-2 text-[11px] px-2.5 py-0.5 rounded-full bg-[#122314] text-[#68ef3f] border border-[#273f2b] font-medium">
+                  Gia Phả Số Hóa
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Mobile Hamburger Button (< 768px) - 2 gạch chuyển thành dấu X mượt mà */}
-          <div className="md:hidden flex items-center">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="w-10 h-10 rounded-full flex flex-col items-center justify-center bg-[#122314] border border-[#273f2b] text-white hover:text-[#68ef3f] transition-all focus:outline-none relative overflow-hidden"
-              aria-label={mobileMenuOpen ? 'Đóng menu' : 'Mở menu'}
-            >
-              <span
-                className={`w-5 h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out transform ${
-                  mobileMenuOpen ? 'rotate-45 translate-y-[3.5px]' : '-translate-y-[3px]'
-                }`}
-              />
-              <span
-                className={`w-5 h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out transform ${
-                  mobileMenuOpen ? '-rotate-45 -translate-y-[3.5px]' : 'translate-y-[3px]'
-                }`}
-              />
-            </button>
+          {/* Cột Giữa (Desktop): Canh giữa chính xác tuyệt đối với Slogan & Hero text bên dưới */}
+          <div className="hidden md:flex items-center justify-center">
+            <nav className="inline-flex items-center gap-1 lg:gap-2 px-3 py-1.5 rounded-full bg-[#122314]/80 border border-[#273f2b] backdrop-blur-md shadow-sm">
+              <button
+                type="button"
+                onClick={() => scrollToSection('features')}
+                className="px-4 py-1.5 rounded-full text-xs lg:text-sm font-medium text-[#b7bda5] hover:text-white hover:bg-[#1a331d]/60 transition-all cursor-pointer whitespace-nowrap"
+              >
+                Tính Năng
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection('pricing')}
+                className="px-4 py-1.5 rounded-full text-xs lg:text-sm font-medium text-[#b7bda5] hover:text-white hover:bg-[#1a331d]/60 transition-all cursor-pointer whitespace-nowrap"
+              >
+                Bảng Giá
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenLegalDocs('PRIVACY');
+                }}
+                className="px-4 py-1.5 rounded-full text-xs lg:text-sm font-medium text-[#b7bda5] hover:text-white hover:bg-[#1a331d]/60 transition-all cursor-pointer whitespace-nowrap"
+              >
+                Chính Sách
+              </button>
+            </nav>
+          </div>
+
+          {/* Cột Phải: Nút Đăng Nhập (Desktop) & Hamburger (Mobile) */}
+          <div className="flex items-center justify-end">
+            <div className="hidden md:flex items-center">
+              <button
+                type="button"
+                onClick={onOpenLogin}
+                className="px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#122314] bg-[#68ef3f] hover:bg-[#58dc31] shadow-[0_0_20px_rgba(104,239,63,0.35)] transition-all transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap flex items-center gap-1.5"
+              >
+                <span>Đăng Nhập</span>
+                <ArrowRight size={16} />
+              </button>
+            </div>
+
+            {/* Mobile Hamburger Button (< 768px) */}
+            <div className="md:hidden flex items-center">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="w-10 h-10 rounded-full flex flex-col items-center justify-center bg-[#122314] border border-[#273f2b] text-white hover:text-[#68ef3f] transition-all focus:outline-none relative overflow-hidden"
+                aria-label={mobileMenuOpen ? 'Đóng menu' : 'Mở menu'}
+              >
+                <span
+                  className={`w-5 h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out transform ${
+                    mobileMenuOpen ? 'rotate-45 translate-y-[3.5px]' : '-translate-y-[3px]'
+                  }`}
+                />
+                <span
+                  className={`w-5 h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out transform ${
+                    mobileMenuOpen ? '-rotate-45 -translate-y-[3.5px]' : 'translate-y-[3px]'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
         </div>
       </header>
