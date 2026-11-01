@@ -28,7 +28,7 @@ import { SubscriptionModal } from './components/SubscriptionModal';
 import { RenameTreeModal } from './components/RenameTreeModal';
 import { CreateTreeModal } from './components/CreateTreeModal';
 import { LandingPage } from './components/LandingPage';
-import { LegalDocsModal, LegalDocTab } from './components/LegalDocsModal';
+import { TermsAndPoliciesPage, PolicyTab } from './components/TermsAndPoliciesPage';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { FamilyTreeLogo } from './components/FamilyTreeLogo';
 import { ToastProvider, useToast } from './components/Toast';
@@ -119,7 +119,7 @@ const AppContent: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [pendingInvitations, setPendingInvitations] = useState<TreeInvitation[]>([]);
 
-  // Landing Page (/guest) and Legal Docs states
+  // Landing Page (/guest) and Dedicated Legal Docs (/terms&policies, /privacy, /terms, /cookies, /refund)
   const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const p = window.location.pathname.toLowerCase();
@@ -127,8 +127,34 @@ const AppContent: React.FC = () => {
     }
     return false;
   });
-  const [legalModalOpen, setLegalModalOpen] = useState<boolean>(false);
-  const [legalModalTab, setLegalModalTab] = useState<LegalDocTab>('PRIVACY');
+  const [isPoliciesPage, setIsPoliciesPage] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase();
+      return (
+        p.startsWith('/terms&policies') ||
+        p.startsWith('/terms-and-policies') ||
+        p.startsWith('/privacy') ||
+        p.startsWith('/terms') ||
+        p.startsWith('/cookies') ||
+        p.startsWith('/refund')
+      );
+    }
+    return false;
+  });
+  const [policyPageTab, setPolicyPageTab] = useState<PolicyTab>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab')?.toUpperCase();
+      if (tabParam === 'TERMS' || tabParam === 'PRIVACY' || tabParam === 'COOKIE' || tabParam === 'REFUND') {
+        return tabParam as PolicyTab;
+      }
+      const p = window.location.pathname.toLowerCase();
+      if (p.includes('terms') && !p.includes('privacy') && !p.includes('&')) return 'TERMS';
+      if (p.includes('cookie')) return 'COOKIE';
+      if (p.includes('refund')) return 'REFUND';
+    }
+    return 'PRIVACY';
+  });
 
   // Dedicated Admin Dashboard states
   const [adminActiveTab, setAdminActiveTab] = useState<AdminTab>('USERS');
@@ -299,20 +325,29 @@ const AppContent: React.FC = () => {
         window.history.replaceState(null, '', window.location.pathname);
       }
 
-      // Kiểm tra các đường dẫn pháp lý chuyên biệt (/privacy, /terms, /cookies, /refund)
+      // Kiểm tra các đường dẫn pháp lý chuyên biệt (/terms&policies, /privacy, /terms, /cookies, /refund)
       const currentPath = window.location.pathname.toLowerCase();
-      if (currentPath === '/privacy') {
-        setLegalModalTab('PRIVACY');
-        setLegalModalOpen(true);
-      } else if (currentPath === '/terms') {
-        setLegalModalTab('TERMS');
-        setLegalModalOpen(true);
-      } else if (currentPath === '/cookies' || currentPath === '/cookie-policy') {
-        setLegalModalTab('COOKIE');
-        setLegalModalOpen(true);
-      } else if (currentPath === '/refund' || currentPath === '/refund-policy') {
-        setLegalModalTab('REFUND');
-        setLegalModalOpen(true);
+      if (
+        currentPath.startsWith('/terms&policies') ||
+        currentPath.startsWith('/terms-and-policies') ||
+        currentPath.startsWith('/privacy') ||
+        currentPath.startsWith('/terms') ||
+        currentPath.startsWith('/cookies') ||
+        currentPath.startsWith('/refund')
+      ) {
+        setIsPoliciesPage(true);
+        const tabParam = searchParams.get('tab')?.toUpperCase();
+        if (tabParam === 'TERMS' || tabParam === 'PRIVACY' || tabParam === 'COOKIE' || tabParam === 'REFUND') {
+          setPolicyPageTab(tabParam as PolicyTab);
+        } else if (currentPath.includes('terms') && !currentPath.includes('privacy') && !currentPath.includes('&')) {
+          setPolicyPageTab('TERMS');
+        } else if (currentPath.includes('cookie')) {
+          setPolicyPageTab('COOKIE');
+        } else if (currentPath.includes('refund')) {
+          setPolicyPageTab('REFUND');
+        } else {
+          setPolicyPageTab('PRIVACY');
+        }
       }
       const verifyToken = searchParams.get('verify_token') || hashParams.get('verify_token');
       const resetToken = searchParams.get('reset_token') || hashParams.get('reset_token');
@@ -475,13 +510,22 @@ const AppContent: React.FC = () => {
       const token = getStoredToken();
       if (!token) {
         setIsLoading(false);
-        // Nếu truy cập /guest hoặc chưa đăng nhập, tự động bật giao diện đón khách Landing Page
+        // Nếu truy cập trang pháp lý, giữ nguyên chế độ xem pháp lý
         const currentPath = window.location.pathname.toLowerCase();
-        if (currentPath === '/guest' || currentPath === '/landing') {
-          setIsGuestMode(true);
+        if (
+          currentPath.startsWith('/terms&policies') ||
+          currentPath.startsWith('/terms-and-policies') ||
+          currentPath.startsWith('/privacy') ||
+          currentPath.startsWith('/terms') ||
+          currentPath.startsWith('/cookies') ||
+          currentPath.startsWith('/refund')
+        ) {
+          setIsPoliciesPage(true);
           setShowAuthModal(false);
         } else {
-          setShowAuthModal(true);
+          // Mặc định cho mọi khách truy cập chưa đăng nhập: Hiển thị Landing Page (/guest)
+          setIsGuestMode(true);
+          setShowAuthModal(false);
         }
         return;
       }
@@ -928,13 +972,34 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // Chế độ đón khách Landing Page (/guest)
-  if (isGuestMode || (!user && !isLoading && !showAuthModal)) {
+  // 1. Chế độ xem trang văn kiện pháp lý riêng biệt (/terms&policies, /privacy, /terms, /cookies, /refund)
+  if (isPoliciesPage) {
+    return (
+      <div className="terms-policies-wrapper">
+        <TermsAndPoliciesPage
+          initialTab={policyPageTab}
+          onBackToApp={() => {
+            setIsPoliciesPage(false);
+            window.history.pushState(null, '', '/guest');
+            setIsGuestMode(true);
+          }}
+        />
+        {/* Cookie Consent Banner */}
+        <CookieConsentBanner
+          onOpenLegalDocs={(tab) => {
+            setPolicyPageTab(tab);
+          }}
+        />
+      </div>
+    );
+  }
+
+  // 2. Chế độ đón khách Landing Page (/guest)
+  if (isGuestMode || (!user && !isLoading)) {
     return (
       <div className="landing-guest-wrapper">
         <LandingPage
           onStartDemo={() => {
-            // Xem cây demo hoặc mở Auth
             setShowAuthModal(true);
           }}
           onOpenLogin={() => {
@@ -944,23 +1009,18 @@ const AppContent: React.FC = () => {
             setShowAuthModal(true);
           }}
           onOpenLegalDocs={(tab) => {
-            setLegalModalTab(tab);
-            setLegalModalOpen(true);
+            setPolicyPageTab(tab);
+            window.history.pushState(null, '', `/terms&policies?tab=${tab}`);
+            setIsPoliciesPage(true);
           }}
-        />
-
-        {/* Legal Docs Modal */}
-        <LegalDocsModal
-          isOpen={legalModalOpen}
-          onClose={() => setLegalModalOpen(false)}
-          initialTab={legalModalTab}
         />
 
         {/* Cookie Consent Banner */}
         <CookieConsentBanner
           onOpenLegalDocs={(tab) => {
-            setLegalModalTab(tab);
-            setLegalModalOpen(true);
+            setPolicyPageTab(tab);
+            window.history.pushState(null, '', `/terms&policies?tab=${tab}`);
+            setIsPoliciesPage(true);
           }}
         />
 
@@ -1660,18 +1720,12 @@ const AppContent: React.FC = () => {
         }}
       />
 
-      {/* Legal Docs Modal */}
-      <LegalDocsModal
-        isOpen={legalModalOpen}
-        onClose={() => setLegalModalOpen(false)}
-        initialTab={legalModalTab}
-      />
-
       {/* Cookie Consent Banner */}
       <CookieConsentBanner
         onOpenLegalDocs={(tab) => {
-          setLegalModalTab(tab);
-          setLegalModalOpen(true);
+          setPolicyPageTab(tab);
+          window.history.pushState(null, '', `/terms&policies?tab=${tab}`);
+          setIsPoliciesPage(true);
         }}
       />
 

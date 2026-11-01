@@ -717,7 +717,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
                 )}
 
-                {/* Checkbox Tuân thủ Nghị định 13/2023/NĐ-CP khi Đăng ký mới */}
+                {/* Checkbox Đồng ý Điều khoản dịch vụ & Chính sách bảo mật khi Đăng ký mới */}
                 {authMode === 'REGISTER' && (
                   <div
                     style={{
@@ -748,14 +748,44 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <label
                       htmlFor="consent-decree-13"
                       style={{
-                        fontSize: '0.72rem',
+                        fontSize: '0.74rem',
                         color: '#cbd5e1',
-                        lineHeight: 1.45,
+                        lineHeight: 1.5,
                         cursor: 'pointer',
                         userSelect: 'none',
                       }}
                     >
-                      <strong>Khai báo mục đích (Nghị định 13):</strong> Tôi đồng ý cung cấp họ tên và email để Famlykin khởi tạo tài khoản và vẽ sơ đồ phả hệ gia tộc. Dữ liệu thuộc quyền sở hữu của tôi và có thể yêu cầu xóa bất kỳ lúc nào.
+                      <span>Bằng việc tiếp tục, bạn đồng ý với </span>
+                      <a
+                        href="/terms&policies?tab=TERMS"
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          color: '#34d399',
+                          textDecoration: 'underline',
+                          textUnderlineOffset: '2px',
+                          fontWeight: 600,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Điều khoản dịch vụ
+                      </a>
+                      <span> & </span>
+                      <a
+                        href="/terms&policies?tab=PRIVACY"
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          color: '#34d399',
+                          textDecoration: 'underline',
+                          textUnderlineOffset: '2px',
+                          fontWeight: 600,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Chính sách bảo mật
+                      </a>
+                      <span> của Famlykin.</span>
                     </label>
                   </div>
                 )}
@@ -856,58 +886,48 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </span>
             </button>
 
-            {/* Liên kết Điều khoản dịch vụ & Chính sách bảo mật */}
-            <div
-              style={{
-                marginTop: '1.15rem',
-                textAlign: 'center',
-                fontSize: '0.74rem',
-                color: '#64748b',
-                lineHeight: 1.5,
-              }}
-            >
-              <span>Bằng việc tiếp tục, bạn đồng ý với </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setTermsInitialTab('TERMS');
-                  setShowTermsModal(true);
-                }}
+            {/* Liên kết Điều khoản dịch vụ & Chính sách bảo mật cho màn hình Đăng Nhập */}
+            {authMode === 'LOGIN' && (
+              <div
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#34d399',
-                  padding: 0,
+                  marginTop: '1.15rem',
+                  textAlign: 'center',
                   fontSize: '0.74rem',
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '2px',
+                  color: '#64748b',
+                  lineHeight: 1.5,
                 }}
               >
-                Điều khoản dịch vụ
-              </button>
-              <span> & </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setTermsInitialTab('PRIVACY');
-                  setShowTermsModal(true);
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#34d399',
-                  padding: 0,
-                  fontSize: '0.74rem',
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '2px',
-                }}
-              >
-                Chính sách bảo mật
-              </button>
-              <span> của Famlykin.</span>
-            </div>
+                <span>Bằng việc tiếp tục, bạn đồng ý với </span>
+                <a
+                  href="/terms&policies?tab=TERMS"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    color: '#34d399',
+                    textDecoration: 'underline',
+                    textUnderlineOffset: '2px',
+                    fontWeight: 600,
+                  }}
+                >
+                  Điều khoản dịch vụ
+                </a>
+                <span> & </span>
+                <a
+                  href="/terms&policies?tab=PRIVACY"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    color: '#34d399',
+                    textDecoration: 'underline',
+                    textUnderlineOffset: '2px',
+                    fontWeight: 600,
+                  }}
+                >
+                  Chính sách bảo mật
+                </a>
+                <span> của Famlykin.</span>
+              </div>
+            )}
           </>
         )}
 
