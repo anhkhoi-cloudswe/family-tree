@@ -134,31 +134,36 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </button>
           </div>
 
-          {/* Mobile Hamburger Button (< 768px) */}
+          {/* Mobile Hamburger Button (< 768px) - 2 gạch ngang chuyển thành dấu X */}
           <div className="md:hidden flex items-center">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-[#122314] border border-[#273f2b] text-white hover:text-[#68ef3f] transition-all focus:outline-none"
+              className="w-10 h-10 rounded-full flex flex-col items-center justify-center gap-1.5 bg-[#122314] border border-[#273f2b] text-white hover:text-[#68ef3f] transition-all focus:outline-none relative"
               aria-label={mobileMenuOpen ? 'Đóng menu' : 'Mở menu'}
             >
-              {mobileMenuOpen ? (
-                <X size={20} className="transition-transform duration-300 rotate-90" />
-              ) : (
-                <Menu size={20} className="transition-transform duration-300" />
-              )}
+              <span
+                className={`w-5 h-0.5 bg-current rounded-full transition-all duration-300 transform origin-center ${
+                  mobileMenuOpen ? 'rotate-45 translate-y-[4px]' : ''
+                }`}
+              />
+              <span
+                className={`w-5 h-0.5 bg-current rounded-full transition-all duration-300 transform origin-center ${
+                  mobileMenuOpen ? '-rotate-45 -translate-y-[4px]' : ''
+                }`}
+              />
             </button>
           </div>
         </div>
 
         {/* Mobile Fullscreen / Drawer Slide-down Overlay */}
         {mobileMenuOpen && (
-          <div className="md:hidden fixed inset-x-0 top-16 sm:top-20 bg-[#0b160f]/98 backdrop-blur-2xl border-b border-[#273f2b] shadow-2xl animate-drawer-slide-down px-6 py-6 flex flex-col justify-between overflow-y-auto" style={{ height: 'calc(100vh - 4rem)' }}>
+          <div className="md:hidden fixed inset-0 top-16 sm:top-20 z-50 bg-[#070e09] backdrop-blur-2xl border-b border-[#273f2b] shadow-2xl animate-drawer-slide-down px-6 py-6 flex flex-col justify-between overflow-y-auto">
             <nav className="flex flex-col space-y-3.5 my-2">
               <button
                 type="button"
                 onClick={() => scrollToSection('features')}
-                className="w-full text-left py-3 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314]/80 border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
+                className="w-full text-left py-3.5 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
               >
                 <span>🌿 Tính Năng Cốt Lõi</span>
                 <ChevronRight size={18} className="text-[#68ef3f]" />
@@ -166,7 +171,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <button
                 type="button"
                 onClick={() => scrollToSection('pricing')}
-                className="w-full text-left py-3 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314]/80 border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
+                className="w-full text-left py-3.5 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
               >
                 <span>💎 Bảng Giá Hội Viên</span>
                 <ChevronRight size={18} className="text-[#68ef3f]" />
@@ -174,7 +179,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <button
                 type="button"
                 onClick={() => scrollToSection('contact')}
-                className="w-full text-left py-3 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314]/80 border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
+                className="w-full text-left py-3.5 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
               >
                 <span>✉️ Liên Hệ & Hỗ Trợ</span>
                 <ChevronRight size={18} className="text-[#68ef3f]" />
@@ -185,14 +190,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   setMobileMenuOpen(false);
                   onOpenLegalDocs('PRIVACY');
                 }}
-                className="w-full text-left py-3 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314]/80 border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
+                className="w-full text-left py-3.5 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
               >
                 <span>🛡️ Chính Sách Bảo Mật (NĐ 13)</span>
                 <ChevronRight size={18} className="text-[#68ef3f]" />
               </button>
             </nav>
 
-            <div className="pt-4 pb-6 border-t border-[#273f2b] flex flex-col space-y-3">
+            <div className="pt-4 pb-8 border-t border-[#273f2b] flex flex-col space-y-3">
               <button
                 type="button"
                 onClick={() => {
@@ -220,28 +225,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </header>
 
       {/* 2. Hero Section Với Nền Thiên Nhiên, Gradient Tinh Tế & Scroll Fade-Out */}
-      <section className="relative pt-24 sm:pt-36 pb-16 sm:pb-28 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center text-center overflow-visible">
+      <section className="relative pt-24 sm:pt-36 pb-20 sm:pb-32 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center text-center overflow-visible">
         {/* Lớp Ảnh Thiên Nhiên Phong Cảnh Đồi Chè hero-bg.png (Kéo dài từ đỉnh Hero Section xuống hết cụm nút CTA chính) */}
         <div
-          className="absolute inset-x-0 -top-20 sm:-top-28 h-[580px] sm:h-[680px] pointer-events-none -z-20 overflow-hidden"
+          className="absolute inset-x-0 -top-24 sm:-top-32 h-[680px] sm:h-[780px] pointer-events-none -z-20 overflow-hidden"
           style={{
-            opacity: Math.max(0.15, 1 - scrollY / 380),
+            opacity: Math.max(0, 1 - scrollY / 320),
+            transition: 'opacity 0.25s ease-out',
           }}
         >
           <img
             src="/images/hero-bg.png"
             alt="Phong cảnh thiên nhiên cội nguồn"
-            className="w-full h-full object-cover object-top sm:object-center brightness-105 contrast-105"
+            className="w-full h-full object-cover object-center brightness-110 contrast-105"
             style={{
-              transform: `translateY(${heroParallaxOffset}px) scale(1.03)`,
-              transition: 'transform 0.1s ease-out',
+              transform: `translateY(${heroParallaxOffset}px) scale(1.02)`,
             }}
           />
         </div>
 
         {/* Lớp Phủ Gradient Chuẩn: bg-gradient-to-b from-black/60 via-black/30 to-[#070e09]/95 để chữ trắng hiển thị nổi bật sắc nét */}
         <div
-          className="absolute inset-x-0 -top-20 sm:-top-28 h-[580px] sm:h-[680px] pointer-events-none -z-10 bg-gradient-to-b from-black/60 via-black/30 to-[#070e09]/95"
+          className="absolute inset-x-0 -top-24 sm:-top-32 h-[680px] sm:h-[780px] pointer-events-none -z-10 bg-gradient-to-b from-black/60 via-black/30 to-[#070e09]"
+          style={{
+            opacity: Math.max(0, 1 - scrollY / 320),
+            transition: 'opacity 0.25s ease-out',
+          }}
         />
 
         {/* Neon Botanical Glow Atmosphere Orbs */}
@@ -289,7 +298,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
 
         {/* Hero Interactive App Mockup Preview - 3D Perspective Tilt Tomorro Style */}
-        <div className="mt-14 sm:mt-20 w-full max-w-5xl [perspective:1400px]">
+        <div className="mt-20 sm:mt-28 w-full max-w-5xl [perspective:1400px]">
           <div className="rounded-3xl p-2 sm:p-4 bg-gradient-to-b from-[#1a331d]/60 via-[#122314]/50 to-[#0a140b] border border-[#273f2b]/80 shadow-[0_30px_80px_rgba(0,0,0,0.85),_0_0_50px_rgba(104,239,63,0.15)] transform transition-transform duration-500 hover:[transform:none] sm:[transform:rotateX(6deg)_rotateY(-3deg)_rotateZ(-1deg)]">
             <div className="rounded-2xl overflow-hidden bg-[#0a140b] border border-[#273f2b] relative">
               {/* Mockup browser bar */}
@@ -303,11 +312,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Tree Canvas Preview Card Graphic */}
-              <div className="p-6 sm:p-14 relative flex flex-col items-center justify-center min-h-[300px] sm:min-h-[420px] bg-gradient-to-b from-[#0e1c10] to-[#081209]">
+              <div className="p-6 sm:p-14 relative flex flex-col items-center justify-center min-h-[340px] sm:min-h-[440px] bg-gradient-to-b from-[#0e1c10] to-[#081209]">
                 <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(104, 239, 63, 0.3) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
                 
                 {/* Level 1: Ancestor */}
-                <div className="flex flex-col items-center z-10">
+                <div className="flex flex-col items-center z-10 w-full max-w-2xl">
                   <div className="px-6 py-3.5 rounded-2xl bg-[#122314] border-2 border-[#68ef3f]/70 shadow-[0_0_25px_rgba(104,239,63,0.25)] flex items-center gap-3.5">
                     <div className="w-11 h-11 rounded-full bg-[#68ef3f]/20 text-[#68ef3f] font-bold flex items-center justify-center text-sm border border-[#68ef3f]/40">
                       NV
@@ -324,38 +333,105 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Connecting branch line */}
-                  <div className="w-0.5 h-10 bg-[#68ef3f]/60 my-1 shadow-[0_0_8px_rgba(104,239,63,0.5)]" />
+                  {/* CÂY GIA PHẢ - DESKTOP VIEW: Kẻ từ Cụ xuống và nối cả 3 người con ngang hàng */}
+                  <div className="hidden sm:flex flex-col items-center w-full">
+                    {/* Trục dọc từ Cụ xuống */}
+                    <div className="w-0.5 h-6 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.6)]" />
+                    {/* Thanh ngang tỏa sang 3 nhánh con */}
+                    <div className="w-[78%] h-0.5 bg-[#68ef3f] relative shadow-[0_0_8px_rgba(104,239,63,0.6)]">
+                      {/* Nhánh con trái (Bác ruột) */}
+                      <div className="absolute left-0 top-0 w-0.5 h-6 bg-[#68ef3f]" />
+                      {/* Nhánh con giữa (Bố ruột) */}
+                      <div className="absolute left-1/2 -translate-x-1/2 top-0 w-0.5 h-6 bg-[#68ef3f]" />
+                      {/* Nhánh con phải (Cô ruột) */}
+                      <div className="absolute right-0 top-0 w-0.5 h-6 bg-[#68ef3f]" />
+                    </div>
+                    {/* Khoảng cách xuống thẻ con */}
+                    <div className="h-6" />
 
-                  {/* Level 2: Children */}
-                  <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
-                    <div className="px-4 py-2.5 rounded-xl bg-[#122314] border border-[#273f2b] flex items-center gap-2.5 shadow-sm">
-                      <div className="w-9 h-9 rounded-full bg-[#1b341f] text-[#d9deca] font-semibold flex items-center justify-center text-xs border border-[#273f2b]">
-                        NA
+                    {/* 3 người con ngang hàng */}
+                    <div className="grid grid-cols-3 gap-4 w-full">
+                      <div className="px-4 py-2.5 rounded-xl bg-[#122314] border border-[#273f2b] flex items-center gap-2.5 shadow-sm justify-center">
+                        <div className="w-9 h-9 rounded-full bg-[#1b341f] text-[#d9deca] font-semibold flex items-center justify-center text-xs border border-[#273f2b]">
+                          NA
+                        </div>
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-white">Nguyễn Văn Anh</div>
+                          <div className="text-[11px] text-[#68ef3f] font-semibold">Bác ruột (Đời 2)</div>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <div className="text-xs font-bold text-white">Nguyễn Văn Anh</div>
-                        <div className="text-[11px] text-[#68ef3f] font-semibold">Bác ruột (Đời 2)</div>
+
+                      <div className="px-4 py-2.5 rounded-xl bg-[#122314] border-2 border-[#68ef3f]/70 shadow-[0_0_20px_rgba(104,239,63,0.2)] flex items-center gap-2.5 justify-center">
+                        <div className="w-9 h-9 rounded-full bg-[#68ef3f]/25 text-[#68ef3f] font-semibold flex items-center justify-center text-xs border border-[#68ef3f]/40">
+                          NB
+                        </div>
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-white">Nguyễn Văn Ba</div>
+                          <div className="text-[11px] text-[#68ef3f] font-semibold">Bố ruột (Đời 2)</div>
+                        </div>
+                      </div>
+
+                      <div className="px-4 py-2.5 rounded-xl bg-[#122314] border border-[#273f2b] flex items-center gap-2.5 shadow-sm justify-center">
+                        <div className="w-9 h-9 rounded-full bg-[#1b341f] text-[#d9deca] font-semibold flex items-center justify-center text-xs border border-[#273f2b]">
+                          NC
+                        </div>
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-white">Nguyễn Thị Cúc</div>
+                          <div className="text-[11px] text-[#b7bda5] font-semibold">Cô ruột (Đời 2)</div>
+                        </div>
                       </div>
                     </div>
+                  </div>
 
-                    <div className="px-4 py-2.5 rounded-xl bg-[#122314] border-2 border-[#68ef3f]/70 shadow-[0_0_20px_rgba(104,239,63,0.2)] flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-full bg-[#68ef3f]/25 text-[#68ef3f] font-semibold flex items-center justify-center text-xs border border-[#68ef3f]/40">
-                        NB
-                      </div>
-                      <div className="text-left">
-                        <div className="text-xs font-bold text-white">Nguyễn Văn Ba</div>
-                        <div className="text-[11px] text-[#68ef3f] font-semibold">Bố ruột (Đời 2)</div>
-                      </div>
-                    </div>
+                  {/* CÂY GIA PHẢ - MOBILE VIEW: Kẻ 1 đường trục dọc xuyên suốt và rẽ nhánh nối cả 3 người con */}
+                  <div className="sm:hidden flex flex-col items-center w-full mt-1">
+                    {/* Trục dọc nối từ Cụ xuống */}
+                    <div className="w-0.5 h-6 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.6)]" />
 
-                    <div className="px-4 py-2.5 rounded-xl bg-[#122314] border border-[#273f2b] flex items-center gap-2.5 shadow-sm">
-                      <div className="w-9 h-9 rounded-full bg-[#1b341f] text-[#d9deca] font-semibold flex items-center justify-center text-xs border border-[#273f2b]">
-                        NC
+                    <div className="relative flex flex-col gap-3 w-full max-w-[280px] pl-6">
+                      {/* Trục xương sống dọc bên trái */}
+                      <div className="absolute left-2.5 top-0 bottom-6 w-0.5 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.6)]" />
+
+                      {/* Con 1 */}
+                      <div className="relative">
+                        <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-0.5 bg-[#68ef3f]" />
+                        <div className="px-4 py-2.5 rounded-xl bg-[#122314] border border-[#273f2b] flex items-center gap-2.5 shadow-sm">
+                          <div className="w-8 h-8 rounded-full bg-[#1b341f] text-[#d9deca] font-semibold flex items-center justify-center text-xs border border-[#273f2b]">
+                            NA
+                          </div>
+                          <div className="text-left">
+                            <div className="text-xs font-bold text-white">Nguyễn Văn Anh</div>
+                            <div className="text-[11px] text-[#68ef3f] font-semibold">Bác ruột (Đời 2)</div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <div className="text-xs font-bold text-white">Nguyễn Thị Cúc</div>
-                        <div className="text-[11px] text-[#b7bda5] font-semibold">Cô ruột (Đời 2)</div>
+
+                      {/* Con 2 */}
+                      <div className="relative">
+                        <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-0.5 bg-[#68ef3f]" />
+                        <div className="px-4 py-2.5 rounded-xl bg-[#122314] border-2 border-[#68ef3f]/70 shadow-[0_0_15px_rgba(104,239,63,0.2)] flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-[#68ef3f]/25 text-[#68ef3f] font-semibold flex items-center justify-center text-xs border border-[#68ef3f]/40">
+                            NB
+                          </div>
+                          <div className="text-left">
+                            <div className="text-xs font-bold text-white">Nguyễn Văn Ba</div>
+                            <div className="text-[11px] text-[#68ef3f] font-semibold">Bố ruột (Đời 2)</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Con 3 */}
+                      <div className="relative">
+                        <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-0.5 bg-[#68ef3f]" />
+                        <div className="px-4 py-2.5 rounded-xl bg-[#122314] border border-[#273f2b] flex items-center gap-2.5 shadow-sm">
+                          <div className="w-8 h-8 rounded-full bg-[#1b341f] text-[#d9deca] font-semibold flex items-center justify-center text-xs border border-[#273f2b]">
+                            NC
+                          </div>
+                          <div className="text-left">
+                            <div className="text-xs font-bold text-white">Nguyễn Thị Cúc</div>
+                            <div className="text-[11px] text-[#b7bda5] font-semibold">Cô ruột (Đời 2)</div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -685,14 +761,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 6. Footer With Legal Documents Links */}
-      <footer className="mt-auto border-t border-slate-800 bg-slate-950 py-12 px-4 sm:px-6 text-xs text-slate-400">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      {/* 6. Footer With Legal Documents Links & Nature Footer Background */}
+      <footer className="mt-auto relative border-t border-[#273f2b] py-14 px-4 sm:px-6 text-xs text-slate-400 overflow-hidden">
+        {/* Footer Background Image footer-bg.png */}
+        <div className="absolute inset-0 pointer-events-none -z-20">
+          <img
+            src="/images/footer-bg.png"
+            alt="Cội nguồn dòng tộc footer"
+            className="w-full h-full object-cover object-bottom opacity-40 brightness-75 contrast-110"
+          />
+        </div>
+        {/* Lớp phủ gradient tối bảo đảm độ tương phản chữ */}
+        <div className="absolute inset-0 pointer-events-none -z-10 bg-gradient-to-t from-[#050b06] via-[#070e09]/90 to-[#070e09]/98" />
+
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
           <div className="flex items-center gap-3">
             <FamilyTreeLogo size={28} />
             <div>
               <div className="font-bold text-white text-sm">Famlykin</div>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-slate-400">
                 Nền tảng số hóa gia phả & bảo tồn văn hóa dòng tộc Việt Nam • Email: lienhe@famlykin.io.vn
               </p>
             </div>
@@ -703,23 +790,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onOpenLegalDocs('PRIVACY')}
-              className="hover:text-emerald-400 transition-colors cursor-pointer"
+              className="hover:text-[#68ef3f] transition-colors cursor-pointer text-slate-300"
             >
               Chính Sách Bảo Mật (NĐ 13)
             </button>
-            <span className="text-slate-700">•</span>
+            <span className="text-[#273f2b]">•</span>
             <button
               type="button"
               onClick={() => onOpenLegalDocs('TERMS')}
-              className="hover:text-emerald-400 transition-colors cursor-pointer"
+              className="hover:text-[#68ef3f] transition-colors cursor-pointer text-slate-300"
             >
               Điều Khoản Dịch Vụ
             </button>
-            <span className="text-slate-700">•</span>
+            <span className="text-[#273f2b]">•</span>
             <button
               type="button"
               onClick={() => onOpenLegalDocs('COOKIE')}
-              className="hover:text-emerald-400 transition-colors cursor-pointer"
+              className="hover:text-[#68ef3f] transition-colors cursor-pointer text-slate-300"
             >
               Chính Sách Cookie
             </button>
