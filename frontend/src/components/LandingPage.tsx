@@ -256,10 +256,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       )}
 
       {/* 2. Hero Section Với Nền Thiên Nhiên, Gradient Tinh Tế & Scroll Fade-Out */}
-      <section className="relative pt-24 sm:pt-36 pb-28 sm:pb-44 px-4 sm:px-6 w-full flex flex-col items-center text-center overflow-visible">
+      <section className="relative pt-20 sm:pt-36 pb-24 sm:pb-36 px-4 sm:px-6 w-full flex flex-col items-center text-center overflow-visible">
         {/* Lớp Ảnh Thiên Nhiên Phong Cảnh Đồi Chè (WebP siêu nhẹ + fallback PNG) - Kéo dài vượt hẳn qua nút CTA */}
         <div
-          className="absolute inset-x-0 -top-24 sm:-top-32 h-[850px] sm:h-[1050px] pointer-events-none -z-20 overflow-hidden w-full"
+          className="absolute inset-x-0 -top-24 sm:-top-32 h-[880px] sm:h-[1100px] pointer-events-none -z-20 overflow-hidden w-full"
           style={{
             opacity: Math.max(0, 1 - scrollY / 460),
             transition: 'opacity 0.25s ease-out',
@@ -270,7 +270,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <img
               src={heroBgWebp}
               alt="Phong cảnh thiên nhiên cội nguồn"
-              className="w-full h-full object-cover object-center brightness-125 contrast-110"
+              className="w-full h-full object-cover object-center brightness-115 contrast-110"
               style={{
                 transform: `translateY(${heroParallaxOffset}px) scale(1.02)`,
               }}
@@ -278,9 +278,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </picture>
         </div>
 
-        {/* Lớp Phủ Gradient Chuẩn: Phần đỉnh trong suốt để thấy ảnh, phần đuôi hòa sắc với màu đồi chè (#3c540e / #122314) chuyển dần sang đen sâu #070e09 */}
+        {/* Lớp Phủ Gradient Chuẩn: Tăng cường độ tương phản ở nửa dưới để văn bản luôn nổi bật tuyệt đối */}
         <div
-          className="absolute inset-x-0 -top-24 sm:-top-32 h-[850px] sm:h-[1050px] pointer-events-none -z-10 bg-gradient-to-b from-black/40 via-transparent to-[#070e09] w-full"
+          className="absolute inset-x-0 -top-24 sm:-top-32 h-[880px] sm:h-[1100px] pointer-events-none -z-10 bg-gradient-to-b from-black/50 via-black/40 via-50% to-[#070e09]/95 w-full"
           style={{
             opacity: Math.max(0, 1 - scrollY / 460),
             transition: 'opacity 0.25s ease-out',
@@ -291,28 +291,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[680px] h-[350px] sm:h-[680px] bg-[#68ef3f]/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 
         {/* Slogan nhỏ (Bỏ icon sao trước chữ) */}
-        <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-[#122314]/90 border border-[#273f2b] text-[#68ef3f] text-xs sm:text-sm font-semibold mb-6 shadow-lg backdrop-blur-md">
+        <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-[#122314]/90 border border-[#273f2b] text-[#68ef3f] text-xs sm:text-sm font-semibold mb-4 sm:mb-6 shadow-lg backdrop-blur-md">
           <span>Lưu truyền gốc rễ • Kết nối trăm năm</span>
         </div>
 
-        {/* Tiêu đề chính (H1) */}
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight max-w-4xl leading-tight sm:leading-tight drop-shadow-md">
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#d9deca] to-[#68ef3f] drop-shadow-[0_0_40px_rgba(104,239,63,0.35)]">
+        {/* Tiêu đề chính (H1) - Linh hoạt font-size trên mobile tránh ngắt dòng thô */}
+        <h1 className="text-2xl min-[380px]:text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight max-w-4xl leading-tight sm:leading-tight drop-shadow-md px-2">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#e2e8d8] to-[#68ef3f] drop-shadow-[0_0_40px_rgba(104,239,63,0.35)]">
             Gìn Giữ Cội Nguồn • Kết Nối Dòng Tộc
           </span>
         </h1>
 
-        {/* Mô tả ngắn gọn (1 dòng) */}
-        <p className="mt-5 text-sm sm:text-lg text-[#d0d7c0] max-w-3xl leading-relaxed font-normal drop-shadow-sm">
-          Nền tảng phả hệ thông minh Việt Nam tích hợp <strong className="text-white">Lịch Giỗ Âm - Dương thông minh</strong>, bàn tính xưng hô và kết nối dòng tộc.
+        {/* Mô tả ngắn gọn (1 dòng) - Tương phản cao, drop-shadow rõ ràng trên nền tối */}
+        <p className="mt-4 sm:mt-5 text-sm sm:text-lg text-slate-200 max-w-3xl leading-relaxed font-normal drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] px-2">
+          Nền tảng phả hệ thông minh Việt Nam tích hợp <strong className="text-[#68ef3f] font-semibold">Lịch Giỗ Âm - Dương thông minh</strong>, bàn tính xưng hô và kết nối dòng tộc.
         </p>
 
-        {/* CTA Buttons (Responsive Full-width trên mobile, hàng ngang trên desktop) */}
-        <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center gap-3.5 sm:gap-4 w-full sm:w-auto z-10">
+        {/* CTA Buttons (Responsive Full-width trên mobile, hàng ngang trên desktop, padding ngón tay chuẩn UX) */}
+        <div className="mt-7 sm:mt-10 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto max-w-md sm:max-w-none px-4 sm:px-0 z-10">
           <button
             type="button"
             onClick={onOpenRegister}
-            className="w-full sm:w-auto px-8 sm:px-10 py-4 rounded-full text-base sm:text-lg font-bold text-[#122314] bg-[#68ef3f] hover:bg-[#58dc31] shadow-[0_0_35px_rgba(104,239,63,0.45)] transition-all transform hover:-translate-y-1 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2.5 whitespace-nowrap"
+            className="w-full sm:w-auto px-7 sm:px-10 py-3.5 sm:py-4 rounded-full text-base sm:text-lg font-bold text-[#122314] bg-[#68ef3f] hover:bg-[#58dc31] shadow-[0_0_35px_rgba(104,239,63,0.45)] transition-all transform hover:-translate-y-1 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2.5 whitespace-nowrap min-h-[48px]"
           >
             <span>Bắt Đầu Miễn Phí Ngay</span>
             <ChevronRight size={20} className="stroke-[2.5]" />
@@ -321,17 +321,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <button
             type="button"
             onClick={onStartDemo}
-            className="w-full sm:w-auto px-8 py-4 rounded-full text-sm sm:text-base font-semibold text-[#f2f5eb] bg-[#122314]/90 hover:bg-[#1a331d] border border-[#273f2b] hover:border-[#68ef3f]/60 transition-all cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap shadow-md backdrop-blur-md"
+            className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-full text-sm sm:text-base font-semibold text-[#f2f5eb] bg-[#122314]/90 hover:bg-[#1a331d] border border-[#273f2b] hover:border-[#68ef3f]/60 transition-all cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap shadow-md backdrop-blur-md min-h-[48px]"
           >
             <TreePine size={18} className="text-[#68ef3f]" />
             <span>Khám Phá Cây Mẫu Trải Nghiệm</span>
           </button>
         </div>
 
-        {/* Hero Interactive App Mockup Preview - Dịch xuống thoáng đãng (mt-28 sm:mt-40), không lấn vào nút CTA */}
-        <div className="mt-28 sm:mt-44 w-full max-w-5xl [perspective:1400px] z-10">
-          <div className="rounded-3xl p-2 sm:p-4 bg-gradient-to-b from-[#1a331d]/60 via-[#122314]/50 to-[#0a140b] border border-[#273f2b]/80 shadow-[0_30px_80px_rgba(0,0,0,0.85),_0_0_50px_rgba(104,239,63,0.15)] transform transition-transform duration-500 hover:[transform:none] sm:[transform:rotateX(6deg)_rotateY(-3deg)_rotateZ(-1deg)]">
-            <div className="rounded-2xl overflow-hidden bg-[#0a140b] border border-[#273f2b] relative">
+        {/* Hero Interactive App Mockup Preview - Trọn vẹn trong container kính mờ bo góc cao cấp, không bị cắt lửng lơ */}
+        <div className="mt-14 sm:mt-24 w-full max-w-5xl [perspective:1400px] z-10 px-2 sm:px-4">
+          <div className="rounded-3xl p-2.5 sm:p-4 bg-gradient-to-b from-[#1a331d]/70 via-[#122314]/60 to-[#0a140b]/90 border border-[#273f2b]/90 backdrop-blur-md shadow-[0_25px_70px_rgba(0,0,0,0.85),_0_0_45px_rgba(104,239,63,0.12)] transform transition-transform duration-500 hover:[transform:none] sm:[transform:rotateX(4deg)_rotateY(-2deg)]">
+            <div className="rounded-2xl overflow-hidden bg-[#0a140b] border border-[#273f2b] relative shadow-inner">
               {/* Mockup browser bar */}
               <div className="h-10 bg-[#122314] px-4 flex items-center gap-2 border-b border-[#273f2b]">
                 <div className="w-3 h-3 rounded-full bg-rose-500/80" />
@@ -343,13 +343,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Tree Canvas Preview Card Graphic */}
-              <div className="p-6 sm:p-14 relative flex flex-col items-center justify-center min-h-[340px] sm:min-h-[440px] bg-gradient-to-b from-[#0e1c10] to-[#081209]">
+              <div className="p-5 sm:p-12 relative flex flex-col items-center justify-center min-h-[320px] sm:min-h-[420px] bg-gradient-to-b from-[#0e1c10] to-[#081209]">
                 <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(104, 239, 63, 0.3) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
                 
                 {/* Level 1: Ancestor */}
                 <div className="flex flex-col items-center z-10 w-full max-w-2xl">
-                  <div className="px-6 py-3.5 rounded-2xl bg-[#122314] border-2 border-[#68ef3f]/70 shadow-[0_0_25px_rgba(104,239,63,0.25)] flex items-center gap-3.5">
-                    <div className="w-11 h-11 rounded-full bg-[#68ef3f]/20 text-[#68ef3f] font-bold flex items-center justify-center text-sm border border-[#68ef3f]/40">
+                  <div className="px-5 sm:px-6 py-3 sm:py-3.5 rounded-2xl bg-[#122314] border-2 border-[#68ef3f]/70 shadow-[0_0_25px_rgba(104,239,63,0.25)] flex items-center gap-3 sm:gap-3.5">
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#68ef3f]/20 text-[#68ef3f] font-bold flex items-center justify-center text-sm border border-[#68ef3f]/40">
                       NV
                     </div>
                     <div className="text-left">
