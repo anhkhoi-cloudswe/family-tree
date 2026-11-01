@@ -256,10 +256,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       )}
 
       {/* 2. Hero Section Với Nền Thiên Nhiên, Gradient Tinh Tế & Scroll Fade-Out */}
-      <section className="relative pt-20 sm:pt-36 pb-24 sm:pb-36 px-4 sm:px-6 w-full flex flex-col items-center text-center overflow-visible">
+      <section className="relative pt-16 sm:pt-36 pb-20 sm:pb-36 px-4 sm:px-6 w-full flex flex-col items-center text-center overflow-visible">
         {/* Lớp Ảnh Thiên Nhiên Phong Cảnh Đồi Chè (WebP siêu nhẹ + fallback PNG) - Neo cố định top center để thấy trọn khinh khí cầu và mặt trời */}
         <div
-          className="absolute inset-x-0 -top-24 sm:-top-32 h-[880px] sm:h-[1100px] pointer-events-none -z-20 overflow-hidden w-full"
+          className="absolute inset-x-0 -top-20 sm:-top-32 h-[880px] sm:h-[1100px] pointer-events-none -z-20 overflow-hidden w-full"
           style={{
             opacity: Math.max(0, 1 - scrollY / 460),
             transition: 'opacity 0.25s ease-out',
@@ -278,7 +278,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* Lớp Phủ Gradient Chuẩn: Tăng cường độ phủ tối ở phần giữa để tiêu đề chữ trắng nổi bật tuyệt đối */}
         <div
-          className="absolute inset-x-0 -top-24 sm:-top-32 h-[880px] sm:h-[1100px] pointer-events-none -z-10 bg-gradient-to-b from-black/40 via-black/65 via-45% to-[#070e09] w-full"
+          className="absolute inset-x-0 -top-20 sm:-top-32 h-[880px] sm:h-[1100px] pointer-events-none -z-10 bg-gradient-to-b from-black/40 via-black/65 via-45% to-[#070e09] w-full"
           style={{
             opacity: Math.max(0, 1 - scrollY / 460),
             transition: 'opacity 0.25s ease-out',
@@ -289,14 +289,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[680px] h-[350px] sm:h-[680px] bg-[#68ef3f]/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 
         {/* Slogan nhỏ (Bỏ icon sao trước chữ) */}
-        <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-[#122314]/90 border border-[#273f2b] text-[#68ef3f] text-xs sm:text-sm font-semibold mb-4 sm:mb-6 shadow-lg backdrop-blur-md">
+        <div className="inline-flex items-center px-4 py-1 rounded-full bg-[#122314]/90 border border-[#273f2b] text-[#68ef3f] text-xs sm:text-sm font-semibold mb-3 sm:mb-6 shadow-lg backdrop-blur-md">
           <span>Lưu truyền gốc rễ • Kết nối trăm năm</span>
         </div>
 
-        {/* Tiêu đề chính (H1) - Linh hoạt font-size trên mobile tránh ngắt dòng thô */}
-        <h1 className="text-2xl min-[380px]:text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight max-w-4xl leading-tight sm:leading-tight drop-shadow-md px-2">
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#e2e8d8] to-[#68ef3f] drop-shadow-[0_0_40px_rgba(104,239,63,0.35)]">
-            Gìn Giữ Cội Nguồn • Kết Nối Dòng Tộc
+        {/* Tiêu đề chính (H1) - Hiển thị 2 dòng: "Gìn Giữ Cội Nguồn •" và xuống dòng "Kết Nối Dòng Tộc" trên cả desktop và mobile */}
+        <h1 className="text-3xl min-[400px]:text-4xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight max-w-4xl leading-[1.2] sm:leading-[1.2] drop-shadow-md px-2">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#e2e8d8] to-[#68ef3f] drop-shadow-[0_0_40px_rgba(104,239,63,0.35)] block">
+            Gìn Giữ Cội Nguồn •
+          </span>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d9deca] via-white to-[#68ef3f] drop-shadow-[0_0_40px_rgba(104,239,63,0.35)] block mt-1">
+            Kết Nối Dòng Tộc
           </span>
         </h1>
 
@@ -306,7 +309,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </p>
 
         {/* CTA Buttons (Responsive Full-width trên mobile, hàng ngang trên desktop, padding ngón tay chuẩn UX) */}
-        <div className="mt-7 sm:mt-10 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto max-w-md sm:max-w-none px-4 sm:px-0 z-10">
+        <div className="mt-6 sm:mt-10 flex flex-col sm:flex-row items-center gap-2.5 sm:gap-4 w-full sm:w-auto max-w-md sm:max-w-none px-2 sm:px-0 z-10">
           <button
             type="button"
             onClick={onOpenRegister}
