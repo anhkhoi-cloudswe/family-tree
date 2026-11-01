@@ -22,6 +22,8 @@ import {
   Network,
 } from 'lucide-react';
 import { FamilyTreeLogo } from './FamilyTreeLogo';
+import heroBgImg from '../assets/hero-bg.png';
+import footerBgImg from '../assets/footer-bg.png';
 
 interface LandingPageProps {
   onStartDemo: () => void;
@@ -155,100 +157,103 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </button>
           </div>
         </div>
-
-        {/* Mobile Fullscreen / Drawer Slide-down Overlay */}
-        {mobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 top-16 sm:top-20 z-50 bg-[#070e09] backdrop-blur-2xl border-b border-[#273f2b] shadow-2xl animate-drawer-slide-down px-6 py-6 flex flex-col justify-between overflow-y-auto">
-            <nav className="flex flex-col space-y-3.5 my-2">
-              <button
-                type="button"
-                onClick={() => scrollToSection('features')}
-                className="w-full text-left py-3.5 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
-              >
-                <span>🌿 Tính Năng Cốt Lõi</span>
-                <ChevronRight size={18} className="text-[#68ef3f]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection('pricing')}
-                className="w-full text-left py-3.5 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
-              >
-                <span>💎 Bảng Giá Hội Viên</span>
-                <ChevronRight size={18} className="text-[#68ef3f]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection('contact')}
-                className="w-full text-left py-3.5 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
-              >
-                <span>✉️ Liên Hệ & Hỗ Trợ</span>
-                <ChevronRight size={18} className="text-[#68ef3f]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenLegalDocs('PRIVACY');
-                }}
-                className="w-full text-left py-3.5 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
-              >
-                <span>🛡️ Chính Sách Bảo Mật (NĐ 13)</span>
-                <ChevronRight size={18} className="text-[#68ef3f]" />
-              </button>
-            </nav>
-
-            <div className="pt-4 pb-8 border-t border-[#273f2b] flex flex-col space-y-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenLogin();
-                }}
-                className="w-full py-3.5 rounded-full text-sm font-semibold text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/60 transition-all text-center"
-              >
-                Đăng Nhập
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenRegister();
-                }}
-                className="w-full py-3.5 rounded-full text-sm font-bold text-[#122314] bg-[#68ef3f] hover:bg-[#58dc31] shadow-[0_0_25px_rgba(104,239,63,0.35)] transition-all flex items-center justify-center gap-2"
-              >
-                <span>Khởi Tạo Cây Ngay</span>
-                <ArrowRight size={16} />
-              </button>
-            </div>
-          </div>
-        )}
       </header>
+
+      {/* Mobile Fullscreen Drawer Overlay - Render ngang hàng ngoài header với fixed inset-0 */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-50 bg-[#070e09] flex flex-col justify-between px-6 pt-20 pb-8 overflow-y-auto animate-drawer-slide-down"
+          style={{ minHeight: '100vh', height: '100vh' }}
+        >
+          <div className="flex flex-col space-y-4 my-auto">
+            <button
+              type="button"
+              onClick={() => scrollToSection('features')}
+              className="w-full text-left py-4 px-5 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between shadow-sm"
+            >
+              <span>🌿 Tính Năng Cốt Lõi</span>
+              <ChevronRight size={18} className="text-[#68ef3f]" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('pricing')}
+              className="w-full text-left py-4 px-5 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between shadow-sm"
+            >
+              <span>💎 Bảng Giá Hội Viên</span>
+              <ChevronRight size={18} className="text-[#68ef3f]" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('contact')}
+              className="w-full text-left py-4 px-5 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between shadow-sm"
+            >
+              <span>✉️ Liên Hệ & Hỗ Trợ</span>
+              <ChevronRight size={18} className="text-[#68ef3f]" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenLegalDocs('PRIVACY');
+              }}
+              className="w-full text-left py-4 px-5 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between shadow-sm"
+            >
+              <span>🛡️ Chính Sách Bảo Mật (NĐ 13)</span>
+              <ChevronRight size={18} className="text-[#68ef3f]" />
+            </button>
+          </div>
+
+          <div className="pt-6 border-t border-[#273f2b] flex flex-col space-y-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenLogin();
+              }}
+              className="w-full py-3.5 rounded-full text-sm font-semibold text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/60 transition-all text-center"
+            >
+              Đăng Nhập
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenRegister();
+              }}
+              className="w-full py-3.5 rounded-full text-sm font-bold text-[#122314] bg-[#68ef3f] hover:bg-[#58dc31] shadow-[0_0_25px_rgba(104,239,63,0.35)] transition-all flex items-center justify-center gap-2"
+            >
+              <span>Khởi Tạo Cây Ngay</span>
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2. Hero Section Với Nền Thiên Nhiên, Gradient Tinh Tế & Scroll Fade-Out */}
       <section className="relative pt-24 sm:pt-36 pb-20 sm:pb-32 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center text-center overflow-visible">
         {/* Lớp Ảnh Thiên Nhiên Phong Cảnh Đồi Chè hero-bg.png (Kéo dài từ đỉnh Hero Section xuống hết cụm nút CTA chính) */}
         <div
-          className="absolute inset-x-0 -top-24 sm:-top-32 h-[680px] sm:h-[780px] pointer-events-none -z-20 overflow-hidden"
+          className="absolute inset-x-0 -top-24 sm:-top-32 h-[720px] sm:h-[820px] pointer-events-none -z-20 overflow-hidden"
           style={{
-            opacity: Math.max(0, 1 - scrollY / 320),
+            opacity: Math.max(0, 1 - scrollY / 350),
             transition: 'opacity 0.25s ease-out',
           }}
         >
           <img
-            src="/images/hero-bg.png"
+            src={heroBgImg}
             alt="Phong cảnh thiên nhiên cội nguồn"
-            className="w-full h-full object-cover object-center brightness-110 contrast-105"
+            className="w-full h-full object-cover object-center brightness-125 contrast-110"
             style={{
               transform: `translateY(${heroParallaxOffset}px) scale(1.02)`,
             }}
           />
         </div>
 
-        {/* Lớp Phủ Gradient Chuẩn: bg-gradient-to-b from-black/60 via-black/30 to-[#070e09]/95 để chữ trắng hiển thị nổi bật sắc nét */}
+        {/* Lớp Phủ Gradient Chuẩn: bg-gradient-to-b from-black/50 via-black/20 to-[#070e09]/95 để ảnh nền vừa rõ nét vừa tôn chữ */}
         <div
-          className="absolute inset-x-0 -top-24 sm:-top-32 h-[680px] sm:h-[780px] pointer-events-none -z-10 bg-gradient-to-b from-black/60 via-black/30 to-[#070e09]"
+          className="absolute inset-x-0 -top-24 sm:-top-32 h-[720px] sm:h-[820px] pointer-events-none -z-10 bg-gradient-to-b from-black/50 via-black/20 to-[#070e09]"
           style={{
-            opacity: Math.max(0, 1 - scrollY / 320),
+            opacity: Math.max(0, 1 - scrollY / 350),
             transition: 'opacity 0.25s ease-out',
           }}
         />
@@ -383,19 +388,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                   </div>
 
-                  {/* CÂY GIA PHẢ - MOBILE VIEW: Kẻ 1 đường trục dọc xuyên suốt và rẽ nhánh nối cả 3 người con */}
-                  <div className="sm:hidden flex flex-col items-center w-full mt-1">
-                    {/* Trục dọc nối từ Cụ xuống */}
-                    <div className="w-0.5 h-6 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.6)]" />
+                  {/* CÂY GIA PHẢ - MOBILE VIEW: Kẻ từ Cụ xuống thanh ngang tỏa sang và nối 3 thẻ con thẳng hàng dọc */}
+                  <div className="sm:hidden flex flex-col items-center w-full mt-2">
+                    {/* Đường nối dọc từ Cụ xuống giữa */}
+                    <div className="w-1 h-5 bg-[#68ef3f] rounded-full shadow-[0_0_10px_rgba(104,239,63,0.8)]" />
 
-                    <div className="relative flex flex-col gap-3 w-full max-w-[280px] pl-6">
-                      {/* Trục xương sống dọc bên trái */}
-                      <div className="absolute left-2.5 top-0 bottom-6 w-0.5 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.6)]" />
+                    <div className="relative flex flex-col gap-3 w-full max-w-[280px]">
+                      {/* Đường trục xương sống bên trái nối từ thanh trên xuống đến con thứ 3 */}
+                      <div className="absolute left-[-10px] top-[-10px] bottom-6 w-1 bg-[#68ef3f] rounded-full shadow-[0_0_10px_rgba(104,239,63,0.8)]" />
+                      
+                      {/* Cầu nối ngang từ đường giữa của Cụ sang trục xương sống trái */}
+                      <div className="absolute left-[-10px] right-1/2 top-[-10px] h-1 bg-[#68ef3f] rounded-full shadow-[0_0_10px_rgba(104,239,63,0.8)]" />
 
-                      {/* Con 1 */}
+                      {/* Con 1: Bác ruột */}
                       <div className="relative">
-                        <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-0.5 bg-[#68ef3f]" />
-                        <div className="px-4 py-2.5 rounded-xl bg-[#122314] border border-[#273f2b] flex items-center gap-2.5 shadow-sm">
+                        <div className="absolute -left-[10px] top-1/2 -translate-y-1/2 w-[10px] h-1 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.7)]" />
+                        <div className="px-3.5 py-2.5 rounded-xl bg-[#122314] border border-[#273f2b] flex items-center gap-2.5 shadow-sm">
                           <div className="w-8 h-8 rounded-full bg-[#1b341f] text-[#d9deca] font-semibold flex items-center justify-center text-xs border border-[#273f2b]">
                             NA
                           </div>
@@ -406,10 +414,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         </div>
                       </div>
 
-                      {/* Con 2 */}
+                      {/* Con 2: Bố ruột */}
                       <div className="relative">
-                        <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-0.5 bg-[#68ef3f]" />
-                        <div className="px-4 py-2.5 rounded-xl bg-[#122314] border-2 border-[#68ef3f]/70 shadow-[0_0_15px_rgba(104,239,63,0.2)] flex items-center gap-2.5">
+                        <div className="absolute -left-[10px] top-1/2 -translate-y-1/2 w-[10px] h-1 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.7)]" />
+                        <div className="px-3.5 py-2.5 rounded-xl bg-[#122314] border-2 border-[#68ef3f]/70 shadow-[0_0_15px_rgba(104,239,63,0.2)] flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-full bg-[#68ef3f]/25 text-[#68ef3f] font-semibold flex items-center justify-center text-xs border border-[#68ef3f]/40">
                             NB
                           </div>
@@ -420,10 +428,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         </div>
                       </div>
 
-                      {/* Con 3 */}
+                      {/* Con 3: Cô ruột */}
                       <div className="relative">
-                        <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-0.5 bg-[#68ef3f]" />
-                        <div className="px-4 py-2.5 rounded-xl bg-[#122314] border border-[#273f2b] flex items-center gap-2.5 shadow-sm">
+                        <div className="absolute -left-[10px] top-1/2 -translate-y-1/2 w-[10px] h-1 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.7)]" />
+                        <div className="px-3.5 py-2.5 rounded-xl bg-[#122314] border border-[#273f2b] flex items-center gap-2.5 shadow-sm">
                           <div className="w-8 h-8 rounded-full bg-[#1b341f] text-[#d9deca] font-semibold flex items-center justify-center text-xs border border-[#273f2b]">
                             NC
                           </div>
@@ -762,35 +770,39 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* 6. Footer With Legal Documents Links & Nature Footer Background */}
-      <footer className="mt-auto relative border-t border-[#273f2b] py-14 px-4 sm:px-6 text-xs text-slate-400 overflow-hidden">
+      <footer className="mt-auto relative border-t border-[#273f2b] py-16 px-4 sm:px-6 text-xs text-slate-400 overflow-hidden">
         {/* Footer Background Image footer-bg.png */}
         <div className="absolute inset-0 pointer-events-none -z-20">
           <img
-            src="/images/footer-bg.png"
+            src={footerBgImg}
             alt="Cội nguồn dòng tộc footer"
-            className="w-full h-full object-cover object-bottom opacity-40 brightness-75 contrast-110"
+            className="w-full h-full object-cover object-bottom opacity-55 brightness-90 contrast-110"
           />
         </div>
         {/* Lớp phủ gradient tối bảo đảm độ tương phản chữ */}
-        <div className="absolute inset-0 pointer-events-none -z-10 bg-gradient-to-t from-[#050b06] via-[#070e09]/90 to-[#070e09]/98" />
+        <div className="absolute inset-0 pointer-events-none -z-10 bg-gradient-to-t from-[#050b06] via-[#070e09]/85 to-[#070e09]/95" />
 
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-3">
-            <FamilyTreeLogo size={28} />
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+          {/* Logo & Slogan */}
+          <div className="flex items-center gap-3.5 text-center md:text-left">
+            <FamilyTreeLogo size={36} />
             <div>
-              <div className="font-bold text-white text-sm">Famlykin</div>
-              <p className="text-[11px] text-slate-400">
-                Nền tảng số hóa gia phả & bảo tồn văn hóa dòng tộc Việt Nam • Email: lienhe@famlykin.io.vn
+              <div className="font-bold text-white text-base tracking-wide">Famlykin</div>
+              <p className="text-xs text-[#b7bda5] mt-0.5 max-w-sm">
+                Nền tảng số hóa gia phả & bảo tồn văn hóa dòng tộc Việt Nam
               </p>
+              <div className="text-[11px] text-[#68ef3f] mt-1 font-mono">
+                Email: lienhe@famlykin.io.vn
+              </div>
             </div>
           </div>
 
           {/* Legal Documents Required Links */}
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-medium">
             <button
               type="button"
               onClick={() => onOpenLegalDocs('PRIVACY')}
-              className="hover:text-[#68ef3f] transition-colors cursor-pointer text-slate-300"
+              className="hover:text-[#68ef3f] transition-colors cursor-pointer text-slate-200 hover:underline underline-offset-4"
             >
               Chính Sách Bảo Mật (NĐ 13)
             </button>
@@ -798,7 +810,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onOpenLegalDocs('TERMS')}
-              className="hover:text-[#68ef3f] transition-colors cursor-pointer text-slate-300"
+              className="hover:text-[#68ef3f] transition-colors cursor-pointer text-slate-200 hover:underline underline-offset-4"
             >
               Điều Khoản Dịch Vụ
             </button>
@@ -806,14 +818,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onOpenLegalDocs('COOKIE')}
-              className="hover:text-[#68ef3f] transition-colors cursor-pointer text-slate-300"
+              className="hover:text-[#68ef3f] transition-colors cursor-pointer text-slate-200 hover:underline underline-offset-4"
             >
               Chính Sách Cookie
             </button>
           </div>
 
-          <div className="text-[11px] text-slate-500 text-center md:text-right">
-            © {new Date().getFullYear()} Famlykin. Tuân thủ Nghị định 13/2023/NĐ-CP & GDPR.
+          {/* Copyright */}
+          <div className="text-[11px] text-slate-400 text-center md:text-right">
+            <div>© {new Date().getFullYear()} Famlykin. All rights reserved.</div>
+            <div className="text-[#7e8371] mt-0.5">Tuân thủ Nghị định 13/2023/NĐ-CP & GDPR.</div>
           </div>
         </div>
       </footer>
