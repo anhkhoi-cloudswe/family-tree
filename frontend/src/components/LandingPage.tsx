@@ -153,28 +153,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* Mobile Fullscreen / Drawer Slide-down Overlay */}
         {mobileMenuOpen && (
-          <div className="md:hidden fixed inset-x-0 top-16 sm:top-20 bg-[#0b160f]/98 backdrop-blur-2xl border-b border-[#273f2b] shadow-2xl animate-drawer-slide-down px-5 py-6 flex flex-col gap-5 min-h-[calc(100vh-4rem)]">
-            <nav className="flex flex-col gap-2">
+          <div className="md:hidden fixed inset-x-0 top-16 sm:top-20 bg-[#0b160f]/98 backdrop-blur-2xl border-b border-[#273f2b] shadow-2xl animate-drawer-slide-down px-6 py-6 flex flex-col justify-between overflow-y-auto" style={{ height: 'calc(100vh - 4rem)' }}>
+            <nav className="flex flex-col space-y-3.5 my-2">
               <button
                 type="button"
                 onClick={() => scrollToSection('features')}
-                className="w-full text-left py-3 px-4 rounded-xl text-base font-medium text-slate-200 hover:text-white hover:bg-[#122314] border border-transparent hover:border-[#273f2b] transition-all"
+                className="w-full text-left py-3 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314]/80 border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
               >
-                🌿 Tính Năng Cốt Lõi
+                <span>🌿 Tính Năng Cốt Lõi</span>
+                <ChevronRight size={18} className="text-[#68ef3f]" />
               </button>
               <button
                 type="button"
                 onClick={() => scrollToSection('pricing')}
-                className="w-full text-left py-3 px-4 rounded-xl text-base font-medium text-slate-200 hover:text-white hover:bg-[#122314] border border-transparent hover:border-[#273f2b] transition-all"
+                className="w-full text-left py-3 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314]/80 border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
               >
-                💎 Bảng Giá Hội Viên
+                <span>💎 Bảng Giá Hội Viên</span>
+                <ChevronRight size={18} className="text-[#68ef3f]" />
               </button>
               <button
                 type="button"
                 onClick={() => scrollToSection('contact')}
-                className="w-full text-left py-3 px-4 rounded-xl text-base font-medium text-slate-200 hover:text-white hover:bg-[#122314] border border-transparent hover:border-[#273f2b] transition-all"
+                className="w-full text-left py-3 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314]/80 border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
               >
-                ✉️ Liên Hệ & Hỗ Trợ
+                <span>✉️ Liên Hệ & Hỗ Trợ</span>
+                <ChevronRight size={18} className="text-[#68ef3f]" />
               </button>
               <button
                 type="button"
@@ -182,13 +185,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   setMobileMenuOpen(false);
                   onOpenLegalDocs('PRIVACY');
                 }}
-                className="w-full text-left py-3 px-4 rounded-xl text-base font-medium text-slate-300 hover:text-white hover:bg-[#122314] border border-transparent hover:border-[#273f2b] transition-all"
+                className="w-full text-left py-3 px-4 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314]/80 border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between"
               >
-                🛡️ Chính Sách Bảo Mật (NĐ 13)
+                <span>🛡️ Chính Sách Bảo Mật (NĐ 13)</span>
+                <ChevronRight size={18} className="text-[#68ef3f]" />
               </button>
             </nav>
 
-            <div className="pt-4 mt-auto border-t border-[#273f2b] flex flex-col gap-3">
+            <div className="pt-4 pb-6 border-t border-[#273f2b] flex flex-col space-y-3">
               <button
                 type="button"
                 onClick={() => {
@@ -216,30 +220,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </header>
 
       {/* 2. Hero Section Với Nền Thiên Nhiên, Gradient Tinh Tế & Scroll Fade-Out */}
-      <section className="relative pt-28 sm:pt-36 pb-20 sm:pb-32 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center text-center overflow-visible">
-        {/* Lớp Ảnh Thiên Nhiên Phong Cảnh Nền bg#1.png (Kéo dài từ đỉnh trang đến cụm nút CTA) */}
+      <section className="relative pt-24 sm:pt-36 pb-16 sm:pb-28 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center text-center overflow-visible">
+        {/* Lớp Ảnh Thiên Nhiên Phong Cảnh Đồi Chè hero-bg.png (Kéo dài từ đỉnh Hero Section xuống hết cụm nút CTA chính) */}
         <div
-          className="absolute inset-x-0 -top-24 sm:-top-32 h-[820px] sm:h-[920px] pointer-events-none -z-20 overflow-hidden transition-opacity duration-300 ease-out"
+          className="absolute inset-x-0 -top-20 sm:-top-28 h-[580px] sm:h-[680px] pointer-events-none -z-20 overflow-hidden"
           style={{
-            opacity: heroBgOpacity,
+            opacity: Math.max(0.15, 1 - scrollY / 380),
           }}
         >
-          <div
-            className="w-full h-full bg-cover bg-top sm:bg-center transition-transform duration-100 ease-out"
+          <img
+            src="/images/hero-bg.png"
+            alt="Phong cảnh thiên nhiên cội nguồn"
+            className="w-full h-full object-cover object-top sm:object-center brightness-105 contrast-105"
             style={{
-              backgroundImage: "url('/images/bg%231.png')",
-              transform: `translateY(${heroParallaxOffset}px) scale(1.04)`,
+              transform: `translateY(${heroParallaxOffset}px) scale(1.03)`,
+              transition: 'transform 0.1s ease-out',
             }}
           />
         </div>
 
-        {/* Lớp Phủ Gradient Tinh Tế Đảm Bảo Chữ Sắc Nét & Chuyển Nền Mượt Mà */}
+        {/* Lớp Phủ Gradient Chuẩn: bg-gradient-to-b from-black/60 via-black/30 to-[#070e09]/95 để chữ trắng hiển thị nổi bật sắc nét */}
         <div
-          className="absolute inset-x-0 -top-24 sm:-top-32 h-[820px] sm:h-[920px] pointer-events-none -z-10 bg-gradient-to-b from-black/60 via-black/30 to-[#070e09]/95"
+          className="absolute inset-x-0 -top-20 sm:-top-28 h-[580px] sm:h-[680px] pointer-events-none -z-10 bg-gradient-to-b from-black/60 via-black/30 to-[#070e09]/95"
         />
 
         {/* Neon Botanical Glow Atmosphere Orbs */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[680px] h-[350px] sm:h-[680px] bg-[#68ef3f]/12 rounded-full blur-[140px] pointer-events-none -z-10" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[680px] h-[350px] sm:h-[680px] bg-[#68ef3f]/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 
         {/* Pill Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#122314]/90 border border-[#273f2b] text-[#68ef3f] text-xs sm:text-sm font-semibold mb-6 shadow-lg backdrop-blur-md">
@@ -376,7 +382,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 3. Core Features Showcase - Đặc Quyền Bản Sắc Dòng Họ (SaaS Card Grid System) */}
+      {/* 3. Core Features Showcase - Đặc Quyền Bản Sắc Dòng Họ */}
       <section id="features" className="py-20 sm:py-28 bg-[#0a140b] border-y border-[#273f2b] px-4 sm:px-6 scroll-mt-20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
@@ -392,93 +398,93 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </p>
           </div>
 
-          {/* 3 Columns Desktop / 1 Column Mobile Grid with Glassmorphism & Lift-up Effect */}
+          {/* 3 Cột Desktop / 1 Cột Mobile với backdrop-blur-md bg-[#122314]/65 border border-emerald-950 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
             {/* Feature 1: Sơ Đồ Phả Hệ */}
-            <div className="glass-card-tomorro p-7 sm:p-8 rounded-3xl relative flex flex-col justify-between group">
+            <div className="p-7 sm:p-8 rounded-3xl backdrop-blur-md bg-[#122314]/65 border border-emerald-950 hover:border-[#68ef3f]/40 hover:bg-[#162d19]/80 transition-all duration-300 shadow-xl flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#122314] to-[#1e3c23] border border-emerald-900/60 flex items-center justify-center mb-6 shadow-inner text-[#68ef3f] group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-[#1a3820] border border-emerald-900/60 flex items-center justify-center mb-5 text-[#68ef3f] group-hover:scale-105 transition-transform shadow-inner">
                   <TreePine size={24} className="stroke-[2.2]" />
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2.5">
                   Sơ Đồ Phả Hệ Động Đa Thế Hệ
                 </h3>
-                <p className="text-xs sm:text-sm text-[#b7bda5] leading-relaxed line-clamp-2">
+                <p className="text-xs sm:text-sm text-[#b7bda5] leading-relaxed">
                   Tự động sắp xếp nhánh Nội - Ngoại mượt mà, chuyển đổi góc nhìn theo từng thành viên chỉ với một chạm.
                 </p>
               </div>
             </div>
 
             {/* Feature 2: Lịch Giỗ Âm Dương */}
-            <div className="glass-card-tomorro p-7 sm:p-8 rounded-3xl relative flex flex-col justify-between group">
+            <div className="p-7 sm:p-8 rounded-3xl backdrop-blur-md bg-[#122314]/65 border border-emerald-950 hover:border-[#68ef3f]/40 hover:bg-[#162d19]/80 transition-all duration-300 shadow-xl flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#122314] to-[#3a1a1a] border border-rose-900/60 flex items-center justify-center mb-6 shadow-inner text-rose-400 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-[#1a3820] border border-emerald-900/60 flex items-center justify-center mb-5 text-rose-400 group-hover:scale-105 transition-transform shadow-inner">
                   <Flame size={24} className="stroke-[2.2]" />
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2.5">
                   Lịch Giỗ Âm - Dương Tự Động
                 </h3>
-                <p className="text-xs sm:text-sm text-[#b7bda5] leading-relaxed line-clamp-2">
+                <p className="text-xs sm:text-sm text-[#b7bda5] leading-relaxed">
                   Tự động quy đổi ngày giỗ Âm lịch tổ tiên sang Dương lịch từng năm, đếm ngược và nhắc nhở con cháu.
                 </p>
               </div>
             </div>
 
             {/* Feature 3: Bàn Tính Xưng Hô */}
-            <div className="glass-card-tomorro p-7 sm:p-8 rounded-3xl relative flex flex-col justify-between group">
+            <div className="p-7 sm:p-8 rounded-3xl backdrop-blur-md bg-[#122314]/65 border border-emerald-950 hover:border-[#68ef3f]/40 hover:bg-[#162d19]/80 transition-all duration-300 shadow-xl flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#122314] to-[#3a3014] border border-amber-900/60 flex items-center justify-center mb-6 shadow-inner text-amber-400 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-[#1a3820] border border-emerald-900/60 flex items-center justify-center mb-5 text-amber-400 group-hover:scale-105 transition-transform shadow-inner">
                   <Calculator size={24} className="stroke-[2.2]" />
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2.5">
                   Bàn Tính Vai Vế Xưng Hô
                 </h3>
-                <p className="text-xs sm:text-sm text-[#b7bda5] leading-relaxed line-clamp-2">
+                <p className="text-xs sm:text-sm text-[#b7bda5] leading-relaxed">
                   Chọn 2 người bất kỳ trong gia tộc để tra cứu xưng hô chuẩn thuần phong mỹ tục kèm diễn giải rõ ràng.
                 </p>
               </div>
             </div>
 
             {/* Feature 4: Trắc Nghiệm Phả Hệ */}
-            <div className="glass-card-tomorro p-7 sm:p-8 rounded-3xl relative flex flex-col justify-between group">
+            <div className="p-7 sm:p-8 rounded-3xl backdrop-blur-md bg-[#122314]/65 border border-emerald-950 hover:border-[#68ef3f]/40 hover:bg-[#162d19]/80 transition-all duration-300 shadow-xl flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#122314] to-[#1e233d] border border-indigo-900/60 flex items-center justify-center mb-6 shadow-inner text-indigo-400 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-[#1a3820] border border-emerald-900/60 flex items-center justify-center mb-5 text-indigo-400 group-hover:scale-105 transition-transform shadow-inner">
                   <Award size={24} className="stroke-[2.2]" />
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2.5">
                   Trắc Nghiệm Phả Hệ (Flashcard)
                 </h3>
-                <p className="text-xs sm:text-sm text-[#b7bda5] leading-relaxed line-clamp-2">
+                <p className="text-xs sm:text-sm text-[#b7bda5] leading-relaxed">
                   Đố vui tương tác giúp thế hệ trẻ dễ dàng ghi nhớ mặt người thân và cội nguồn tổ tiên ngày sum vầy.
                 </p>
               </div>
             </div>
 
             {/* Feature 5: Xuất File Excel / Ảnh */}
-            <div className="glass-card-tomorro p-7 sm:p-8 rounded-3xl relative flex flex-col justify-between group">
+            <div className="p-7 sm:p-8 rounded-3xl backdrop-blur-md bg-[#122314]/65 border border-emerald-950 hover:border-[#68ef3f]/40 hover:bg-[#162d19]/80 transition-all duration-300 shadow-xl flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#122314] to-[#153430] border border-teal-900/60 flex items-center justify-center mb-6 shadow-inner text-teal-300 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-[#1a3820] border border-emerald-900/60 flex items-center justify-center mb-5 text-teal-300 group-hover:scale-105 transition-transform shadow-inner">
                   <Download size={24} className="stroke-[2.2]" />
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2.5">
                   Xuất File Excel & Ảnh Siêu Nét
                 </h3>
-                <p className="text-xs sm:text-sm text-[#b7bda5] leading-relaxed line-clamp-2">
+                <p className="text-xs sm:text-sm text-[#b7bda5] leading-relaxed">
                   Tải ảnh sơ đồ độ phân giải cực cao để in ấn tranh thờ họ, hoặc sao lưu toàn bộ cây ra bảng tính Excel.
                 </p>
               </div>
             </div>
 
             {/* Feature 6: Cộng Tác Thời Gian Thực */}
-            <div className="glass-card-tomorro p-7 sm:p-8 rounded-3xl relative flex flex-col justify-between group">
+            <div className="p-7 sm:p-8 rounded-3xl backdrop-blur-md bg-[#122314]/65 border border-emerald-950 hover:border-[#68ef3f]/40 hover:bg-[#162d19]/80 transition-all duration-300 shadow-xl flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#122314] to-[#1c3a20] border border-emerald-900/60 flex items-center justify-center mb-6 shadow-inner text-[#68ef3f] group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-[#1a3820] border border-emerald-900/60 flex items-center justify-center mb-5 text-[#68ef3f] group-hover:scale-105 transition-transform shadow-inner">
                   <Users size={24} className="stroke-[2.2]" />
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2.5">
                   Cộng Tác Dòng Họ Thời Gian Thực
                 </h3>
-                <p className="text-xs sm:text-sm text-[#b7bda5] leading-relaxed line-clamp-2">
+                <p className="text-xs sm:text-sm text-[#b7bda5] leading-relaxed">
                   Tạo link mời con cháu cùng cập nhật thông tin, phân quyền minh bạch giữa Trưởng tộc và người đóng góp.
                 </p>
               </div>
@@ -540,7 +546,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
             <div className="flex items-center gap-2.5 text-xs text-slate-200">
               <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-              <span>Cam kết hoàn tiền trong 7 ngày</span>
+              <span>Lưu trữ phả hệ trọn đời và bảo mật</span>
             </div>
           </div>
         </div>
@@ -632,7 +638,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </li>
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 size={16} className="text-[#68ef3f] shrink-0" />
-                    <span>Cam kết hoàn tiền trong 7 ngày nếu có lỗi</span>
+                    <span>Phân quyền chi tiết cho ban quản tộc</span>
                   </li>
                 </ul>
               </div>
@@ -663,10 +669,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <a
-              href="mailto:contact@famlykin.io.vn"
+              href="mailto:lienhe@famlykin.io.vn"
               className="px-6 py-3.5 rounded-full text-xs sm:text-sm font-semibold bg-[#122314] text-white hover:text-[#68ef3f] border border-[#273f2b] hover:border-[#68ef3f]/60 transition-all flex items-center gap-2"
             >
-              <span>Gửi Email: contact@famlykin.io.vn</span>
+              <span>Gửi Email: lienhe@famlykin.io.vn</span>
             </a>
             <button
               type="button"
@@ -679,7 +685,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 6. Footer With 4 Legal Documents Links */}
+      {/* 6. Footer With Legal Documents Links */}
       <footer className="mt-auto border-t border-slate-800 bg-slate-950 py-12 px-4 sm:px-6 text-xs text-slate-400">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
@@ -687,12 +693,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div>
               <div className="font-bold text-white text-sm">Famlykin</div>
               <p className="text-[11px] text-slate-500">
-                Nền tảng số hóa gia phả & bảo tồn văn hóa dòng tộc Việt Nam
+                Nền tảng số hóa gia phả & bảo tồn văn hóa dòng tộc Việt Nam • Email: lienhe@famlykin.io.vn
               </p>
             </div>
           </div>
 
-          {/* 4 Legal Documents Required Links */}
+          {/* Legal Documents Required Links */}
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs">
             <button
               type="button"
@@ -716,14 +722,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               className="hover:text-emerald-400 transition-colors cursor-pointer"
             >
               Chính Sách Cookie
-            </button>
-            <span className="text-slate-700">•</span>
-            <button
-              type="button"
-              onClick={() => onOpenLegalDocs('REFUND')}
-              className="hover:text-emerald-400 transition-colors cursor-pointer"
-            >
-              Chính Sách Hoàn Tiền
             </button>
           </div>
 
