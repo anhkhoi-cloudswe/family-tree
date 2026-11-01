@@ -27,6 +27,9 @@ import { BranchesHubView } from './components/BranchesHubView';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { RenameTreeModal } from './components/RenameTreeModal';
 import { CreateTreeModal } from './components/CreateTreeModal';
+import { LandingPage } from './components/LandingPage';
+import { LegalDocsModal, LegalDocTab } from './components/LegalDocsModal';
+import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { FamilyTreeLogo } from './components/FamilyTreeLogo';
 import { ToastProvider, useToast } from './components/Toast';
 import { User, FamilyTree, Person, TreeRole, TreeInvitation, SubscriptionStatus } from './types';
@@ -115,6 +118,17 @@ const AppContent: React.FC = () => {
   const [showUpdatePhoneModal, setShowUpdatePhoneModal] = useState<boolean>(false);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [pendingInvitations, setPendingInvitations] = useState<TreeInvitation[]>([]);
+
+  // Landing Page (/guest) and Legal Docs states
+  const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase();
+      return p === '/guest' || p === '/landing';
+    }
+    return false;
+  });
+  const [legalModalOpen, setLegalModalOpen] = useState<boolean>(false);
+  const [legalModalTab, setLegalModalTab] = useState<LegalDocTab>('PRIVACY');
 
   // Dedicated Admin Dashboard states
   const [adminActiveTab, setAdminActiveTab] = useState<AdminTab>('USERS');
@@ -285,7 +299,21 @@ const AppContent: React.FC = () => {
         window.history.replaceState(null, '', window.location.pathname);
       }
 
-      // Kiểm tra nếu URL hiện tại chứa verify_token hoặc reset_token từ Cloudflare email
+      // Kiểm tra các đường dẫn pháp lý chuyên biệt (/privacy, /terms, /cookies, /refund)
+      const currentPath = window.location.pathname.toLowerCase();
+      if (currentPath === '/privacy') {
+        setLegalModalTab('PRIVACY');
+        setLegalModalOpen(true);
+      } else if (currentPath === '/terms') {
+        setLegalModalTab('TERMS');
+        setLegalModalOpen(true);
+      } else if (currentPath === '/cookies' || currentPath === '/cookie-policy') {
+        setLegalModalTab('COOKIE');
+        setLegalModalOpen(true);
+      } else if (currentPath === '/refund' || currentPath === '/refund-policy') {
+        setLegalModalTab('REFUND');
+        setLegalModalOpen(true);
+      }
       const verifyToken = searchParams.get('verify_token') || hashParams.get('verify_token');
       const resetToken = searchParams.get('reset_token') || hashParams.get('reset_token');
 
@@ -447,7 +475,14 @@ const AppContent: React.FC = () => {
       const token = getStoredToken();
       if (!token) {
         setIsLoading(false);
-        setShowAuthModal(true);
+        // Nếu truy cập /guest hoặc chưa đăng nhập, tự động bật giao diện đón khách Landing Page
+        const currentPath = window.location.pathname.toLowerCase();
+        if (currentPath === '/guest' || currentPath === '/landing') {
+          setIsGuestMode(true);
+          setShowAuthModal(false);
+        } else {
+          setShowAuthModal(true);
+        }
         return;
       }
 
@@ -889,6 +924,54 @@ const AppContent: React.FC = () => {
             <div className="loading-progress-indeterminate" />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Chế độ đón khách Landing Page (/guest)
+  if (isGuestMode || (!user && !isLoading && !showAuthModal)) {
+    return (
+      <div className="landing-guest-wrapper">
+        <LandingPage
+          onStartDemo={() => {
+            // Xem cây demo hoặc mở Auth
+            setShowAuthModal(true);
+          }}
+          onOpenLogin={() => {
+            setShowAuthModal(true);
+          }}
+          onOpenRegister={() => {
+            setShowAuthModal(true);
+          }}
+          onOpenLegalDocs={(tab) => {
+            setLegalModalTab(tab);
+            setLegalModalOpen(true);
+          }}
+        />
+
+        {/* Legal Docs Modal */}
+        <LegalDocsModal
+          isOpen={legalModalOpen}
+          onClose={() => setLegalModalOpen(false)}
+          initialTab={legalModalTab}
+        />
+
+        {/* Cookie Consent Banner */}
+        <CookieConsentBanner
+          onOpenLegalDocs={(tab) => {
+            setLegalModalTab(tab);
+            setLegalModalOpen(true);
+          }}
+        />
+
+        {/* Auth Modal */}
+        {showAuthModal && (
+          <AuthModal
+            onSuccess={handleAuthSuccess}
+            resetToken={resetPasswordToken}
+            onClearResetToken={() => setResetPasswordToken(null)}
+          />
+        )}
       </div>
     );
   }
@@ -1574,6 +1657,21 @@ const AppContent: React.FC = () => {
         onAccountClosed={() => {
           setShowProfileModal(false);
           handleLogout();
+        }}
+      />
+
+      {/* Legal Docs Modal */}
+      <LegalDocsModal
+        isOpen={legalModalOpen}
+        onClose={() => setLegalModalOpen(false)}
+        initialTab={legalModalTab}
+      />
+
+      {/* Cookie Consent Banner */}
+      <CookieConsentBanner
+        onOpenLegalDocs={(tab) => {
+          setLegalModalTab(tab);
+          setLegalModalOpen(true);
         }}
       />
 

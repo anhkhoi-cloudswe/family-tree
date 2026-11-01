@@ -31,7 +31,7 @@ import {
 import { User } from '../types';
 import { useToast } from './Toast';
 import { FamilyTreeLogo } from './FamilyTreeLogo';
-import { TermsPolicyModal } from './TermsPolicyModal';
+import { LegalDocsModal, LegalDocTab } from './LegalDocsModal';
 
 interface AuthModalProps {
   onSuccess: (user: User, defaultTreeId?: string) => void;
@@ -65,7 +65,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const [termsInitialTab, setTermsInitialTab] = useState<'TERMS' | 'PRIVACY'>('TERMS');
+  const [termsInitialTab, setTermsInitialTab] = useState<LegalDocTab>('TERMS');
+  const [consentDecree13, setConsentDecree13] = useState<boolean>(true);
 
   // Nếu URL có reset_token thì tự động mở màn hình đặt lại mật khẩu
   useEffect(() => {
@@ -176,6 +177,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     if (password.length < 6) {
       setError('Mật khẩu phải có độ dài từ 6 ký tự trở lên.');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!consentDecree13) {
+      setError('Vui lòng đồng ý với mục đích thu thập và Chính sách bảo mật dữ liệu cá nhân theo Nghị định 13.');
       setIsLoading(false);
       return;
     }
@@ -707,6 +714,49 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     >
                       Quên mật khẩu?
                     </button>
+                  </div>
+                )}
+
+                {/* Checkbox Tuân thủ Nghị định 13/2023/NĐ-CP khi Đăng ký mới */}
+                {authMode === 'REGISTER' && (
+                  <div
+                    style={{
+                      marginTop: '0.75rem',
+                      padding: '0.65rem 0.75rem',
+                      background: 'rgba(16, 185, 129, 0.08)',
+                      border: '1px solid rgba(52, 211, 153, 0.25)',
+                      borderRadius: '9px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '0.55rem',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      id="consent-decree-13"
+                      checked={consentDecree13}
+                      onChange={(e) => setConsentDecree13(e.target.checked)}
+                      style={{
+                        marginTop: '2px',
+                        width: '16px',
+                        height: '16px',
+                        accentColor: '#10b981',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <label
+                      htmlFor="consent-decree-13"
+                      style={{
+                        fontSize: '0.72rem',
+                        color: '#cbd5e1',
+                        lineHeight: 1.45,
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                      }}
+                    >
+                      <strong>Khai báo mục đích (Nghị định 13):</strong> Tôi đồng ý cung cấp họ tên và email để Famlykin khởi tạo tài khoản và vẽ sơ đồ phả hệ gia tộc. Dữ liệu thuộc quyền sở hữu của tôi và có thể yêu cầu xóa bất kỳ lúc nào.
+                    </label>
                   </div>
                 )}
               </div>
@@ -1301,7 +1351,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         )}
       </div>
 
-      <TermsPolicyModal
+      <LegalDocsModal
         isOpen={showTermsModal}
         onClose={() => setShowTermsModal(false)}
         initialTab={termsInitialTab}

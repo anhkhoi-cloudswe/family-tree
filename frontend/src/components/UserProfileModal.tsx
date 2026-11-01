@@ -641,7 +641,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </form>
           )}
 
-          {/* TAB 3: ĐÓNG TÀI KHOẢN (Bảo lưu & Ân hạn 30 ngày) */}
+          {/* TAB 3: ĐÓNG TÀI KHOẢN & YÊU CẦU XÓA DỮ LIỆU (Nghị định 13 / GDPR) */}
           {activeTab === 'DANGER' && (
             <div className="flex-1 flex flex-col justify-between">
               <div className="space-y-3">
@@ -649,25 +649,25 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/25 space-y-2.5">
                   <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-rose-300">
                     <AlertTriangle size={15} className="text-rose-400 flex-shrink-0" />
-                    <span>Chính Sách Bảo Lưu & Ân Hạn 30 Ngày</span>
+                    <span>Quyền Xóa Dữ Liệu Cá Nhân (Nghị Định 13 / GDPR)</span>
                   </div>
                   <div className="text-xs text-slate-300 space-y-2 leading-relaxed">
                     <div className="flex items-start gap-2">
                       <span className="text-rose-400 font-bold text-sm leading-none">•</span>
                       <p>
-                        <strong className="text-white">Tạm ngưng hoạt động:</strong> Sau khi đóng, tài khoản sẽ tự động đăng xuất và tạm ngưng quyền truy cập.
+                        <strong className="text-white">Quyền được quên (Right to be forgotten):</strong> Bạn có toàn quyền yêu cầu đóng tài khoản và xóa vĩnh viễn toàn bộ dữ liệu cá nhân của mình khỏi máy chủ Famlykin.
                       </p>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-emerald-400 font-bold text-sm leading-none">•</span>
                       <p>
-                        <strong className="text-white">Bảo lưu toàn vẹn dữ liệu:</strong> Cây gia phả và thông tin dòng họ vẫn được giữ an toàn. Bạn có <strong>30 ngày</strong> để đăng nhập lại và khôi phục tài khoản bất kỳ lúc nào.
+                        <strong className="text-white">Thời gian ân hạn 30 ngày:</strong> Để phòng tránh thao tác nhầm lẫn, dữ liệu được chuyển sang trạng thái chờ xóa. Bạn có <strong>30 ngày</strong> để đăng nhập lại và khôi phục tài khoản bất kỳ lúc nào.
                       </p>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-amber-400 font-bold text-sm leading-none">•</span>
                       <p>
-                        <strong className="text-white">Tự động hủy sau thời hạn:</strong> Sau thời hạn 30 ngày nếu không có yêu cầu khôi phục, tài khoản mới chính thức được đóng vĩnh viễn.
+                        <strong className="text-white">Xóa vĩnh viễn:</strong> Sau 30 ngày nếu không có yêu cầu khôi phục, hệ thống tự động xóa sạch dữ liệu người dùng và không thể phục hồi.
                       </p>
                     </div>
                   </div>
@@ -677,7 +677,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 leading-relaxed flex items-center gap-2">
                   <span className="text-amber-400 text-sm flex-shrink-0">💡</span>
                   <span>
-                    Nếu bạn đang là người quản trị cây phả hệ, hãy chuyển giao quyền cho thành viên khác trước khi rời đi.
+                    Nếu bạn đang là Trưởng tộc hoặc người quản trị cây phả hệ, bạn có thể xuất bản sao lưu Excel trước khi xóa tài khoản.
                   </span>
                 </div>
               </div>
@@ -688,30 +688,30 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowCloseConfirm(true)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 hover:text-rose-200 font-semibold text-xs shadow-md flex items-center justify-center gap-2 transition"
+                    className="w-full py-2.5 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 hover:text-rose-200 font-semibold text-xs shadow-md flex items-center justify-center gap-2 transition cursor-pointer"
                   >
                     <Trash2 size={14} />
-                    <span>Yêu Cầu Tạm Dừng & Đóng Tài Khoản</span>
+                    <span>Yêu Cầu Xóa Dữ Liệu & Đóng Tài Khoản</span>
                   </button>
                 ) : (
                   <div className="p-3 rounded-xl bg-slate-950 border border-rose-500/40 space-y-2 animate-in fade-in duration-150">
                     <p className="text-[11px] text-rose-200 font-medium text-center">
-                      Bạn có chắc muốn đóng tài khoản? Bạn sẽ được đăng xuất và có 30 ngày để suy nghĩ và khôi phục lại.
+                      Bạn có chắc muốn thực hiện quyền xóa tài khoản? Bạn sẽ được đăng xuất và có 30 ngày ân hạn để khôi phục trước khi bị xóa vĩnh viễn.
                     </p>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         disabled={isClosingAccount}
                         onClick={handleCloseAccount}
-                        className="flex-1 py-2 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                        className="flex-1 py-2 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <Trash2 size={13} />
-                        <span>{isClosingAccount ? 'Đang xử lý...' : 'Xác Nhận Đóng'}</span>
+                        <span>{isClosingAccount ? 'Đang xử lý...' : 'Xác Nhận Xóa Dữ Liệu'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowCloseConfirm(false)}
-                        className="py-2 px-3.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-semibold transition"
+                        className="py-2 px-3.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-semibold transition cursor-pointer"
                       >
                         Hủy
                       </button>
