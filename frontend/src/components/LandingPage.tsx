@@ -294,11 +294,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
 
         {/* Tiêu đề chính (H1) - Hiển thị 2 dòng: "Gìn Giữ Cội Nguồn •" và xuống dòng "Kết Nối Dòng Tộc" trên cả desktop và mobile */}
-        <h1 className="text-3xl min-[400px]:text-4xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight max-w-4xl leading-[1.2] sm:leading-[1.2] drop-shadow-md px-2">
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#e2e8d8] to-[#68ef3f] drop-shadow-[0_0_40px_rgba(104,239,63,0.35)] block">
+        <h1 className="text-3xl min-[400px]:text-4xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight max-w-4xl leading-[1.35] sm:leading-[1.3] drop-shadow-md px-2 py-2">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#e2e8d8] to-[#68ef3f] drop-shadow-[0_0_40px_rgba(104,239,63,0.35)] block py-1">
             Gìn Giữ Cội Nguồn •
           </span>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d9deca] via-white to-[#68ef3f] drop-shadow-[0_0_40px_rgba(104,239,63,0.35)] block mt-1">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d9deca] via-white to-[#68ef3f] drop-shadow-[0_0_40px_rgba(104,239,63,0.35)] block py-1 mt-1">
             Kết Nối Dòng Tộc
           </span>
         </h1>
