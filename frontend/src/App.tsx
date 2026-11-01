@@ -28,6 +28,7 @@ import { SubscriptionModal } from './components/SubscriptionModal';
 import { RenameTreeModal } from './components/RenameTreeModal';
 import { CreateTreeModal } from './components/CreateTreeModal';
 import { LandingPage } from './components/LandingPage';
+import { DiscoverDemoPage } from './components/DiscoverDemoPage';
 import { TermsAndPoliciesPage, PolicyTab } from './components/TermsAndPoliciesPage';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { FamilyTreeLogo } from './components/FamilyTreeLogo';
@@ -119,7 +120,14 @@ const AppContent: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [pendingInvitations, setPendingInvitations] = useState<TreeInvitation[]>([]);
 
-  // Landing Page (/guest) and Dedicated Legal Docs (/terms&policies, /privacy, /terms, /cookies, /refund)
+  // Landing Page (/guest), Discover Demo (/discover) and Dedicated Legal Docs (/terms&policies, /privacy, /terms, /cookies, /refund)
+  const [isDiscoverDemo, setIsDiscoverDemo] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase();
+      return p === '/discover' || p === '/demo';
+    }
+    return false;
+  });
   const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const p = window.location.pathname.toLowerCase();
@@ -521,6 +529,10 @@ const AppContent: React.FC = () => {
           currentPath.startsWith('/refund')
         ) {
           setIsPoliciesPage(true);
+          setShowAuthModal(false);
+        } else if (currentPath === '/discover' || currentPath === '/demo') {
+          setIsDiscoverDemo(true);
+          setIsGuestMode(false);
           setShowAuthModal(false);
         } else if (currentPath === '/login' || currentPath === '/signin' || currentPath === '/register' || currentPath === '/signup') {
           // Người dùng vào trực tiếp URL /login hoặc /register
@@ -998,14 +1010,48 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // 2. Chế độ đón khách Landing Page (/guest)
+  // 2. Chế độ khám phá sơ đồ cây mẫu trải nghiệm (/discover)
+  if (isDiscoverDemo) {
+    return (
+      <div className="landing-guest-wrapper">
+        <DiscoverDemoPage
+          onBackToHome={() => {
+            setIsDiscoverDemo(false);
+            window.history.pushState(null, '', '/guest');
+            setIsGuestMode(true);
+          }}
+          onOpenLogin={() => {
+            setIsDiscoverDemo(false);
+            window.history.pushState(null, '', '/login');
+            setShowAuthModal(true);
+          }}
+        />
+        {/* Auth Modal nếu người dùng quyết định đăng nhập/đăng ký từ trang mẫu */}
+        {showAuthModal && (
+          <AuthModal
+            onSuccess={handleAuthSuccess}
+            resetToken={resetPasswordToken}
+            onClearResetToken={() => setResetPasswordToken(null)}
+            onBackToHome={() => {
+              setShowAuthModal(false);
+              window.history.pushState(null, '', '/discover');
+              setIsDiscoverDemo(true);
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // 3. Chế độ đón khách Landing Page (/guest)
   if (isGuestMode || (!user && !isLoading)) {
     return (
       <div className="landing-guest-wrapper">
         <LandingPage
           onStartDemo={() => {
-            window.history.pushState(null, '', '/login');
-            setShowAuthModal(true);
+            window.history.pushState(null, '', '/discover');
+            setIsDiscoverDemo(true);
+            setIsGuestMode(false);
           }}
           onOpenLogin={() => {
             window.history.pushState(null, '', '/login');

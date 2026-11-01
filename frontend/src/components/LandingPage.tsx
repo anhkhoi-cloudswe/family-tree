@@ -113,29 +113,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => scrollToSection('contact')}
+              onClick={() => {
+                onOpenLegalDocs('PRIVACY');
+              }}
               className="px-4 py-1.5 rounded-full text-xs lg:text-sm font-medium text-[#b7bda5] hover:text-white hover:bg-[#1a331d]/60 transition-all cursor-pointer"
             >
-              Liên Hệ
+              Chính Sách
             </button>
           </nav>
 
-          {/* Desktop Right CTA Buttons */}
+          {/* Desktop Right CTA Button (Đồng bộ nút Đăng Nhập -> như mobile view) */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
             <button
               type="button"
               onClick={onOpenLogin}
-              className="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold text-white hover:text-[#68ef3f] bg-transparent hover:bg-[#122314] border border-[#273f2b] transition-all cursor-pointer whitespace-nowrap"
+              className="px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#122314] bg-[#68ef3f] hover:bg-[#58dc31] shadow-[0_0_20px_rgba(104,239,63,0.35)] transition-all transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap flex items-center gap-1.5"
             >
-              Đăng Nhập
-            </button>
-            <button
-              type="button"
-              onClick={onOpenRegister}
-              className="px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#122314] bg-[#68ef3f] hover:bg-[#58dc31] shadow-[0_0_20px_rgba(104,239,63,0.3)] transition-all transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap flex items-center gap-1.5"
-            >
-              <span>Khởi Tạo Cây</span>
-              <ArrowRight size={15} />
+              <span>Đăng Nhập</span>
+              <ArrowRight size={16} />
             </button>
           </div>
 
@@ -183,14 +178,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               className="w-full text-left py-4 px-5 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between shadow-sm cursor-pointer"
             >
               <span>💎 Bảng Giá Hội Viên</span>
-              <ChevronRight size={18} className="text-[#68ef3f]" />
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection('contact')}
-              className="w-full text-left py-4 px-5 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between shadow-sm cursor-pointer"
-            >
-              <span>✉️ Liên Hệ & Hỗ Trợ</span>
               <ChevronRight size={18} className="text-[#68ef3f]" />
             </button>
             <button
@@ -257,24 +244,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* Neon Botanical Glow Atmosphere Orbs */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[680px] h-[350px] sm:h-[680px] bg-[#68ef3f]/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 
-        {/* Pill Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#122314]/90 border border-[#273f2b] text-[#68ef3f] text-xs sm:text-sm font-semibold mb-6 shadow-lg backdrop-blur-md">
-          <Sparkles size={15} className="text-[#68ef3f]" />
+        {/* Slogan nhỏ (Bỏ icon sao trước chữ) */}
+        <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-[#122314]/90 border border-[#273f2b] text-[#68ef3f] text-xs sm:text-sm font-semibold mb-6 shadow-lg backdrop-blur-md">
           <span>Lưu truyền gốc rễ • Kết nối trăm năm</span>
         </div>
 
-        {/* Hero Title */}
+        {/* Tiêu đề chính (H1) */}
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight max-w-4xl leading-tight sm:leading-tight drop-shadow-md">
-          Số Hóa Cây Gia Phả & Quản Lý <br className="hidden sm:inline" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#d9deca] to-[#68ef3f] drop-shadow-[0_0_40px_rgba(104,239,63,0.35)]">
-            Ngày Giỗ Tổ Tiên Cổ Truyền
+            Gìn Giữ Cội Nguồn • Kết Nối Dòng Tộc
           </span>
         </h1>
 
-        {/* Subtitle */}
-        <p className="mt-5 text-sm sm:text-lg text-[#d0d7c0] max-w-2xl leading-relaxed font-normal drop-shadow-sm">
-          Nền tảng phả hệ Việt Nam đầu tiên tích hợp <strong className="text-white">Lịch Giỗ Âm - Dương thông minh</strong>, 
-          bàn tính xưng hô chuẩn thuần phong mỹ tục, và trắc nghiệm dòng tộc dành cho thế hệ tương lai.
+        {/* Mô tả ngắn gọn (1 dòng) */}
+        <p className="mt-5 text-sm sm:text-lg text-[#d0d7c0] max-w-3xl leading-relaxed font-normal drop-shadow-sm">
+          Nền tảng phả hệ thông minh Việt Nam tích hợp <strong className="text-white">Lịch Giỗ Âm - Dương thông minh</strong>, bàn tính xưng hô và kết nối dòng tộc.
         </p>
 
         {/* CTA Buttons (Responsive Full-width trên mobile, hàng ngang trên desktop) */}
@@ -814,36 +798,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 Khởi Tạo Cây Dòng Họ
               </button>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. Contact Section */}
-      <section id="contact" className="py-16 sm:py-24 bg-[#070e09] border-t border-[#273f2b] px-4 sm:px-6 scroll-mt-20">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#122314] border border-[#273f2b] text-[#68ef3f] text-xs font-semibold">
-            <span>Hỗ Trợ Kỹ Thuật & Cố Vấn Dòng Tộc</span>
-          </div>
-          <h3 className="text-2xl sm:text-4xl font-extrabold text-white">
-            Bạn Cần Tư Vấn Thiết Lập Gia Phả Cho Chi Tộc?
-          </h3>
-          <p className="text-sm sm:text-base text-[#b7bda5] max-w-xl mx-auto leading-relaxed">
-            Đội ngũ Famlykin luôn sẵn sàng hỗ trợ các bậc cao niên và ban quản tộc số hóa dữ liệu tổ tiên chính xác, bảo mật và chuẩn phong tục Việt.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <a
-              href="mailto:lienhe@famlykin.io.vn"
-              className="px-6 py-3.5 rounded-full text-xs sm:text-sm font-semibold bg-[#122314] text-white hover:text-[#68ef3f] border border-[#273f2b] hover:border-[#68ef3f]/60 transition-all flex items-center gap-2"
-            >
-              <span>Gửi Email: lienhe@famlykin.io.vn</span>
-            </a>
-            <button
-              type="button"
-              onClick={onOpenRegister}
-              className="px-7 py-3.5 rounded-full text-xs sm:text-sm font-bold bg-[#68ef3f] text-[#122314] hover:bg-[#58dc31] shadow-[0_0_20px_rgba(104,239,63,0.3)] transition-all cursor-pointer"
-            >
-              Tạo Cây Ngay Bây Giờ
-            </button>
           </div>
         </div>
       </section>

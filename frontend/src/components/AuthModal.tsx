@@ -514,16 +514,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Màn hình 1 & 2: Đăng Nhập hoặc Đăng Ký */}
         {(authMode === 'LOGIN' || authMode === 'REGISTER') && (
           <>
-            {/* Tabs: Đăng Nhập | Đăng Ký */}
+            {/* Tabs: Đăng Nhập | Đăng Ký Đồng Bộ Brand Green Famlykin */}
             <div
               style={{
                 display: 'flex',
-                background: 'rgba(0, 0, 0, 0.4)',
-                padding: '0.28rem',
-                borderRadius: '11px',
+                background: '#070e09',
+                padding: '0.3rem',
+                borderRadius: '12px',
                 marginBottom: '1.25rem',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                gap: '0.25rem',
+                border: '1px solid #273f2b',
+                gap: '0.35rem',
               }}
             >
               <button
@@ -535,17 +535,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 }}
                 style={{
                   flex: 1,
-                  padding: '0.55rem 0.5rem',
-                  borderRadius: '8px',
-                  border: authMode === 'LOGIN' ? '1px solid rgba(52, 211, 153, 0.35)' : '1px solid transparent',
+                  padding: '0.6rem 0.5rem',
+                  borderRadius: '9px',
+                  border: authMode === 'LOGIN' ? '1px solid #68ef3f' : '1px solid transparent',
                   cursor: 'pointer',
                   background: authMode === 'LOGIN'
-                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.35) 100%)'
+                    ? '#122314'
                     : 'transparent',
-                  color: authMode === 'LOGIN' ? '#ffffff' : '#94a3b8',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  boxShadow: authMode === 'LOGIN' ? '0 2px 8px rgba(16, 185, 129, 0.2)' : 'none',
+                  color: authMode === 'LOGIN' ? '#68ef3f' : '#b7bda5',
+                  fontWeight: 700,
+                  fontSize: '0.86rem',
+                  boxShadow: authMode === 'LOGIN' ? '0 0 15px rgba(104, 239, 63, 0.2)' : 'none',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -560,17 +560,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 }}
                 style={{
                   flex: 1,
-                  padding: '0.55rem 0.5rem',
-                  borderRadius: '8px',
-                  border: authMode === 'REGISTER' ? '1px solid rgba(52, 211, 153, 0.35)' : '1px solid transparent',
+                  padding: '0.6rem 0.5rem',
+                  borderRadius: '9px',
+                  border: authMode === 'REGISTER' ? '1px solid #68ef3f' : '1px solid transparent',
                   cursor: 'pointer',
                   background: authMode === 'REGISTER'
-                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.35) 100%)'
+                    ? '#122314'
                     : 'transparent',
-                  color: authMode === 'REGISTER' ? '#ffffff' : '#94a3b8',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  boxShadow: authMode === 'REGISTER' ? '0 2px 8px rgba(16, 185, 129, 0.2)' : 'none',
+                  color: authMode === 'REGISTER' ? '#68ef3f' : '#b7bda5',
+                  fontWeight: 700,
+                  fontSize: '0.86rem',
+                  boxShadow: authMode === 'REGISTER' ? '0 0 15px rgba(104, 239, 63, 0.2)' : 'none',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -750,14 +750,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
                 )}
 
-                {/* Checkbox Đồng ý Điều khoản dịch vụ & Chính sách bảo mật khi Đăng ký mới (không đóng hộp viền) */}
+                {/* Checkbox Đồng ý Điều khoản dịch vụ & Chính sách bảo mật khi Đăng ký mới */}
                 {authMode === 'REGISTER' && (
                   <div
                     style={{
-                      marginTop: '0.75rem',
+                      marginTop: '0.9rem',
+                      marginBottom: '0.4rem',
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: '0.6rem',
+                      gap: '0.65rem',
+                      padding: '0.2rem 0.1rem',
                     }}
                   >
                     <input
@@ -767,18 +769,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       onChange={(e) => setConsentDecree13(e.target.checked)}
                       style={{
                         marginTop: '2px',
-                        width: '16px',
-                        height: '16px',
-                        accentColor: '#10b981',
+                        width: '18px',
+                        height: '18px',
+                        minWidth: '18px',
+                        minHeight: '18px',
+                        accentColor: '#68ef3f',
                         cursor: 'pointer',
                         flexShrink: 0,
+                        borderRadius: '4px',
+                        outline: 'none',
+                        border: '1.5px solid #68ef3f',
                       }}
                     />
                     <label
                       htmlFor="consent-decree-13"
                       style={{
-                        fontSize: '0.75rem',
-                        color: '#cbd5e1',
+                        fontSize: '0.78rem',
+                        color: '#d0d7c0',
                         lineHeight: 1.5,
                         cursor: 'pointer',
                         userSelect: 'none',
@@ -790,7 +797,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         target="_blank"
                         rel="noreferrer"
                         style={{
-                          color: '#34d399',
+                          color: '#68ef3f',
                           textDecoration: 'underline',
                           textUnderlineOffset: '2px',
                           fontWeight: 600,
@@ -805,7 +812,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         target="_blank"
                         rel="noreferrer"
                         style={{
-                          color: '#34d399',
+                          color: '#68ef3f',
                           textDecoration: 'underline',
                           textUnderlineOffset: '2px',
                           fontWeight: 600,
@@ -829,26 +836,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem',
-                  padding: '0.72rem 1rem',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  color: '#ffffff',
+                  padding: '0.78rem 1rem',
+                  fontSize: '0.92rem',
+                  fontWeight: 700,
+                  color: '#122314',
                   background:
                     authMode === 'REGISTER' && !isRegisterValid
-                      ? 'linear-gradient(135deg, rgba(5, 150, 105, 0.4) 0%, rgba(16, 185, 129, 0.3) 100%)'
-                      : 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                      ? 'rgba(104, 239, 63, 0.3)'
+                      : '#68ef3f',
                   border:
                     authMode === 'REGISTER' && !isRegisterValid
                       ? '1px solid rgba(255, 255, 255, 0.08)'
-                      : '1px solid rgba(52, 211, 153, 0.4)',
-                  borderRadius: '10px',
+                      : '1px solid #68ef3f',
+                  borderRadius: '11px',
                   cursor: isLoading || (authMode === 'REGISTER' && !isRegisterValid) ? 'not-allowed' : 'pointer',
                   opacity: isLoading ? 0.75 : authMode === 'REGISTER' && !isRegisterValid ? 0.45 : 1,
                   filter: authMode === 'REGISTER' && !isRegisterValid ? 'grayscale(0.6)' : 'none',
                   boxShadow:
                     authMode === 'REGISTER' && !isRegisterValid
                       ? 'none'
-                      : '0 4px 18px rgba(16, 185, 129, 0.35)',
+                      : '0 0 25px rgba(104, 239, 63, 0.4)',
                   transition: 'all 0.2s ease',
                 }}
               >

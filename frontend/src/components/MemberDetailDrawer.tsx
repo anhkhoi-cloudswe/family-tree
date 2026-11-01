@@ -35,10 +35,11 @@ interface MemberDetailDrawerProps {
   tree: FamilyTree | null;
   mePerson?: Person | null;
   onClose: () => void;
-  onUpdated: () => void;
-  onAddRelativeFor: (person: Person) => void;
+  onUpdated?: () => void;
+  onAddRelativeFor?: (person: Person) => void;
   onSelectPerson?: (person: Person) => void;
   onBack?: () => void;
+  readOnly?: boolean;
 }
 
 export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
@@ -50,6 +51,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
   onAddRelativeFor,
   onSelectPerson,
   onBack,
+  readOnly = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Person>>({});
@@ -226,8 +228,8 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
     ];
   }, [tree, person, mePerson, formData.generation]);
 
-  // Quyền chỉnh sửa (chỉ OWNER và EDITOR được phép sửa/thêm/xóa thành viên)
-  const isCanEdit = !tree?.userRole || tree.userRole === 'OWNER' || tree.userRole === 'EDITOR';
+  // Quyền chỉnh sửa (chỉ OWNER và EDITOR được phép sửa/thêm/xóa thành viên, readOnly chặn toàn bộ)
+  const isCanEdit = !readOnly && (!tree?.userRole || tree.userRole === 'OWNER' || tree.userRole === 'EDITOR');
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -263,7 +265,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
       await apiUpdatePerson(person.id, formData);
       setIsEditing(false);
       toast.success(`Đã cập nhật thông tin của "${formData.fullName}" thành công!`);
-      onUpdated();
+      onUpdated?.();
     } catch (err: any) {
       toast.error(err.message || 'Lỗi lưu thông tin');
     } finally {
@@ -278,7 +280,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
       await apiDeletePerson(person.id);
       toast.success(`Đã xóa thành viên "${person.fullName}" khỏi cây gia phả`);
       onClose();
-      onUpdated();
+      onUpdated?.();
     } catch (err: any) {
       toast.error(err.message || 'Lỗi khi xóa thành viên');
     } finally {
@@ -462,7 +464,7 @@ export const MemberDetailDrawer: React.FC<MemberDetailDrawerProps> = ({
                   </div>
 
                   {/* Quick Add Relative Button */}
-                  {isCanEdit && (
+                  {isCanEdit && onAddRelativeFor && (
                     <button
                       type="button"
                       className="btn-secondary drawer-add-rel-btn"
