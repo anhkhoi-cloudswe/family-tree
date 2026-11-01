@@ -22,8 +22,8 @@ import {
   Network,
 } from 'lucide-react';
 import { FamilyTreeLogo } from './FamilyTreeLogo';
-import heroBgImg from '../assets/hero-bg.png';
-import footerBgImg from '../assets/footer-bg.png';
+import heroBgWebp from '../assets/hero-bg.webp';
+import footerBgWebp from '../assets/footer-bg.webp';
 
 interface LandingPageProps {
   onStartDemo: () => void;
@@ -64,20 +64,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const heroParallaxOffset = scrollY * 0.25; // Parallax dịch chuyển nhẹ
 
   return (
-    <div className="min-h-screen bg-[#070e09] text-slate-100 flex flex-col font-sans selection:bg-[#68ef3f] selection:text-slate-950 overflow-x-hidden">
+    <div className="landing-enter-anim min-h-screen bg-[#070e09] text-slate-100 flex flex-col font-sans selection:bg-[#68ef3f] selection:text-slate-950 overflow-x-hidden">
       {/* 1. Navbar Cao Cấp Phong Cách SaaS Hiện Đại (Tomorro Inspired) */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrollY > 20
-            ? 'backdrop-blur-md bg-[#0b160f]/85 border-b border-[#273f2b]/80 shadow-[0_10px_30px_rgba(0,0,0,0.5)]'
+          scrollY > 20 || mobileMenuOpen
+            ? 'backdrop-blur-md bg-[#0b160f]/95 border-b border-[#273f2b]/80 shadow-[0_10px_30px_rgba(0,0,0,0.5)]'
             : 'backdrop-blur-sm bg-[#0b160f]/60 border-b border-transparent'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
-          {/* Logo Famlykin */}
+          {/* Logo Famlykin (Luôn cố định vị trí, không bị nhảy giật khi mở Drawer) */}
           <div
             className="flex items-center gap-3 cursor-pointer group shrink-0"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => {
+              if (mobileMenuOpen) setMobileMenuOpen(false);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
           >
             <div className="transition-transform duration-300 group-hover:scale-105">
               <FamilyTreeLogo size={36} />
@@ -136,22 +139,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </button>
           </div>
 
-          {/* Mobile Hamburger Button (< 768px) - 2 gạch ngang chuyển thành dấu X */}
+          {/* Mobile Hamburger Button (< 768px) - 2 gạch chuyển thành dấu X mượt mà */}
           <div className="md:hidden flex items-center">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="w-10 h-10 rounded-full flex flex-col items-center justify-center gap-1.5 bg-[#122314] border border-[#273f2b] text-white hover:text-[#68ef3f] transition-all focus:outline-none relative"
+              className="w-10 h-10 rounded-full flex flex-col items-center justify-center bg-[#122314] border border-[#273f2b] text-white hover:text-[#68ef3f] transition-all focus:outline-none relative overflow-hidden"
               aria-label={mobileMenuOpen ? 'Đóng menu' : 'Mở menu'}
             >
               <span
-                className={`w-5 h-0.5 bg-current rounded-full transition-all duration-300 transform origin-center ${
-                  mobileMenuOpen ? 'rotate-45 translate-y-[4px]' : ''
+                className={`w-5 h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out transform ${
+                  mobileMenuOpen ? 'rotate-45 translate-y-[3.5px]' : '-translate-y-[3px]'
                 }`}
               />
               <span
-                className={`w-5 h-0.5 bg-current rounded-full transition-all duration-300 transform origin-center ${
-                  mobileMenuOpen ? '-rotate-45 -translate-y-[4px]' : ''
+                className={`w-5 h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out transform ${
+                  mobileMenuOpen ? '-rotate-45 -translate-y-[3.5px]' : 'translate-y-[3px]'
                 }`}
               />
             </button>
@@ -159,38 +162,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </header>
 
-      {/* Mobile Fullscreen Drawer Overlay - Render ngang hàng ngoài header với fixed inset-0 */}
+      {/* Mobile Drawer (Trượt xuống bên dưới Header top-16 sm:top-20, giữ nguyên Header và Logo) */}
       {mobileMenuOpen && (
         <div
-          className="md:hidden fixed inset-0 z-50 bg-[#070e09] flex flex-col justify-between px-6 pt-5 pb-8 overflow-y-auto animate-drawer-slide-down"
-          style={{ minHeight: '100vh', height: '100vh' }}
+          className="md:hidden fixed inset-x-0 top-16 sm:top-20 bottom-0 z-40 bg-[#070e09]/98 backdrop-blur-2xl flex flex-col justify-between px-6 py-6 overflow-y-auto animate-drawer-slide-down border-t border-[#273f2b]"
         >
-          {/* Top Bar bên trong Drawer: Hiển thị Logo & Nút Đóng X để thoát */}
-          <div className="flex items-center justify-between h-12 pb-2 border-b border-[#273f2b]">
-            <div
-              className="flex items-center gap-3 cursor-pointer"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
-              <FamilyTreeLogo size={32} />
-              <span className="text-xl font-bold font-serif tracking-wider text-white">
-                Famlykin
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-10 h-10 rounded-full flex flex-col items-center justify-center gap-1.5 bg-[#122314] border border-[#273f2b] text-white hover:text-[#68ef3f] transition-all focus:outline-none relative"
-              aria-label="Đóng menu"
-            >
-              <span className="w-5 h-0.5 bg-current rounded-full rotate-45 translate-y-[4px]" />
-              <span className="w-5 h-0.5 bg-current rounded-full -rotate-45 -translate-y-[4px]" />
-            </button>
-          </div>
-
-          <div className="flex flex-col space-y-4 my-auto py-6">
+          <div className="flex flex-col space-y-4 my-auto py-2">
             <button
               type="button"
               onClick={() => scrollToSection('features')}
@@ -246,7 +223,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* 2. Hero Section Với Nền Thiên Nhiên, Gradient Tinh Tế & Scroll Fade-Out */}
       <section className="relative pt-24 sm:pt-36 pb-20 sm:pb-32 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center text-center overflow-visible">
-        {/* Lớp Ảnh Thiên Nhiên Phong Cảnh Đồi Chè hero-bg.png (Kéo dài từ đỉnh Hero Section xuống hết cụm nút CTA chính) */}
+        {/* Lớp Ảnh Thiên Nhiên Phong Cảnh Đồi Chè (WebP siêu nhẹ + fallback PNG) */}
         <div
           className="absolute inset-x-0 -top-24 sm:-top-32 h-[720px] sm:h-[820px] pointer-events-none -z-20 overflow-hidden"
           style={{
@@ -254,14 +231,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             transition: 'opacity 0.25s ease-out',
           }}
         >
-          <img
-            src={heroBgImg}
-            alt="Phong cảnh thiên nhiên cội nguồn"
-            className="w-full h-full object-cover object-center brightness-125 contrast-110"
-            style={{
-              transform: `translateY(${heroParallaxOffset}px) scale(1.02)`,
-            }}
-          />
+          <picture className="w-full h-full block">
+            <source srcSet={heroBgWebp} type="image/webp" />
+            <img
+              src="/images/hero-bg.webp"
+              alt="Phong cảnh thiên nhiên cội nguồn"
+              className="w-full h-full object-cover object-center brightness-125 contrast-110"
+              style={{
+                transform: `translateY(${heroParallaxOffset}px) scale(1.02)`,
+              }}
+            />
+          </picture>
         </div>
 
         {/* Lớp Phủ Gradient Chuẩn: bg-gradient-to-b from-black/50 via-black/20 to-[#070e09]/95 để ảnh nền vừa rõ nét vừa tôn chữ */}
@@ -403,21 +383,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                   </div>
 
-                  {/* CÂY GIA PHẢ - MOBILE VIEW: Bố cục gia phả trực quan, đường rẽ nhánh ngang - dọc cân đối chuẩn UI/UX */}
+                  {/* CÂY GIA PHẢ - MOBILE VIEW: Bố cục gia phả trực quan, đường rẽ nhánh ngang - dọc rõ ràng, không bị che khuất */}
                   <div className="sm:hidden flex flex-col items-center w-full mt-2">
                     {/* Trục dọc nối từ giữa Cụ xuống */}
-                    <div className="w-1 h-5 bg-[#68ef3f] rounded-full shadow-[0_0_10px_rgba(104,239,63,0.8)]" />
+                    <div className="w-1 h-5 bg-[#68ef3f] rounded-full shadow-[0_0_10px_rgba(104,239,63,0.8)] z-10" />
 
-                    <div className="relative flex flex-col gap-3 w-full max-w-[270px]">
-                      {/* Trục xương sống dọc bo góc tinh tế bên trái */}
-                      <div className="absolute left-[-12px] top-0 bottom-5 w-1 bg-[#68ef3f] rounded-full shadow-[0_0_10px_rgba(104,239,63,0.8)]" />
+                    <div className="relative flex flex-col gap-3 w-full max-w-[270px] pl-6">
+                      {/* Trục xương sống dọc bo tròn từ trên đỉnh xuống ngang thẻ thứ 3 */}
+                      <div className="absolute left-1.5 top-0 bottom-6 w-1 bg-[#68ef3f] rounded-full shadow-[0_0_10px_rgba(104,239,63,0.8)] z-0" />
                       
                       {/* Cầu nối ngang từ giữa sang trục xương sống bên trái */}
-                      <div className="absolute left-[-12px] right-1/2 top-0 h-1 bg-[#68ef3f] rounded-full shadow-[0_0_10px_rgba(104,239,63,0.8)]" />
+                      <div className="absolute left-1.5 right-1/2 top-0 h-1 bg-[#68ef3f] rounded-full shadow-[0_0_10px_rgba(104,239,63,0.8)] z-0" />
 
                       {/* Con 1: Bác ruột */}
-                      <div className="relative">
-                        <div className="absolute -left-[12px] top-1/2 -translate-y-1/2 w-[12px] h-1 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.7)]" />
+                      <div className="relative z-10">
+                        <div className="absolute -left-[18px] top-1/2 -translate-y-1/2 w-[18px] h-1 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.7)]" />
                         <div className="px-3.5 py-2.5 rounded-xl bg-[#122314] border border-[#273f2b] flex items-center gap-2.5 shadow-sm">
                           <div className="w-8 h-8 rounded-full bg-[#1b341f] text-[#d9deca] font-semibold flex items-center justify-center text-xs border border-[#273f2b]">
                             NA
@@ -430,8 +410,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       </div>
 
                       {/* Con 2: Bố ruột */}
-                      <div className="relative">
-                        <div className="absolute -left-[12px] top-1/2 -translate-y-1/2 w-[12px] h-1 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.7)]" />
+                      <div className="relative z-10">
+                        <div className="absolute -left-[18px] top-1/2 -translate-y-1/2 w-[18px] h-1 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.7)]" />
                         <div className="px-3.5 py-2.5 rounded-xl bg-[#122314] border-2 border-[#68ef3f]/70 shadow-[0_0_15px_rgba(104,239,63,0.2)] flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-full bg-[#68ef3f]/25 text-[#68ef3f] font-semibold flex items-center justify-center text-xs border border-[#68ef3f]/40">
                             NB
@@ -444,8 +424,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       </div>
 
                       {/* Con 3: Cô ruột */}
-                      <div className="relative">
-                        <div className="absolute -left-[12px] top-1/2 -translate-y-1/2 w-[12px] h-1 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.7)]" />
+                      <div className="relative z-10">
+                        <div className="absolute -left-[18px] top-1/2 -translate-y-1/2 w-[18px] h-1 bg-[#68ef3f] shadow-[0_0_8px_rgba(104,239,63,0.7)]" />
                         <div className="px-3.5 py-2.5 rounded-xl bg-[#122314] border border-[#273f2b] flex items-center gap-2.5 shadow-sm">
                           <div className="w-8 h-8 rounded-full bg-[#1b341f] text-[#d9deca] font-semibold flex items-center justify-center text-xs border border-[#273f2b]">
                             NC
@@ -869,13 +849,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* 6. Footer With Legal Documents Links & Nature Footer Background */}
       <footer className="mt-auto relative border-t border-[#273f2b] py-16 px-4 sm:px-6 text-xs text-slate-400 overflow-hidden">
-        {/* Footer Background Image footer-bg.png */}
+        {/* Footer Background Image (WebP + fallback) */}
         <div className="absolute inset-0 pointer-events-none -z-20">
-          <img
-            src={footerBgImg}
-            alt="Cội nguồn dòng tộc footer"
-            className="w-full h-full object-cover object-bottom opacity-55 brightness-90 contrast-110"
-          />
+          <picture className="w-full h-full block">
+            <source srcSet={footerBgWebp} type="image/webp" />
+            <img
+              src="/images/footer-bg.webp"
+              alt="Cội nguồn dòng tộc footer"
+              className="w-full h-full object-cover object-bottom opacity-55 brightness-90 contrast-110"
+            />
+          </picture>
         </div>
         {/* Lớp phủ gradient tối bảo đảm độ tương phản chữ */}
         <div className="absolute inset-0 pointer-events-none -z-10 bg-gradient-to-t from-[#050b06] via-[#070e09]/85 to-[#070e09]/95" />

@@ -6132,6 +6132,24 @@ input:-internal-autofill-selected {
   box-shadow: 0 20px 40px -15px rgba(104, 239, 63, 0.15), 0 0 20px rgba(104, 239, 63, 0.1);
 }
 
+/* Landing Page Entrance Smooth Animation */
+@keyframes landingPageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-enter-anim {
+  animation: landingPageEnter 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+
+
 
 
 
