@@ -44,7 +44,40 @@ export const TermsAndPoliciesPage: React.FC<TermsAndPoliciesPageProps> = ({
 
   const handleTabChange = (tab: PolicyTab) => {
     setActiveTab(tab);
+    if (typeof window !== 'undefined' && window.history?.pushState) {
+      window.history.pushState(null, '', `/terms-and-policies?tab=${tab}`);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const tabs: PolicyTab[] = ['PRIVACY', 'TERMS', 'COOKIE', 'REFUND'];
+
+  const handleKeyDownTabList = (e: React.KeyboardEvent) => {
+    const currentIndex = tabs.indexOf(activeTab);
+    let nextIndex = -1;
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      nextIndex = (currentIndex + 1) % tabs.length;
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      nextIndex = 0;
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      nextIndex = tabs.length - 1;
+    }
+
+    if (nextIndex !== -1) {
+      const nextTab = tabs[nextIndex];
+      handleTabChange(nextTab);
+      const tabEl = document.getElementById(`tab-${nextTab.toLowerCase()}`);
+      if (tabEl) {
+        tabEl.focus();
+      }
+    }
   };
 
   const handleBack = () => {
@@ -60,7 +93,12 @@ export const TermsAndPoliciesPage: React.FC<TermsAndPoliciesPageProps> = ({
       {/* 1. Header Navigation */}
       <header className="sticky top-0 z-40 w-full border-b border-[#273f2b] bg-[#070e09]/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={handleBack}>
+          <button
+            type="button"
+            className="flex items-center gap-3 cursor-pointer group rounded-xl p-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f]"
+            onClick={handleBack}
+            aria-label="Về trang chủ Famlykin"
+          >
             <div className="transition-transform duration-300 group-hover:scale-105">
               <FamilyTreeLogo size={36} />
             </div>
@@ -72,15 +110,15 @@ export const TermsAndPoliciesPage: React.FC<TermsAndPoliciesPageProps> = ({
                 Điều Khoản & Chính Sách
               </span>
             </div>
-          </div>
+          </button>
 
           <button
             type="button"
             onClick={handleBack}
-            className="px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold text-slate-200 hover:text-white bg-[#122314] hover:bg-[#1a331d] border border-[#273f2b] hover:border-[#68ef3f]/40 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+            className="px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold text-slate-200 hover:text-white bg-[#122314] hover:bg-[#1a331d] border border-[#273f2b] hover:border-[#68ef3f]/40 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#070e09]"
           >
             <ArrowLeft size={15} className="text-[#68ef3f]" />
-            <span>← Quay lại</span>
+            <span>Quay lại</span>
           </button>
         </div>
       </header>
@@ -103,14 +141,23 @@ export const TermsAndPoliciesPage: React.FC<TermsAndPoliciesPageProps> = ({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 flex-1 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
           {/* Sticky Tab Menu */}
-          <aside className="lg:col-span-1 lg:sticky lg:top-24 space-y-1.5 p-2 rounded-2xl bg-[#0b160f] border border-[#273f2b]">
+          <aside
+            role="tablist"
+            aria-label="Danh mục điều khoản và chính sách"
+            onKeyDown={handleKeyDownTabList}
+            className="lg:col-span-1 lg:sticky lg:top-24 space-y-1.5 p-2 rounded-2xl bg-[#0b160f] border border-[#273f2b]"
+          >
             <button
               type="button"
+              role="tab"
+              id="tab-privacy"
+              aria-selected={activeTab === 'PRIVACY'}
+              aria-controls="panel-privacy"
               onClick={() => handleTabChange('PRIVACY')}
-              className={`w-full py-3 px-3.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer ${
+              className={`w-full py-3 px-3.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f] active:scale-[0.99] ${
                 activeTab === 'PRIVACY'
                   ? 'bg-[#122314] text-[#68ef3f] border border-[#68ef3f]/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#122314]/40'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#122314]/40 border border-transparent'
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -122,11 +169,15 @@ export const TermsAndPoliciesPage: React.FC<TermsAndPoliciesPageProps> = ({
 
             <button
               type="button"
+              role="tab"
+              id="tab-terms"
+              aria-selected={activeTab === 'TERMS'}
+              aria-controls="panel-terms"
               onClick={() => handleTabChange('TERMS')}
-              className={`w-full py-3 px-3.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer ${
+              className={`w-full py-3 px-3.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f] active:scale-[0.99] ${
                 activeTab === 'TERMS'
                   ? 'bg-[#122314] text-[#68ef3f] border border-[#68ef3f]/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#122314]/40'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#122314]/40 border border-transparent'
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -138,11 +189,15 @@ export const TermsAndPoliciesPage: React.FC<TermsAndPoliciesPageProps> = ({
 
             <button
               type="button"
+              role="tab"
+              id="tab-cookie"
+              aria-selected={activeTab === 'COOKIE'}
+              aria-controls="panel-cookie"
               onClick={() => handleTabChange('COOKIE')}
-              className={`w-full py-3 px-3.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer ${
+              className={`w-full py-3 px-3.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f] active:scale-[0.99] ${
                 activeTab === 'COOKIE'
                   ? 'bg-[#122314] text-[#68ef3f] border border-[#68ef3f]/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#122314]/40'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#122314]/40 border border-transparent'
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -154,11 +209,15 @@ export const TermsAndPoliciesPage: React.FC<TermsAndPoliciesPageProps> = ({
 
             <button
               type="button"
+              role="tab"
+              id="tab-refund"
+              aria-selected={activeTab === 'REFUND'}
+              aria-controls="panel-refund"
               onClick={() => handleTabChange('REFUND')}
-              className={`w-full py-3 px-3.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer ${
+              className={`w-full py-3 px-3.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f] active:scale-[0.99] ${
                 activeTab === 'REFUND'
                   ? 'bg-[#122314] text-[#68ef3f] border border-[#68ef3f]/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#122314]/40'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#122314]/40 border border-transparent'
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -173,7 +232,7 @@ export const TermsAndPoliciesPage: React.FC<TermsAndPoliciesPageProps> = ({
           <article className="lg:col-span-3 p-6 sm:p-10 rounded-3xl bg-[#0b160f] border border-[#273f2b] text-slate-300 space-y-6 leading-relaxed text-sm sm:text-[15px] shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
             {/* 1. PRIVACY TAB */}
             {activeTab === 'PRIVACY' && (
-              <div className="space-y-6">
+              <div id="panel-privacy" role="tabpanel" aria-labelledby="tab-privacy" className="space-y-6">
                 <div className="p-5 rounded-2xl bg-[#122314] border border-[#273f2b] text-[#68ef3f]">
                   <h2 className="font-bold text-base sm:text-lg mb-1 flex items-center gap-2">
                     <ShieldCheck size={20} className="text-[#68ef3f]" />
@@ -258,7 +317,7 @@ export const TermsAndPoliciesPage: React.FC<TermsAndPoliciesPageProps> = ({
 
             {/* 2. TERMS TAB */}
             {activeTab === 'TERMS' && (
-              <div className="space-y-6">
+              <div id="panel-terms" role="tabpanel" aria-labelledby="tab-terms" className="space-y-6">
                 <div className="space-y-3">
                   <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                     <FileText size={18} className="text-[#68ef3f]" />
@@ -303,7 +362,7 @@ export const TermsAndPoliciesPage: React.FC<TermsAndPoliciesPageProps> = ({
 
             {/* 3. COOKIE TAB */}
             {activeTab === 'COOKIE' && (
-              <div className="space-y-6">
+              <div id="panel-cookie" role="tabpanel" aria-labelledby="tab-cookie" className="space-y-6">
                 <div className="p-5 rounded-2xl bg-[#122314] border border-[#273f2b] text-[#68ef3f]">
                   <h2 className="font-bold text-base sm:text-lg mb-1 flex items-center gap-2">
                     <Cookie size={20} className="text-[#68ef3f]" />
@@ -360,7 +419,7 @@ export const TermsAndPoliciesPage: React.FC<TermsAndPoliciesPageProps> = ({
 
             {/* 4. REFUND TAB */}
             {activeTab === 'REFUND' && (
-              <div className="space-y-6">
+              <div id="panel-refund" role="tabpanel" aria-labelledby="tab-refund" className="space-y-6">
                 <div className="p-5 rounded-2xl bg-[#122314] border border-[#273f2b] text-[#68ef3f]">
                   <h2 className="font-bold text-base sm:text-lg mb-1 flex items-center gap-2">
                     <RefreshCw size={20} className="text-[#68ef3f]" />

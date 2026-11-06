@@ -39,7 +39,44 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenLegalDocs,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMenuClosing, setIsMenuClosing] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+
+  // Phát hiện thiết lập giảm chuyển động của hệ điều hành
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const listener = (event: MediaQueryListEvent) => {
+      setPrefersReducedMotion(event.matches);
+    };
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    }
+  }, []);
+
+  const closeMobileMenu = () => {
+    if (prefersReducedMotion) {
+      setMobileMenuOpen(false);
+      return;
+    }
+    setIsMenuClosing(true);
+    setTimeout(() => {
+      setMobileMenuOpen(false);
+      setIsMenuClosing(false);
+    }, 220);
+  };
+
+  const toggleMobileMenu = () => {
+    if (mobileMenuOpen) {
+      closeMobileMenu();
+    } else {
+      setIsMenuClosing(false);
+      setMobileMenuOpen(true);
+    }
+  };
 
   // Lắng nghe sự kiện scroll trên cả window và container .landing-guest-wrapper
   useEffect(() => {
@@ -87,40 +124,42 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   }, [mobileMenuOpen]);
 
   const scrollToSection = (id: string) => {
-    setMobileMenuOpen(false);
+    closeMobileMenu();
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      element.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
     }
   };
 
   // Tính toán độ mờ nền Hero thiên nhiên theo vị trí cuộn trang (Fade-out sau nút CTA)
   // Khi cuộn từ 0px đến 450px: opacity giảm dần từ 1 xuống 0.05
-  const heroBgOpacity = Math.max(0.08, 1 - scrollY / 420);
-  const heroParallaxOffset = scrollY * 0.25; // Parallax dịch chuyển nhẹ
+  const heroBgOpacity = prefersReducedMotion ? 1 : Math.max(0.08, 1 - scrollY / 420);
+  const heroParallaxOffset = prefersReducedMotion ? 0 : scrollY * 0.25; // Parallax dịch chuyển nhẹ (tắt khi reduced motion)
 
   return (
     <div className="landing-enter-anim min-h-screen bg-[#070e09] text-slate-100 flex flex-col font-sans selection:bg-[#68ef3f] selection:text-slate-950 overflow-x-hidden">
       {/* 1. Navbar Cao Cấp Phong Cách SaaS Hiện Đại (Tomorro Inspired) */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-out ${
           mobileMenuOpen
             ? 'bg-[#070e09] border-b border-[#273f2b]'
             : scrollY > 20
             ? 'backdrop-blur-md bg-[#0b160f]/90 border-b border-[#273f2b]/80 shadow-[0_10px_30px_rgba(0,0,0,0.5)]'
-            : 'bg-transparent border-b border-transparent'
+            : 'bg-transparent border-b border-transparent shadow-none'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 grid grid-cols-2 md:grid-cols-3 items-center">
           {/* Cột Trái: Logo Famlykin */}
           <div className="flex items-center justify-start">
-            <div
-              className="flex items-center gap-3 cursor-pointer group"
+            <button
+              type="button"
+              className="flex items-center gap-3 cursor-pointer group rounded-xl p-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f]"
+              aria-label="Về đầu trang chủ Famlykin"
               onClick={() => {
-                if (mobileMenuOpen) setMobileMenuOpen(false);
+                if (mobileMenuOpen) closeMobileMenu();
                 const wrapper = document.querySelector('.landing-guest-wrapper');
-                if (wrapper) wrapper.scrollTo({ top: 0, behavior: 'smooth' });
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                if (wrapper) wrapper.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+                window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
               }}
             >
               <div className="transition-transform duration-300 group-hover:scale-105">
@@ -134,7 +173,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   Gia Phả Số Hóa
                 </span>
               </div>
-            </div>
+            </button>
           </div>
 
           {/* Cột Giữa (Desktop): Canh giữa chính xác tuyệt đối với Slogan & Hero text bên dưới */}
@@ -183,8 +222,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="md:hidden flex items-center">
               <button
                 type="button"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="w-10 h-10 rounded-full flex flex-col items-center justify-center bg-[#122314] border border-[#273f2b] text-white hover:text-[#68ef3f] transition-all focus:outline-none relative overflow-hidden"
+                onClick={toggleMobileMenu}
+                className="w-10 h-10 rounded-full flex flex-col items-center justify-center bg-[#122314] border border-[#273f2b] text-white hover:text-[#68ef3f] transition-all duration-200 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#070e09] relative overflow-hidden"
                 aria-label={mobileMenuOpen ? 'Đóng menu' : 'Mở menu'}
               >
                 <span
@@ -206,14 +245,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Mobile Drawer (Trượt xuống bên dưới Header top-16 sm:top-20, giữ nguyên Header và Logo) */}
       {mobileMenuOpen && (
         <div
-          className="md:hidden fixed inset-x-0 top-16 sm:top-20 bottom-0 z-40 bg-[#070e09] flex flex-col justify-between px-6 py-6 overflow-y-auto animate-drawer-slide-down border-t border-[#273f2b]"
+          className={`md:hidden fixed inset-x-0 top-16 sm:top-20 bottom-0 z-40 bg-[#070e09] flex flex-col justify-between px-6 py-6 overflow-y-auto border-t border-[#273f2b] ${
+            isMenuClosing ? 'animate-drawer-slide-up' : 'animate-drawer-slide-down'
+          }`}
           style={{ height: 'calc(100dvh - 4rem)' }}
         >
-          <div className="flex flex-col space-y-4 my-auto py-4 w-full">
+          <div className="flex flex-col space-y-3 mt-4 w-full">
             <button
               type="button"
               onClick={() => scrollToSection('features')}
-              className="w-full text-left py-4 px-5 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between shadow-sm cursor-pointer"
+              className="drawer-stagger-1 w-full text-left py-4 px-5 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between shadow-sm cursor-pointer active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f]"
             >
               <span>🌿 Tính Năng Cốt Lõi</span>
               <ChevronRight size={18} className="text-[#68ef3f]" />
@@ -221,7 +262,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => scrollToSection('pricing')}
-              className="w-full text-left py-4 px-5 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between shadow-sm cursor-pointer"
+              className="drawer-stagger-2 w-full text-left py-4 px-5 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between shadow-sm cursor-pointer active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f]"
             >
               <span>💎 Bảng Giá Hội Viên</span>
               <ChevronRight size={18} className="text-[#68ef3f]" />
@@ -229,24 +270,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => {
-                setMobileMenuOpen(false);
+                closeMobileMenu();
                 onOpenLegalDocs('PRIVACY');
               }}
-              className="w-full text-left py-4 px-5 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between shadow-sm cursor-pointer"
+              className="drawer-stagger-3 w-full text-left py-4 px-5 rounded-2xl text-base font-semibold text-slate-100 hover:text-white bg-[#122314] border border-[#273f2b] hover:border-[#68ef3f]/50 transition-all flex items-center justify-between shadow-sm cursor-pointer active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f]"
             >
               <span>🛡️ Chính Sách Bảo Mật (NĐ 13)</span>
               <ChevronRight size={18} className="text-[#68ef3f]" />
             </button>
           </div>
 
-          <div className="pt-4 border-t border-[#273f2b] flex flex-col space-y-3 shrink-0 w-full pb-6">
+          <div className="drawer-stagger-4 pt-4 border-t border-[#273f2b] flex flex-col space-y-3 shrink-0 w-full pb-6">
             <button
               type="button"
               onClick={() => {
-                setMobileMenuOpen(false);
+                closeMobileMenu();
                 onOpenLogin();
               }}
-              className="w-full py-4 rounded-full text-base font-bold text-[#122314] bg-[#68ef3f] hover:bg-[#58dc31] shadow-[0_0_25px_rgba(104,239,63,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-4 rounded-full text-base font-bold text-[#122314] bg-[#68ef3f] hover:bg-[#58dc31] shadow-[0_0_25px_rgba(104,239,63,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f]"
             >
               <span>Đăng Nhập</span>
               <ArrowRight size={18} />

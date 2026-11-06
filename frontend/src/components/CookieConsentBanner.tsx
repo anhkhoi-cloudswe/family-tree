@@ -50,24 +50,24 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({ onOpen
   return (
     <aside
       aria-label="Thông báo và tùy chọn Cookie"
-      className="fixed bottom-0 left-0 right-0 z-50 p-2.5 sm:p-4 bg-[#070e09]/95 border-t border-[#273f2b] backdrop-blur-md shadow-2xl text-slate-200 animate-slideUp"
+      className="fixed bottom-0 left-0 right-0 z-50 p-2 sm:p-3 bg-[#070e09]/95 border-t border-[#273f2b] backdrop-blur-md shadow-2xl text-slate-200 animate-slideUp"
       style={{
         boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.85), 0 0 20px rgba(104, 239, 63, 0.08)',
       }}
     >
-      <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4">
+      <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-2 sm:gap-4">
         {/* Left: Message & Regulation Compliance */}
-        <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#122314] text-[#68ef3f] border border-[#273f2b] flex items-center justify-center shrink-0 mt-0.5">
-            <Cookie size={17} />
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+          <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[#122314] text-[#68ef3f] border border-[#273f2b] flex items-center justify-center shrink-0">
+            <Cookie size={15} />
           </div>
 
-          <div className="text-xs leading-relaxed space-y-0.5 sm:space-y-1">
+          <div className="text-xs leading-tight sm:leading-relaxed space-y-0.5">
             <div className="font-bold text-white flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <span className="text-xs sm:text-sm">Bảo vệ quyền riêng tư & Cookie</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#122314] text-[#68ef3f] border border-[#273f2b] font-medium">
+              <span className="text-[11px] sm:text-sm">Bảo vệ riêng tư & Cookie</span>
+              <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-[#122314] text-[#68ef3f] border border-[#273f2b] font-medium">
                 {region === 'VN'
-                  ? 'NĐ 13/2023/NĐ-CP'
+                  ? 'NĐ 13/2023'
                   : region === 'EU'
                   ? 'GDPR'
                   : region === 'US'
@@ -76,15 +76,14 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({ onOpen
               </span>
             </div>
             <p className="text-slate-300 text-[11px] sm:text-xs">
-              Famlykin cam kết <strong className="text-white">chặn toàn bộ cookie theo dõi</strong> cho đến khi bạn đồng ý. 
-              Chỉ sử dụng Cookie thiết yếu để duy trì phiên bảo mật.
+              Famlykin chỉ dùng Cookie thiết yếu bảo mật. Toàn bộ cookie theo dõi bị chặn mặc định.
             </p>
 
-            <div className="flex items-center gap-2 pt-0.5 text-[10px] sm:text-[11px]">
+            <div className="hidden sm:flex items-center gap-2 pt-0.5 text-[10px] sm:text-[11px]">
               <button
                 type="button"
                 onClick={() => onOpenLegalDocs?.('COOKIE')}
-                className="text-[#68ef3f] hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-[#68ef3f] hover:underline flex items-center gap-1 cursor-pointer focus-visible:ring-1 focus-visible:ring-[#68ef3f]"
               >
                 <span>Chính sách Cookie</span>
                 <ExternalLink size={10} />
@@ -93,7 +92,7 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({ onOpen
               <button
                 type="button"
                 onClick={() => onOpenLegalDocs?.('PRIVACY')}
-                className="text-[#68ef3f] hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-[#68ef3f] hover:underline flex items-center gap-1 cursor-pointer focus-visible:ring-1 focus-visible:ring-[#68ef3f]"
               >
                 <span>Chính sách bảo mật</span>
                 <ExternalLink size={10} />
@@ -103,20 +102,20 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({ onOpen
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 w-full md:w-auto justify-end shrink-0 pt-1 md:pt-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 w-full md:w-auto justify-end shrink-0 pt-0.5 md:pt-0">
           <button
             type="button"
             onClick={() => setShowCustomize(!showCustomize)}
-            className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-[11px] sm:text-xs font-semibold text-slate-300 hover:text-white bg-[#122314] hover:bg-[#1a331d] border border-[#273f2b] flex items-center gap-1.5 transition-all cursor-pointer"
+            className="px-2 py-1 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-semibold text-slate-300 hover:text-white bg-[#122314] hover:bg-[#1a331d] border border-[#273f2b] flex items-center gap-1 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-[#68ef3f]"
           >
-            <Settings size={13} />
+            <Settings size={12} />
             <span>Tùy Chỉnh</span>
           </button>
 
           <button
             type="button"
             onClick={handleEssentialOnly}
-            className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-semibold text-slate-200 bg-[#122314] hover:bg-[#1a331d] border border-[#273f2b] transition-all cursor-pointer"
+            className="px-2 py-1 sm:px-3.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-semibold text-slate-200 bg-[#122314] hover:bg-[#1a331d] border border-[#273f2b] transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-[#68ef3f]"
           >
             Chỉ Cần Thiết
           </button>
@@ -124,9 +123,9 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({ onOpen
           <button
             type="button"
             onClick={handleAcceptAll}
-            className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold text-[#122314] bg-[#68ef3f] hover:bg-[#58dc31] shadow-md shadow-[#68ef3f]/20 transition-all cursor-pointer flex items-center gap-1.5"
+            className="px-2.5 py-1 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold text-[#122314] bg-[#68ef3f] hover:bg-[#58dc31] shadow-md shadow-[#68ef3f]/20 transition-all cursor-pointer flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-[#68ef3f]"
           >
-            <Check size={14} className="stroke-[2.5]" />
+            <Check size={13} className="stroke-[2.5]" />
             <span>Đồng Ý</span>
           </button>
         </div>

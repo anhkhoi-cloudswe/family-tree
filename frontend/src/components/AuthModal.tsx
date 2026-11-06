@@ -793,7 +793,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     >
                       <span>Bằng việc tiếp tục, bạn đồng ý với </span>
                       <a
-                        href="/terms&policies?tab=TERMS"
+                        href="/terms-and-policies?tab=TERMS"
                         target="_blank"
                         rel="noreferrer"
                         style={{
@@ -808,7 +808,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       </a>
                       <span> & </span>
                       <a
-                        href="/terms&policies?tab=PRIVACY"
+                        href="/terms-and-policies?tab=PRIVACY"
                         target="_blank"
                         rel="noreferrer"
                         style={{
@@ -945,7 +945,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               >
                 <span>Bằng việc tiếp tục, bạn đồng ý với </span>
                 <a
-                  href="/terms&policies?tab=TERMS"
+                  href="/terms-and-policies?tab=TERMS"
                   target="_blank"
                   rel="noreferrer"
                   style={{
@@ -959,7 +959,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </a>
                 <span> & </span>
                 <a
-                  href="/terms&policies?tab=PRIVACY"
+                  href="/terms-and-policies?tab=PRIVACY"
                   target="_blank"
                   rel="noreferrer"
                   style={{

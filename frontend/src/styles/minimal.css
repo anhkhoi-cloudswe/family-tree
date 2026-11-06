@@ -6112,8 +6112,85 @@ input:-internal-autofill-selected {
   }
 }
 
+/* Landing Mobile Drawer Animation */
+@keyframes drawerSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drawerSlideUp {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+}
+
 .animate-drawer-slide-down {
   animation: drawerSlideDown 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-drawer-slide-up {
+  animation: drawerSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Stagger item entrance in mobile menu */
+@keyframes drawerItemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.drawer-stagger-1 {
+  animation: drawerItemFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
+}
+.drawer-stagger-2 {
+  animation: drawerItemFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+.drawer-stagger-3 {
+  animation: drawerItemFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+.drawer-stagger-4 {
+  animation: drawerItemFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+/* Accessibility: prefers-reduced-motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .landing-enter-anim,
+  .animate-drawer-slide-down,
+  .animate-drawer-slide-up,
+  .drawer-stagger-1,
+  .drawer-stagger-2,
+  .drawer-stagger-3,
+  .drawer-stagger-4,
+  .animate-slideUp {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
 }
 
 .glass-card-tomorro {

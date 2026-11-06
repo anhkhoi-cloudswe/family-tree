@@ -1092,7 +1092,7 @@ const AppContent: React.FC = () => {
           }}
           onOpenLegalDocs={(tab) => {
             setPolicyPageTab(tab);
-            window.history.pushState(null, '', `/terms&policies?tab=${tab}`);
+            window.history.pushState(null, '', `/terms-and-policies?tab=${tab}`);
             setIsPoliciesPage(true);
           }}
         />
@@ -1101,7 +1101,7 @@ const AppContent: React.FC = () => {
         <CookieConsentBanner
           onOpenLegalDocs={(tab) => {
             setPolicyPageTab(tab);
-            window.history.pushState(null, '', `/terms&policies?tab=${tab}`);
+            window.history.pushState(null, '', `/terms-and-policies?tab=${tab}`);
             setIsPoliciesPage(true);
           }}
         />
@@ -1836,7 +1836,7 @@ const AppContent: React.FC = () => {
       <CookieConsentBanner
         onOpenLegalDocs={(tab) => {
           setPolicyPageTab(tab);
-          window.history.pushState(null, '', `/terms&policies?tab=${tab}`);
+          window.history.pushState(null, '', `/terms-and-policies?tab=${tab}`);
           setIsPoliciesPage(true);
         }}
       />
