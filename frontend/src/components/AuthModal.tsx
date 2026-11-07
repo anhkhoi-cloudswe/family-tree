@@ -75,7 +75,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Cloudflare Turnstile Invisible Token & Ref
   const [turnstileToken, setTurnstileToken] = useState<string>('');
   const turnstileRef = useRef<TurnstileInstance | null>(null);
-  const turnstileSiteKey = (import.meta as any).env?.VITE_CLOUDFLARE_TURNSTILE_SITE_KEY || '';
+  const turnstileSiteKey =
+    (import.meta as any).env?.VITE_CLOUDFARE_TURNSTILE_SITE_KEY ||
+    (import.meta as any).env?.VITE_CLOUDFLARE_TURNSTILE_SITE_KEY ||
+    '';
 
   // Nếu URL có reset_token thì tự động mở màn hình đặt lại mật khẩu
   useEffect(() => {

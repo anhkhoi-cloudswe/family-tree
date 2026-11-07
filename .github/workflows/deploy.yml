@@ -73,14 +73,14 @@ jobs:
             SEPAY_API_KEY
             SEPAY_BANK_ACC
             SEPAY_BANK_NAME
-            CLOUDFLARE_TURNSTILE_SECRET_KEY
+            CLOUDFARE_TURNSTILE_SECRET_KEY
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'family_tree_production_secret_2026' }}
           SEPAY_API_KEY: ${{ secrets.SEPAY_API_KEY }}
           SEPAY_BANK_ACC: ${{ secrets.SEPAY_BANK_ACC }}
           SEPAY_BANK_NAME: ${{ secrets.SEPAY_BANK_NAME }}
-          CLOUDFLARE_TURNSTILE_SECRET_KEY: ${{ secrets.CLOUDFLARE_TURNSTILE_SECRET_KEY || 'dummy_turnstile_secret_to_bypass' }}
+          CLOUDFARE_TURNSTILE_SECRET_KEY: ${{ secrets.CLOUDFARE_TURNSTILE_SECRET_KEY }}
 
   # =========================================================
   # 3. FRONTEND DEPLOYMENT (Cloudflare Pages)
@@ -117,7 +117,7 @@ jobs:
           VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID || 'G-ED5GG39XGD' }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://ggefsinnmmrfcfvyhvko.supabase.co' }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_CLOUDFLARE_TURNSTILE_SITE_KEY: ${{ secrets.CLOUDFLARE_TURNSTILE_SITE_KEY }}
+          VITE_CLOUDFARE_TURNSTILE_SITE_KEY: ${{ secrets.CLOUDFARE_TURNSTILE_SITE_KEY }}
         run: npm run build
 
       - name: Publish to Cloudflare Pages

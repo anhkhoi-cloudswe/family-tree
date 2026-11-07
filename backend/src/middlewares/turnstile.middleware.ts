@@ -5,7 +5,7 @@ import { Request, Response, NextFunction } from 'express';
  * Token có thể được truyền trong req.body.turnstileToken hoặc header 'cf-turnstile-token'
  */
 export async function verifyTurnstile(req: Request, res: Response, next: NextFunction) {
-  const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
+  const secretKey = process.env.CLOUDFARE_TURNSTILE_SECRET_KEY || process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
 
   // Nếu chưa cấu hình secret key (ví dụ: môi trường dev local không set), bỏ qua để không chặn phát triển
   if (!secretKey) {
