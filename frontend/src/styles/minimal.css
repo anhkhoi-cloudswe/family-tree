@@ -6219,14 +6219,68 @@ input:-internal-autofill-selected {
   }
 }
 
-@keyframes heroElementFadeUp {
+@keyframes heroBadgePop {
   0% {
     opacity: 0;
-    transform: translateY(22px);
+    transform: translateY(-16px) scale(0.92);
+  }
+  60% {
+    transform: translateY(2px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes heroTitleReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.96);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes heroDescFade {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
   }
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes heroBtnSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(22px) scale(0.95);
+  }
+  70% {
+    transform: translateY(-2px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes heroMockupRise {
+  0% {
+    opacity: 0;
+    transform: translateY(50px) scale(0.94);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
   }
 }
 
@@ -6236,23 +6290,23 @@ input:-internal-autofill-selected {
 }
 
 .hero-fade-1 {
-  animation: heroElementFadeUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+  animation: heroBadgePop 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
 }
 
 .hero-fade-2 {
-  animation: heroElementFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+  animation: heroTitleReveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
 }
 
 .hero-fade-3 {
-  animation: heroElementFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+  animation: heroDescFade 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.38s both;
 }
 
 .hero-fade-4 {
-  animation: heroElementFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
+  animation: heroBtnSlideIn 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.52s both;
 }
 
 .hero-fade-5 {
-  animation: heroElementFadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+  animation: heroMockupRise 1s cubic-bezier(0.16, 1, 0.3, 1) 0.68s both;
 }
 
 

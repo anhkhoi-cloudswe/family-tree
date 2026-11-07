@@ -42,6 +42,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [isMenuClosing, setIsMenuClosing] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0); // Key dùng để re-trigger toàn bộ animations khi click Logo
 
   // Phát hiện thiết lập giảm chuyển động của hệ điều hành
   useEffect(() => {
@@ -137,7 +138,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const heroParallaxOffset = prefersReducedMotion ? 0 : scrollY * 0.25; // Parallax dịch chuyển nhẹ (tắt khi reduced motion)
 
   return (
-    <div className="landing-enter-anim min-h-screen bg-[#070e09] text-slate-100 flex flex-col font-sans selection:bg-[#68ef3f] selection:text-slate-950 overflow-x-hidden">
+    <div key={refreshKey} className="landing-enter-anim min-h-screen bg-[#070e09] text-slate-100 flex flex-col font-sans selection:bg-[#68ef3f] selection:text-slate-950 overflow-x-hidden">
       {/* 1. Navbar Cao Cấp Phong Cách SaaS Hiện Đại (Tomorro Inspired) */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-out ${
@@ -154,12 +155,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               className="flex items-center gap-3 cursor-pointer group rounded-xl p-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#68ef3f]"
-              aria-label="Về đầu trang chủ Famlykin"
+              aria-label="Về đầu trang chủ Famlykin và làm mới animation"
               onClick={() => {
                 if (mobileMenuOpen) closeMobileMenu();
                 const wrapper = document.querySelector('.landing-guest-wrapper');
                 if (wrapper) wrapper.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
                 window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+                setRefreshKey((prev) => prev + 1);
               }}
             >
               <div className="transition-transform duration-300 group-hover:scale-105">
@@ -297,7 +299,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       )}
 
       {/* 2. Hero Section Với Nền Thiên Nhiên, Gradient Tinh Tế & Scroll Fade-Out */}
-      <section className="relative pt-16 sm:pt-36 pb-20 sm:pb-36 px-4 sm:px-6 w-full min-h-[92svh] sm:min-h-0 flex flex-col justify-between sm:justify-start items-center text-center overflow-visible">
+      <section className="relative pt-16 sm:pt-36 pb-20 sm:pb-36 px-4 sm:px-6 w-full flex flex-col items-center text-center overflow-visible">
         {/* Lớp Ảnh Thiên Nhiên Phong Cảnh Đồi Chè (WebP siêu nhẹ + fallback PNG) - Neo cố định top center để thấy trọn khinh khí cầu và mặt trời */}
         <div
           className="absolute inset-x-0 -top-20 sm:-top-32 h-[880px] sm:h-[1100px] pointer-events-none -z-20 overflow-hidden w-full"
@@ -329,8 +331,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* Neon Botanical Glow Atmosphere Orbs */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[680px] h-[350px] sm:h-[680px] bg-[#68ef3f]/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 
-        {/* Nội dung chính Hero: Slogan, H1, Description, CTA Buttons */}
-        <div className="w-full flex flex-col items-center flex-1 justify-center max-w-4xl pt-6 sm:pt-0">
+        {/* Nội dung chính Hero: Slogan, H1, Description, CTA Buttons (Tối ưu padding và min-h để màn hình đầu tiên hiển thị trọn vẹn 100%) */}
+        <div className="w-full flex flex-col items-center justify-center max-w-4xl pt-2 min-[400px]:pt-5 sm:pt-0 min-h-[calc(100svh-5rem)] sm:min-h-0">
           {/* Slogan nhỏ (Bỏ icon sao trước chữ) */}
           <div className="hero-fade-1 inline-flex items-center px-4 py-1 rounded-full bg-[#122314]/90 border border-[#273f2b] text-[#68ef3f] text-xs sm:text-sm font-semibold mb-3 sm:mb-6 shadow-lg backdrop-blur-md">
             <span>Lưu truyền gốc rễ • Kết nối trăm năm</span>
@@ -352,7 +354,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </p>
 
           {/* CTA Buttons (Responsive Full-width trên mobile, hàng ngang trên desktop, padding ngón tay chuẩn UX) */}
-          <div className="hero-fade-4 mt-6 sm:mt-10 flex flex-col sm:flex-row items-center gap-2.5 sm:gap-4 w-full sm:w-auto max-w-md sm:max-w-none px-2 sm:px-0 z-10">
+          <div className="hero-fade-4 mt-6 sm:mt-10 flex flex-col sm:flex-row items-center gap-2.5 sm:gap-4 w-full sm:w-auto max-w-md sm:max-w-none px-2 sm:px-0 z-10 pb-4">
             <button
               type="button"
               onClick={onOpenRegister}
@@ -374,8 +376,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
 
         {/* Hero Interactive App Mockup Preview - Trọn vẹn trong container kính mờ bo góc cao cấp, không bị cắt lửng lơ
-            Trên mobile (dưới md): đặt mt-20 để màn hình đầu tiên (1st screen view) hiển thị trọn vẹn phong cảnh đồi chè và 2 nút CTA mà không bị lấn/dính khung mockup! */}
-        <div className="hero-fade-5 mt-20 sm:mt-24 w-full max-w-5xl [perspective:1400px] z-10 px-2 sm:px-4">
+            Trên mobile (dưới md): đặt mt-32 sm:mt-24 để màn hình đầu tiên (1st screen view) hiển thị trọn vẹn 100% phong cảnh đồi chè và 2 nút CTA mà không bị lấn/dính khung mockup! */}
+        <div className="hero-fade-5 mt-32 sm:mt-24 w-full max-w-5xl [perspective:1400px] z-10 px-2 sm:px-4">
           <div className="rounded-3xl p-2.5 sm:p-4 bg-gradient-to-b from-[#1a331d]/70 via-[#122314]/60 to-[#0a140b]/90 border border-[#273f2b]/90 backdrop-blur-md shadow-[0_25px_70px_rgba(0,0,0,0.85),_0_0_45px_rgba(104,239,63,0.12)] transform transition-transform duration-500 hover:[transform:none] sm:[transform:rotateX(4deg)_rotateY(-2deg)]">
             <div className="rounded-2xl overflow-hidden bg-[#0a140b] border border-[#273f2b] relative shadow-inner">
               {/* Mockup browser bar */}
