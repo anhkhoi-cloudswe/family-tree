@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
   RotateCcw,
+  Check,
   User as UserIcon,
 } from 'lucide-react';
 import {
@@ -69,7 +70,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [resendCooldown, setResendCooldown] = useState(0);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsInitialTab, setTermsInitialTab] = useState<LegalDocTab>('TERMS');
-  const [consentDecree13, setConsentDecree13] = useState<boolean>(true);
+  const [consentDecree13, setConsentDecree13] = useState<boolean>(false);
 
   // Cloudflare Turnstile Invisible Token & Ref
   const [turnstileToken, setTurnstileToken] = useState<string>('');
@@ -793,6 +794,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {/* Checkbox Đồng ý Điều khoản dịch vụ & Chính sách bảo mật khi Đăng ký mới */}
                 {authMode === 'REGISTER' && (
                   <div
+                    onClick={() => setConsentDecree13((prev) => !prev)}
                     style={{
                       marginTop: '0.9rem',
                       marginBottom: '0.4rem',
@@ -800,29 +802,39 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       alignItems: 'flex-start',
                       gap: '0.65rem',
                       padding: '0.2rem 0.1rem',
+                      cursor: 'pointer',
                     }}
                   >
-                    <input
-                      type="checkbox"
-                      id="consent-decree-13"
-                      checked={consentDecree13}
-                      onChange={(e) => setConsentDecree13(e.target.checked)}
+                    <div
+                      role="checkbox"
+                      aria-checked={consentDecree13}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === ' ' || e.key === 'Enter') {
+                          e.preventDefault();
+                          setConsentDecree13((prev) => !prev);
+                        }
+                      }}
                       style={{
                         marginTop: '2px',
                         width: '18px',
                         height: '18px',
                         minWidth: '18px',
                         minHeight: '18px',
-                        accentColor: '#68ef3f',
-                        cursor: 'pointer',
                         flexShrink: 0,
                         borderRadius: '4px',
-                        outline: 'none',
-                        border: '1.5px solid #68ef3f',
+                        border: consentDecree13 ? '1.5px solid #68ef3f' : '1.5px solid rgba(255, 255, 255, 0.35)',
+                        background: consentDecree13 ? '#68ef3f' : 'rgba(255, 255, 255, 0.05)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.15s ease',
+                        boxShadow: consentDecree13 ? '0 0 10px rgba(104, 239, 63, 0.35)' : 'none',
                       }}
-                    />
+                    >
+                      {consentDecree13 && <Check size={13} color="#122314" strokeWidth={3.5} />}
+                    </div>
                     <label
-                      htmlFor="consent-decree-13"
                       style={{
                         fontSize: '0.78rem',
                         color: '#d0d7c0',
