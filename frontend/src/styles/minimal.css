@@ -6209,7 +6209,7 @@ input:-internal-autofill-selected {
   box-shadow: 0 20px 40px -15px rgba(104, 239, 63, 0.15), 0 0 20px rgba(104, 239, 63, 0.1);
 }
 
-/* Landing Page Entrance Smooth Animation */
+/* Landing Page Entrance & Stagger Smooth Animations */
 @keyframes landingPageEnter {
   0% {
     opacity: 0;
@@ -6219,10 +6219,42 @@ input:-internal-autofill-selected {
   }
 }
 
+@keyframes heroElementFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .landing-enter-anim {
   animation: landingPageEnter 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: opacity;
 }
+
+.hero-fade-1 {
+  animation: heroElementFadeUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.hero-fade-2 {
+  animation: heroElementFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+}
+
+.hero-fade-3 {
+  animation: heroElementFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+}
+
+.hero-fade-4 {
+  animation: heroElementFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
+}
+
+.hero-fade-5 {
+  animation: heroElementFadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+}
+
 
 
 
