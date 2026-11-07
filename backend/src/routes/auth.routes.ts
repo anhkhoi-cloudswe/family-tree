@@ -18,6 +18,7 @@ import {
   verifyPhoneOtp,
 } from '../controllers/auth.controller';
 import { authenticateToken } from '../middlewares/auth.middleware';
+import { verifyTurnstile } from '../middlewares/turnstile.middleware';
 import {
   authRateLimiter,
   signupRateLimiter,
@@ -27,12 +28,12 @@ import {
 const router = Router();
 
 router.post('/check-email', checkEmail);
-router.post('/register', signupRateLimiter, register);
+router.post('/register', signupRateLimiter, verifyTurnstile, register);
 router.post('/verify-registration', authRateLimiter, verifyRegistration);
 router.post('/complete-registration', authRateLimiter, completeRegistration);
-router.post('/forgot-password', forgotPasswordRateLimiter, forgotPassword);
+router.post('/forgot-password', forgotPasswordRateLimiter, verifyTurnstile, forgotPassword);
 router.post('/reset-password', authRateLimiter, resetPassword);
-router.post('/login', authRateLimiter, login);
+router.post('/login', authRateLimiter, verifyTurnstile, login);
 router.post('/magic-login', authRateLimiter, magicLogin);
 router.get('/me', authenticateToken, getMe);
 router.put('/phone', authenticateToken, updatePhone);

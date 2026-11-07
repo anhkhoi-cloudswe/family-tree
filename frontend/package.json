@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "^1.6.3",
     "@supabase/supabase-js": "^2.118.0",
     "firebase": "^13.0.0",
     "html-to-image": "^1.11.11",

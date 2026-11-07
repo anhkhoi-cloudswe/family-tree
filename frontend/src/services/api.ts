@@ -41,13 +41,13 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 }
 
 // Auth API
-export const apiLogin = (data: { email: string; password: string }) =>
+export const apiLogin = (data: { email: string; password: string; turnstileToken?: string }) =>
   request<{ token: string; user: User; defaultTreeId?: string }>('/auth/login', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 
-export const apiRegister = (data: { email: string; password: string; fullName?: string }) =>
+export const apiRegister = (data: { email: string; password: string; fullName?: string; turnstileToken?: string }) =>
   request<{ success: boolean; message: string; email: string }>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -71,11 +71,13 @@ export const apiCheckEmail = (email: string) =>
     body: JSON.stringify({ email }),
   });
 
-export const apiForgotPassword = (email: string) =>
-  request<{ success: boolean; message: string; email: string }>('/auth/forgot-password', {
+export const apiForgotPassword = (data: { email: string; turnstileToken?: string } | string) => {
+  const payload = typeof data === 'string' ? { email: data } : data;
+  return request<{ success: boolean; message: string; email: string }>('/auth/forgot-password', {
     method: 'POST',
-    body: JSON.stringify({ email }),
+    body: JSON.stringify(payload),
   });
+};
 
 export const apiResetPassword = (data: { token: string; newPassword: string }) =>
   request<{ success: boolean; message: string }>('/auth/reset-password', {

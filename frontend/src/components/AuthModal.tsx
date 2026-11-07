@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
 import {
   Lock,
   Mail,
@@ -70,6 +71,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [termsInitialTab, setTermsInitialTab] = useState<LegalDocTab>('TERMS');
   const [consentDecree13, setConsentDecree13] = useState<boolean>(true);
 
+  // Cloudflare Turnstile Invisible Token & Ref
+  const [turnstileToken, setTurnstileToken] = useState<string>('');
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
+  const turnstileSiteKey = (import.meta as any).env?.VITE_CLOUDFLARE_TURNSTILE_SITE_KEY || '';
+
   // Nếu URL có reset_token thì tự động mở màn hình đặt lại mật khẩu
   useEffect(() => {
     if (resetToken) {
@@ -117,12 +123,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       const res = await apiLogin({
         email: cleanEmail,
         password,
+        turnstileToken: turnstileToken || undefined,
       });
 
       setStoredToken(res.token);
       toast.success(`Chào mừng ${res.user.fullName || res.user.email} trở lại!`);
       onSuccess(res.user, res.defaultTreeId);
     } catch (err: any) {
+      // Reset Turnstile token để sinh token mới cho lần thử tiếp theo
+      turnstileRef.current?.reset();
+      setTurnstileToken('');
+
       // 2. Nếu backend từ chối, kiểm tra trên Firebase Auth (có thể user vừa verify email nhưng chưa sync vào DB)
       try {
         const fbRes = await loginWithFirebase(cleanEmail, password);
@@ -221,6 +232,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       try {
         await registerWithFirebaseAndSendVerification(cleanEmail, password);
       } catch (fbRegErr: any) {
+        turnstileRef.current?.reset();
+        setTurnstileToken('');
         if (fbRegErr?.code === 'auth/email-already-in-use') {
           // Email đã có trên Firebase Auth từ lần test trước -> thử login và gửi lại email
           try {
@@ -324,11 +337,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         return;
       }
 
+      // Gửi yêu cầu qua backend đồng thời verify Turnstile (nếu có turnstileToken)
+      try {
+        await apiForgotPassword({ email: cleanEmail, turnstileToken: turnstileToken || undefined });
+      } catch (backendErr: any) {
+        // Nếu backend yêu cầu Turnstile hoặc chặn, ném lỗi ra ngoài
+        if (backendErr.message && backendErr.message.includes('Turnstile')) {
+          turnstileRef.current?.reset();
+          setTurnstileToken('');
+          throw backendErr;
+        }
+      }
+
       await sendFirebasePasswordReset(cleanEmail);
       toast.success('Đã gửi liên kết đặt lại mật khẩu tới email của bạn!');
       setResendCooldown(60);
       setAuthMode('AWAITING_RESET_EMAIL');
     } catch (err: any) {
+      turnstileRef.current?.reset();
+      setTurnstileToken('');
       console.error('Lỗi gửi email đặt lại mật khẩu:', err);
       const code = err.code || '';
       if (code === 'auth/unauthorized-domain') {
@@ -510,6 +537,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Cloudflare Turnstile Invisible Widget (0px, hoàn toàn ẩn ngầm bảo vệ form) */}
+        {turnstileSiteKey && (
+          <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={turnstileSiteKey}
+              onSuccess={(token) => setTurnstileToken(token)}
+              onExpire={() => setTurnstileToken('')}
+              onError={() => setTurnstileToken('')}
+            />
+          </div>
+        )}
 
         {/* Màn hình 1 & 2: Đăng Nhập hoặc Đăng Ký */}
         {(authMode === 'LOGIN' || authMode === 'REGISTER') && (
